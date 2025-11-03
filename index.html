@@ -235,7 +235,7 @@ function drawClouds(deltaFactor) {
     let gameSpeed=5, baseGameSpeed=5, gameSpeedAcceleration=0.05;
     let timeElapsed=0, obstacles=[], backgroundObjects=[], groundObjects=[];
     let frame=0, spawnTimer=0, minSpawnInterval=90, maxSpawnInterval=180;
-    const minSpawnIntervalBase=90, maxSpawnIntervalBase=180, spawnIntervalReductionPerSec=4;
+    const minSpawnIntervalBase=60, maxSpawnIntervalBase=120, spawnIntervalReductionPerSec=6;
     let isGameOver = false, isPaused = false, gameStarted = false, lastTime = 0;
     const baseDeltaTime=1000/60;
     const groundY=gameHeight-50;
@@ -301,8 +301,8 @@ function drawClouds(deltaFactor) {
       spawnTimer = 0;
 
       // 難易度上昇に合わせてレンジを更新（ここは今のままでOK）
-      minSpawnInterval = Math.max(minSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 40);
-      maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 80);
+      minSpawnInterval = Math.max(minSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 25);
+      maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 50);
 
       // どれを出すか決めて追加（ここは今のままでOK）
       const rand = Math.random();
@@ -403,12 +403,16 @@ function drawClouds(deltaFactor) {
       e.preventDefault(); if(gameStarted) return;
       gameStarted=true; startAudio(); startScreen.classList.add('hidden');
       lastTime=performance.now(); requestAnimationFrame(gameLoop);
+      nextSpawnInterval = minSpawnIntervalBase + Math.random() * (maxSpawnIntervalBase - minSpawnIntervalBase);
+      spawnTimer = 0;
     }
     startButton.addEventListener('click',handleGameStart);
     startButton.addEventListener('touchstart',handleGameStart);
+    
   </script>
 </body>
 </html>
+
 
 
 
