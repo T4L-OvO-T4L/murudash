@@ -72,14 +72,26 @@
     </div>
 
     <!-- ゲームオーバー -->
-    <div id="gameOverScreen" class="absolute inset-0 bg-black bg-opacity-50 flex-col justify-center items-center rounded-lg text-white p-8 text-center hidden">
-      <h2 class="text-4xl font-bold mb-4">がめおべら</h2>
-      <p class="text-xl mb-6">スコア: <span id="finalScore">0</span></p>
-      <button id="restartButton" class="px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-xl hover:bg-blue-700 transition-colors">
-        リスタート
-      </button>
-    </div>
+<div id="gameOverScreen" class="absolute inset-0 bg-black bg-opacity-50 flex-col justify-center items-center rounded-lg text-white p-8 text-center hidden">
+  <h2 class="text-4xl font-bold mb-4">がめおべら</h2>
+  <p class="text-xl mb-6">スコア: <span id="finalScore">0</span></p>
+
+  <!-- 横並びボタン -->
+  <div class="flex flex-wrap justify-center gap-3">
+    <button id="restartButton"
+      class="px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-xl hover:bg-blue-700 transition-colors">
+      リスタート
+    </button>
+
+    <a id="shareButton"
+      href="#"
+      target="_blank" rel="noopener noreferrer"
+      class="px-8 py-4 bg-black text-white font-bold rounded-lg shadow-lg text-xl hover:bg-gray-900 transition-colors">
+      Xでスコアをシェア
+    </a>
   </div>
+</div>
+
 
   <!-- ジャンプボタン（画面幅＝キャンバス、高さ1.5倍） -->
   <div class="w-full max-w-lg flex justify-center p-4 fixed bottom-0 left-1/2 -translate-x-1/2">
@@ -96,6 +108,9 @@
     const gameOverScreen = document.getElementById('gameOverScreen');
     const finalScoreEl = document.getElementById('finalScore');
     const restartButton = document.getElementById('restartButton');
+    
+    const shareButton = document.getElementById('shareButton');
+
     const jumpButton = document.getElementById('jumpButton');
     const pauseButton = document.getElementById('pauseButton');
     const pauseOverlay = document.getElementById('pauseOverlay');
@@ -153,33 +168,29 @@ let clouds = Array.from({ length: 5 }, () => ({
 }));
 
 function drawClouds(deltaFactor) {
-  // 夜は少し暗めに
+  // 🔹 昼夜で透明度を変える（全体的に薄め）
+  // 朝・夕 → 0.45、夜 → 0.35 くらいが自然
   const isNight =
     Math.abs(skyTarget.top[0] - THEMES.night.top[0]) < 5 &&
     Math.abs(skyTarget.bottom[0] - THEMES.night.bottom[0]) < 5;
-  const alpha = isNight ? 0.65 : 0.8;
-  ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+  const alpha = isNight ? 0.35 : 0.45;
 
-for (let c of clouds) {
-  const speedBoost = 0.04 * gameSpeed; // ←ゲーム速度に応じた追加スピード
-  c.x -= (c.speed + speedBoost) * deltaFactor;
+  ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
 
-    if (c.x < -c.size * 2) {
-      // ラップ時にランダムリセット
-      c.x = gameWidth + c.size;
-      c.y = 40 + Math.random() * 90;
-      c.speed = 0.12 + Math.random() * 0.18;
-      c.size = 60 + Math.random() * 60;
-    }
-    // ふわっとした形を2つ重ねて描く
+  for (let c of clouds) {
+    c.x -= c.speed * deltaFactor;
+    if (c.x < -200) c.x = gameWidth + 100;
+
     ctx.beginPath();
     ctx.ellipse(c.x, c.y, c.size, c.size * 0.6, 0, 0, Math.PI * 2);
     ctx.fill();
+
     ctx.beginPath();
     ctx.ellipse(c.x + c.size * 0.6, c.y + 10, c.size * 0.9, c.size * 0.5, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 }
+
 
 
 
@@ -200,7 +211,7 @@ for (let c of clouds) {
     let timeElapsed=0, obstacles=[], backgroundObjects=[], groundObjects=[];
     let frame=0, spawnTimer=0, minSpawnInterval=90, maxSpawnInterval=180;
     const minSpawnIntervalBase=90, maxSpawnIntervalBase=180, spawnIntervalReductionPerSec=4;
-    let isGameOver=false,isPaused=false,gameStarted=false,lastTime=0;
+    let is=false,isPaused=false,gameStarted=false,lastTime=0;
     const baseDeltaTime=1000/60;
     const groundY=gameHeight-50;
 
@@ -259,6 +270,14 @@ for (let c of clouds) {
     function clearCanvas(){ ctx.clearRect(0,0,gameWidth,gameHeight); }
     function drawGround(){ ctx.fillStyle='#8B4513'; ctx.fillRect(0,groundY,gameWidth,gameHeight-groundY); }
 
+    
+    function buildXIntentUrl(score) {
+    const text = `むるだっしゅ！スコアは「${score}」でした🌻\nhttps://t4l-ovo-t4l.github.io/murudash/`;
+    return `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    }
+
+
+    
     function gameOver(){
       if(isGameOver)return; isGameOver=true; gameStarted=false;
       if(audioStarted){ try{ bgmAudio.pause(); bgmAudio.currentTime=0; endAudio.currentTime=0; endAudio.play(); }catch(_){ } }
@@ -316,4 +335,5 @@ for (let c of clouds) {
   </script>
 </body>
 </html>
+
 
