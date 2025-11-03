@@ -215,10 +215,10 @@ function setBackgroundTheme(theme) {
   }
 }
 
-// スコアに応じてテーマ決定（0-179 朝 / 180-199 夕 / 200-379 夜 / 380-399 夕 / 400→朝に戻る）
+// スコアに応じてテーマ決定（0-139 朝 / 140-199 夕 / 200-379 夜 / 380-399 夕 / 400→朝に戻る）
 function updateBackgroundThemeByScore(score) {
   const phase = score % 220;
-  if (phase < 180) {
+  if (phase < 140) {
     setBackgroundTheme('morning');
   } else if (phase < 200) {
     setBackgroundTheme('evening');
@@ -617,4 +617,5 @@ function updateBackgroundThemeByScore(score) {
   </script>
 </body>
 </html>
+
 
