@@ -34,10 +34,12 @@
        target="_blank"
        rel="noopener noreferrer"
        class="underline hover:text-white transition">
-       「ムルル」
+       ｢ムルル｣
     </a>
     をモチーフにした非公式ファン作品です。<br class="sm:hidden">
-    権利者様とは一切関係ありません。
+    権利者様とは一切関係ありません。<br>
+    ※音が出ます。ご注意ください。<br>
+    ※iOS Safari想定の設計です。他の端末でも遊べますが、疑惑の判定が生まれる可能性があります。
   </div>
 
   <!-- ヘッダー（タイトル/説明ナシ、左スコア／右ハイスコア＋休憩） -->
@@ -91,7 +93,7 @@
 
   <!-- スマホ用ジャンプ -->
   <div class="w-full max-w-lg flex justify-center p-4 fixed bottom-0 left-1/2 -translate-x-1/2">
-    <button id="jumpButton" class="control-button w-3/4 py-8 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-2xl">
+    <button id="jumpButton" class="control-button w-full py-12 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-2xl">
       ジャンプ
     </button>
   </div>
@@ -137,6 +139,10 @@
     const gameHeight = 300;
     canvas.width = gameWidth;
     canvas.height = gameHeight;
+
+    // 初期化時に背景 朝をセット
+    setBackgroundTheme('morning');
+
 
     // 変数
     let score = 0;
@@ -196,6 +202,35 @@
       console.error('画像の読み込みに失敗しました。');
       player.imageLoaded = false;
     };
+
+    // 背景テーマ切替（scoreで変化）
+function setBackgroundTheme(theme) {
+  // キャンバスだけ切替（bodyはそのまま）
+  if (theme === 'morning') {
+    canvas.style.backgroundImage = 'linear-gradient(to bottom, #a0d2eb, #f7fafc 80%)'; // 朝（既存）
+  } else if (theme === 'evening') {
+    canvas.style.backgroundImage = 'linear-gradient(to bottom, #f6ad55, #fde68a 80%)'; // 夕方：オレンジ〜薄黄
+  } else if (theme === 'night') {
+    canvas.style.backgroundImage = 'linear-gradient(to bottom, #1f2937, #0b1020 80%)'; // 夜：濃紺
+  }
+}
+
+// スコアに応じてテーマ決定（0-179 朝 / 180-199 夕 / 200-379 夜 / 380-399 夕 / 400→朝に戻る）
+function updateBackgroundThemeByScore(score) {
+  const phase = score % 220;
+  if (phase < 180) {
+    setBackgroundTheme('morning');
+  } else if (phase < 200) {
+    setBackgroundTheme('evening');
+  } else if (phase < 380) {
+    setBackgroundTheme('night');
+  } else if (phase < 400) {
+    setBackgroundTheme('evening');
+  } else {
+    setBackgroundTheme('morning');
+  }
+}
+
 
     // 絵文字フォールバック（🫐が出なければ🍇）
     function supportsEmoji(emoji) {
@@ -414,6 +449,7 @@
       gameSpeed = baseGameSpeed + timeInSeconds * gameSpeedAcceleration;
       minSpawnInterval = Math.max(minSpawnIntervalBase - timeInSeconds * spawnIntervalReductionPerSec, 40);
       maxSpawnInterval = Math.max(maxSpawnIntervalBase - timeInSeconds * spawnIntervalReductionPerSec, 80);
+      updateBackgroundThemeByScore(score);
     }
 
     function drawGround() {
@@ -581,3 +617,4 @@
   </script>
 </body>
 </html>
+
