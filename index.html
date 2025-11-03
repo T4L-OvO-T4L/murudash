@@ -36,7 +36,7 @@
      class="underline hover:text-white transition">
      「ムルル」
   </a>
-  をモチーフにした非公式ファン作品です。
+  をモチーフにした非公式ファン作品です。<br class="sm:hidden">
   権利者様とは一切関係ありません。
 </div>
   
@@ -49,9 +49,12 @@
     </div>
     <div class="flex items-center gap-4">
       <div class="text-right">
-        <span class="text-2xl font-bold text-blue-600">スコア: <span id="score">0</span></span>
-        <span id="highScore" class="text-xs text-gray-500 block">ハイスコア: 0</span>
+       <span class="text-2xl font-bold text-blue-600">
+         スコア: <span id="score" class="inline-block min-w-[60px] text-right font-mono">0</span>
+       </span>
+       <span id="highScore" class="text-xs text-gray-500 block">ハイスコア: 0</span>
       </div>
+
       <button id="pauseButton" class="pause-button px-4 py-2 bg-yellow-500 text-white font-bold rounded-lg shadow-md text-sm">
         ちょっと休憩
       </button>
@@ -584,6 +587,7 @@
   </script>
 </body>
 </html>
+
 
 
 
