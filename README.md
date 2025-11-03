@@ -19,7 +19,7 @@
 | BGM | BGM.mp3 | 自作 | オリジナルBGM |
 | 効果音（ゲームオーバー） | END.mp3 | [効果音ラボ](https://soundeffect-lab.info/) | 使用許諾：商用利用可・クレジット任意 |
 | ブルーベリー | blueberry.svg | [Twemoji](https://github.com/twitter/twemoji) | Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
-| ひまわり | sunflower.svg | フリー素材（要記入） | AI → SVG 変換済み |
+| ひまわり | sunflower.svg | イラストAC | AI → SVG 変換済み |
 
 ---
 
@@ -40,4 +40,5 @@
 ## 💬 クレジット
 - “**Twemoji**” by **Twitter, Inc and other contributors** is licensed under **CC-BY 4.0**.  
 - 効果音提供：「効果音ラボ」 https://soundeffect-lab.info/  
+
 - むるだっしゅ！制作：たる（X:@T4L_OvO_）
