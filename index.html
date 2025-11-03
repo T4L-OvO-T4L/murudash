@@ -108,7 +108,7 @@
         await bgmAudio.play();
 
         endAudio = new Audio('./assets/END.mp3');
-        endAudio.volume = 0.8;
+        endAudio.volume = 0.5;
 
         audioStarted = true;
         console.log('Audio started');
@@ -311,7 +311,10 @@
       }
       update(deltaFactor) { this.x -= gameSpeed * deltaFactor; }
       getHitbox() {
-        return { x: this.x, y: this.y - this.height, width: this.width, height: this.height };
+      const shrink = this.type === 'ground_large' ? 0.6 : 0.8; // 🌻だけ少し小さく
+      const w = this.width * shrink;
+      const h = this.height * shrink;
+      return { x: this.x + (this.width - w) / 2, y: this.y - h, width: w, height: h };
       }
     }
 
@@ -554,3 +557,4 @@
   </script>
 </body>
 </html>
+
