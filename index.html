@@ -299,16 +299,17 @@ function drawClouds(deltaFactor) {
       maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 80);
 
       const rand = Math.random();
+      const SCALE = 0.7; // 👈 全体スケール率
 
       if (rand < 0.4) {
-        const size = 40 + Math.random() * 20;
+        const size = (40 + Math.random() * 20) * SCALE;
         const yPos = Math.random() < 0.3 ? groundY - 30 : groundY - 70 - Math.random() * 50;
         obstacles.push(new Obstacle('air', SPRITES.blueberry, yPos, size));
       } else {
         if (score > 10 && Math.random() < 0.3) {
-          obstacles.push(new Obstacle('ground_large', SPRITES.sunflower, groundY, 120));
+          obstacles.push(new Obstacle('ground_large', SPRITES.sunflower, groundY, 120 * SCALE));
         } else {
-          const size = 60 + Math.random() * 20;
+          const size = (60 + Math.random() * 20) * SCALE;
           obstacles.push(new Obstacle('ground', SPRITES.sunflower, groundY, size));
         }
       }
@@ -398,6 +399,7 @@ function drawClouds(deltaFactor) {
   </script>
 </body>
 </html>
+
 
 
 
