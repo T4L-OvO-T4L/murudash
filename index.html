@@ -25,44 +25,42 @@
     .pause-button:active { transform: scale(0.95); }
   </style>
 </head>
-<body class="bg-gray-800 flex flex-col items-center justify-center h-screen">
+<body class="bg-gray-800 flex flex-col items-center justify-start min-h-screen pt-3 sm:pt-4 pb-28">
 
   <!-- 非公式注記 -->
-<div class="w-full text-center bg-gray-900 text-gray-300 text-[11px] py-1 shadow-md">
-  ※本作品は
-  <a href="https://kuronekotsuki.booth.pm/items/4672957"
-     target="_blank"
-     rel="noopener noreferrer"
-     class="underline hover:text-white transition">
-     「ムルル」
-  </a>
-  をモチーフにした非公式ファン作品です。<br class="sm:hidden">
-  権利者様とは一切関係ありません。
-</div>
-  
+  <div class="w-full text-center bg-gray-900 text-gray-300 text-[11px] py-1 shadow-md">
+    ※本作品は
+    <a href="https://kuronekotsuki.booth.pm/items/4672957"
+       target="_blank"
+       rel="noopener noreferrer"
+       class="underline hover:text-white transition">
+       「ムルル」
+    </a>
+    をモチーフにした非公式ファン作品です。<br class="sm:hidden">
+    権利者様とは一切関係ありません。
+  </div>
 
-  <!-- ヘッダー -->
-  <div class="w-full max-w-lg p-4 flex justify-between items-center bg-white rounded-t-lg shadow-md">
-    <div>
-      <h1 class="text-xl font-bold text-gray-800">むるだっしゅ！</h1>
-      <p class="text-sm text-gray-600">2段ジャンプもできるよ</p>
-    </div>
-    <div class="flex items-center gap-4">
-      <div class="text-right">
-       <span class="text-2xl font-bold text-blue-600">
-         スコア: <span id="score" class="inline-block min-w-[60px] text-right font-mono">0</span>
-       </span>
-       <span id="highScore" class="text-xs text-gray-500 block">ハイスコア: 0</span>
+  <!-- ヘッダー（タイトル/説明ナシ、左スコア／右ハイスコア＋休憩） -->
+  <div class="w-full max-w-lg p-3 bg-white rounded-t-lg shadow-md">
+    <div class="flex items-center justify-between gap-3">
+      <!-- 左：現在スコア（幅固定＆等幅でブレ防止） -->
+      <div class="text-left">
+        <span class="text-xl sm:text-2xl font-bold text-blue-600">
+          スコア: <span id="score" class="inline-block min-w-[60px] text-right font-mono">0</span>
+        </span>
       </div>
-
-      <button id="pauseButton" class="pause-button px-4 py-2 bg-yellow-500 text-white font-bold rounded-lg shadow-md text-sm">
-        ちょっと休憩
-      </button>
+      <!-- 右：ハイスコア＋休憩 -->
+      <div class="flex items-center gap-3 shrink-0">
+        <span id="highScore" class="text-xs text-gray-500 block">ハイスコア: 0</span>
+        <button id="pauseButton" class="pause-button px-3 py-2 sm:px-4 sm:py-2 bg-yellow-500 text-white font-bold rounded-lg shadow-md text-sm">
+          ちょっと休憩
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- キャンバス＆オーバーレイ -->
-  <div class="relative w-full max-w-lg">
+  <!-- キャンバス＆オーバーレイ（上寄せ＋下余白） -->
+  <div class="relative w-full max-w-lg mt-2 mb-24">
     <canvas id="gameCanvas" class="rounded-b-lg shadow-md"></canvas>
 
     <!-- スタート画面 -->
@@ -125,8 +123,7 @@
         await bgmAudio.play();
 
         endAudio = new Audio('./assets/END.mp3');
-        endAudio.volume = 0.5;
-
+        endAudio.volume = 0.5; // ゲームオーバーも半分
         audioStarted = true;
         console.log('Audio started');
       } catch (e) {
@@ -200,18 +197,15 @@
       player.imageLoaded = false;
     };
 
-    // ブルーベリー対応チェック
+    // 絵文字フォールバック（🫐が出なければ🍇）
     function supportsEmoji(emoji) {
-      const ctx = document.createElement('canvas').getContext('2d');
-      ctx.canvas.width = ctx.canvas.height = 20;
-      ctx.fillText(emoji, 0, 15);
-      const data = ctx.getImageData(0, 0, 20, 20).data;
-      return [...data].some(v => v !== 0); // 何か描かれていればOK
+      const ctx2 = document.createElement('canvas').getContext('2d');
+      ctx2.canvas.width = ctx2.canvas.height = 20;
+      ctx2.fillText(emoji, 0, 15);
+      const data = ctx2.getImageData(0, 0, 20, 20).data;
+      return [...data].some(v => v !== 0);
     }
-
-      // 🫐が使えない環境なら🍇に置き換える
-      const berryEmoji = supportsEmoji('🫐') ? '🫐' : '🍇';
-
+    const berryEmoji = supportsEmoji('🫐') ? '🫐' : '🍇';
 
     function drawPlayer() {
       const drawHeight = player.height;
@@ -329,7 +323,7 @@
         this.x = gameWidth;
         this.y = y;
         this.type = type; // 'ground', 'air', 'ground_large'
-        this.emoji = emoji;
+               this.emoji = emoji;
         this.fontSize = fontSize;
         this.width = fontSize * 0.8;
         this.height = fontSize * 0.8;
@@ -341,10 +335,10 @@
       }
       update(deltaFactor) { this.x -= gameSpeed * deltaFactor; }
       getHitbox() {
-      const shrink = this.type === 'ground_large' ? 0.7 : 0.8; // 🌻だけ少し小さく
-      const w = this.width * shrink;
-      const h = this.height * shrink;
-      return { x: this.x + (this.width - w) / 2, y: this.y - h, width: w, height: h };
+        const shrink = this.type === 'ground_large' ? 0.7 : 0.8; // 🌻だけ小さめ判定
+        const w = this.width * shrink;
+        const h = this.height * shrink;
+        return { x: this.x + (this.width - w) / 2, y: this.y - h, width: w, height: h };
       }
     }
 
@@ -366,7 +360,7 @@
         } else {
           yPos = groundY - 70 - Math.random() * 50;
         }
-        obstacles.push(new Obstacle('air', '🫐', yPos, fontSize));
+        obstacles.push(new Obstacle('air', berryEmoji, yPos, fontSize)); // 🫐/🍇切替対応
       } else {
         if (score > 10 && Math.random() < 0.3) {
           const fontSize = 110;
@@ -567,7 +561,7 @@
       pauseButton.addEventListener('touchstart', (e) => { e.preventDefault(); togglePause(); });
     }
 
-    // ⚠️ バグ修正: リスタートボタンにイベントを付与
+    // リスタート
     restartButton.addEventListener('click', (e) => { e.preventDefault(); restartGame(); });
     restartButton.addEventListener('touchstart', (e) => { e.preventDefault(); restartGame(); });
 
@@ -587,8 +581,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
