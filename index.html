@@ -6,32 +6,31 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; media-src 'self';">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 
-  <link rel="preload" as="image" href="./assets/blueberry.svg">
-  <link rel="preload" as="image" href="./assets/sunflower.svg">
-  <link rel="preload" as="audio"  href="./assets/BGM.mp3">
-  <link rel="preload" as="audio"  href="./assets/END.mp3">
+<link rel="preload" as="image" href="./assets/blueberry.svg">
+<link rel="preload" as="image" href="./assets/sunflower.svg">
+<link rel="preload" as="audio" href="./assets/BGM.mp3">
+<link rel="preload" as="audio" href="./assets/END.mp3">
 
-  
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-  <title>むるだっしゅ！</title>
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-    body {
-      font-family: 'Inter', sans-serif;
-      touch-action: manipulation;
-      overflow: hidden;
-      overscroll-behavior: none;
-      background-color: #1a202c;
-    }
-    canvas { display: block; }
-    .control-button { transition: background-color 0.1s ease, transform 0.1s ease; }
-    .control-button:active { transform: scale(0.95); background-color: #2c5282; }
-    .pause-button { transition: background-color 0.1s ease, transform 0.1s ease; }
-    .pause-button:active { transform: scale(0.95); }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>むるだっしゅ！</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+  body {
+    font-family: 'Inter', sans-serif;
+    touch-action: manipulation;
+    overflow: hidden;
+    overscroll-behavior: none;
+    background-color: #1a202c;
+  }
+  canvas { display: block; }
+  .control-button { transition: background-color 0.1s ease, transform 0.1s ease; }
+  .control-button:active { transform: scale(0.95); background-color: #2c5282; }
+  .pause-button { transition: background-color 0.1s ease, transform 0.1s ease; }
+  .pause-button:active { transform: scale(0.95); }
+</style>
 </head>
 <body class="bg-gray-800 flex flex-col items-center justify-start min-h-screen pt-3 sm:pt-4 pb-28">
 
@@ -83,28 +82,27 @@
     </div>
 
     <!-- ゲームオーバー -->
-<div id="gameOverScreen" class="absolute inset-0 bg-black bg-opacity-50 flex-col justify-center items-center rounded-lg text-white p-8 text-center hidden">
-  <h2 class="text-4xl font-bold mb-4">がめおべら</h2>
-  <p class="text-xl mb-6">スコア: <span id="finalScore">0</span></p>
+    <div id="gameOverScreen" class="absolute inset-0 bg-black bg-opacity-50 flex-col justify-center items-center rounded-lg text-white p-8 text-center hidden">
+      <h2 class="text-4xl font-bold mb-4">がめおべら</h2>
+      <p class="text-xl mb-6">スコア: <span id="finalScore">0</span></p>
 
-  <!-- 横並びボタン -->
-  <div class="flex flex-wrap justify-center gap-3">
-    <button id="restartButton"
-      class="px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-xl hover:bg-blue-700 transition-colors">
-      リスタート
-    </button>
+      <div class="flex flex-wrap justify-center gap-3">
+        <button id="restartButton"
+          class="px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-xl hover:bg-blue-700 transition-colors">
+          リスタート
+        </button>
 
-    <a id="shareButton"
-      href="#"
-      target="_blank" rel="noopener noreferrer"
-      class="px-8 py-4 bg-black text-white font-bold rounded-lg shadow-lg text-xl hover:bg-gray-900 transition-colors">
-      Xでスコアをシェア
-    </a>
+        <a id="shareButton"
+          href="#"
+          target="_blank" rel="noopener noreferrer"
+          class="px-8 py-4 bg-black text-white font-bold rounded-lg shadow-lg text-xl hover:bg-gray-900 transition-colors">
+          Xでスコアをシェア
+        </a>
+      </div>
+    </div>
   </div>
-</div>
 
-
-  <!-- ジャンプボタン（画面幅＝キャンバス、高さ1.5倍） -->
+  <!-- ジャンプボタン -->
   <div class="w-full max-w-lg flex justify-center p-4 fixed bottom-0 left-1/2 -translate-x-1/2">
     <button id="jumpButton" class="control-button w-full py-12 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-2xl">
       ジャンプ
@@ -119,7 +117,6 @@
     const gameOverScreen = document.getElementById('gameOverScreen');
     const finalScoreEl = document.getElementById('finalScore');
     const restartButton = document.getElementById('restartButton');
-    
     const shareButton = document.getElementById('shareButton');
 
     const jumpButton = document.getElementById('jumpButton');
@@ -128,19 +125,12 @@
     const startScreen = document.getElementById('startScreen');
     const startButton = document.getElementById('startButton');
 
-    // SVG読み込み関数
-    function loadImg(src) {
-      const img = new Image();
-      img.src = src;
-      return img;
-    }
-
-    // 素材ロード
+    // 画像
+    function loadImg(src) { const img = new Image(); img.src = src; return img; }
     const SPRITES = {
       blueberry: loadImg('./assets/blueberry.svg'),
       sunflower: loadImg('./assets/sunflower.svg')
     };
-
 
     // 音
     let audioStarted = false;
@@ -154,13 +144,13 @@
       } catch (e) { console.error(e); }
     }
 
-    // サイズ
+    // 画面サイズ
     const parentWidth = canvas.parentElement.clientWidth;
     const gameWidth = Math.min(parentWidth, 768);
     const gameHeight = 300;
     canvas.width = gameWidth; canvas.height = gameHeight;
 
-    // フェード空
+    // 空のグラデーション（昼夕夜）
     const THEMES = {
       morning: { top: [160,210,235], bottom: [247,250,252] },
       evening: { top: [246,173, 85], bottom: [253,230,138] },
@@ -170,54 +160,27 @@
     let skyTarget  = { top: [...THEMES.morning.top], bottom: [...THEMES.morning.bottom] };
     const skyLerpSpeed = 0.03;
     function setBackgroundTheme(theme){ const t = THEMES[theme] || THEMES.morning; skyTarget = { top:[...t.top], bottom:[...t.bottom] }; }
-    // === 時間ベースの昼夜フェーズ管理 ===
-    // 所要時間（ミリ秒）
-    const T_MORNING_TO_EVENING = 95 * 1000;   // 1分35秒
-    const T_EVENING_TO_NIGHT   = 139 * 1000;  // 2分19秒
-    const T_NIGHT_TO_EVENING   = 95 * 1000;   // 1分35秒
-    const T_EVENING_TO_MORNING = 139 * 1000;  // 2分19秒
 
-    // フェーズ： morning -> evening1 -> night -> evening2 -> morning -> ...
+    const T_MORNING_TO_EVENING = 95 * 1000;
+    const T_EVENING_TO_NIGHT   = 139 * 1000;
+    const T_NIGHT_TO_EVENING   = 95 * 1000;
+    const T_EVENING_TO_MORNING = 139 * 1000;
+
     let dayPhase = 'morning';
-    let phaseTimer = 0; // そのフェーズに入ってからの経過時間(ms)
-
-    // フェーズ切替の共通関数
+    let phaseTimer = 0;
     function setPhase(next){
       dayPhase = next;
       phaseTimer = 0;
-
-      // 見た目のテーマは evening1/2 どっちも 'evening' を使う
       if(next === 'morning') setBackgroundTheme('morning');
       else if(next === 'night') setBackgroundTheme('night');
       else setBackgroundTheme('evening');
     }
-
-    
     function updateBackgroundThemeByTime(deltaMs){
       phaseTimer += deltaMs;
-
-      if(dayPhase === 'morning'){
-        if(phaseTimer >= T_MORNING_TO_EVENING){
-          setPhase('evening1');
-          // 朝→夕(1) 切替
-        }
-      }
-      else if(dayPhase === 'evening1'){
-        if(phaseTimer >= T_EVENING_TO_NIGHT){
-          setPhase('night');      // 夕(1)→夜
-          // 🔁 仕様：夜に入ったらタイマーリセット（setPhase内でリセット済み）
-        }
-      }
-      else if(dayPhase === 'night'){
-        if(phaseTimer >= T_NIGHT_TO_EVENING){
-          setPhase('evening2');   // 夜→夕(2)
-        }
-      }
-      else if(dayPhase === 'evening2'){
-        if(phaseTimer >= T_EVENING_TO_MORNING){
-          setPhase('morning');    // 夕(2)→朝（ここでまた一巡）
-        }
-      }
+      if(dayPhase === 'morning'){ if(phaseTimer >= T_MORNING_TO_EVENING) setPhase('evening1'); }
+      else if(dayPhase === 'evening1'){ if(phaseTimer >= T_EVENING_TO_NIGHT) setPhase('night'); }
+      else if(dayPhase === 'night'){ if(phaseTimer >= T_NIGHT_TO_EVENING) setPhase('evening2'); }
+      else if(dayPhase === 'evening2'){ if(phaseTimer >= T_EVENING_TO_MORNING) setPhase('morning'); }
     }
 
     function lerp(a,b,t){ return a+(b-a)*t; }
@@ -234,48 +197,48 @@
     }
     setBackgroundTheme('morning');
 
-// 雲用オブジェクト
-let clouds = Array.from({ length: 5 }, () => ({
-  x: Math.random() * gameWidth,
-  y: 40 + Math.random() * 90,
-  speed: 0.12 + Math.random() * 0.18, // 0.12〜0.30
-  size: 60 + Math.random() * 60       // 60〜120
-}));
+    // 雲
+    let clouds = Array.from({ length: 5 }, () => ({
+      x: Math.random() * gameWidth,
+      y: 40 + Math.random() * 90,
+      speed: 0.12 + Math.random() * 0.18,
+      size: 60 + Math.random() * 60
+    }));
+    function drawClouds(deltaFactor) {
+      const isNight = Math.abs(skyTarget.top[0] - THEMES.night.top[0]) < 5 &&
+                      Math.abs(skyTarget.bottom[0] - THEMES.night.bottom[0]) < 5;
+      const alpha = isNight ? 0.35 : 0.45;
+      ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+      for (let c of clouds) {
+        c.x -= c.speed * deltaFactor;
+        if (c.x < -200) c.x = gameWidth + 100;
+        ctx.beginPath();
+        ctx.ellipse(c.x, c.y, c.size, c.size * 0.6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(c.x + c.size * 0.6, c.y + 10, c.size * 0.9, c.size * 0.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
 
-function drawClouds(deltaFactor) {
-  // 🔹 昼夜で透明度を変える（全体的に薄め）
-  // 朝・夕 → 0.45、夜 → 0.35 くらいが自然
-  const isNight =
-    Math.abs(skyTarget.top[0] - THEMES.night.top[0]) < 5 &&
-    Math.abs(skyTarget.bottom[0] - THEMES.night.bottom[0]) < 5;
-  const alpha = isNight ? 0.35 : 0.45;
-
-  ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
-
-  for (let c of clouds) {
-    c.x -= c.speed * deltaFactor;
-    if (c.x < -200) c.x = gameWidth + 100;
-
-    ctx.beginPath();
-    ctx.ellipse(c.x, c.y, c.size, c.size * 0.6, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.beginPath();
-    ctx.ellipse(c.x + c.size * 0.6, c.y + 10, c.size * 0.9, c.size * 0.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
-
-
-
-
-    // ゲーム変数
+    // ====== ゲーム状態 ======
     let score=0, highScore=localStorage.getItem('muruHighScore')||0;
     highScoreEl.textContent=`ハイスコア: ${highScore}`;
     let gameSpeed=5, baseGameSpeed=5, gameSpeedAcceleration=0.05;
-    let timeElapsed=0, obstacles=[], backgroundObjects=[], groundObjects=[];
-    let frame=0, spawnTimer=0, minSpawnInterval=90, maxSpawnInterval=180;
-    const minSpawnIntervalBase=80, maxSpawnIntervalBase=110, spawnIntervalReductionPerSec=6;
+
+    let timeElapsed=0, obstacles=[], frame=0, spawnTimer=0;
+
+    // ★ 湧きベース間隔をマイルド化
+    const minSpawnIntervalBase=120, maxSpawnIntervalBase=170, spawnIntervalReductionPerSec=3;
+
+    // ★ 序盤ゆるゆる（1.6倍→45秒かけて通常へ）
+    const EARLY_EASE_MS = 45_000;
+    const EARLY_EASE_START_MULT = 1.6;
+
+    // ★ 序盤は画面内の最大障害物数を制限
+    const EARLY_MAX_ONSCREEN_OBS_MS = 30_000;
+    const EARLY_MAX_ONSCREEN_OBS = 3;
+
     let isGameOver = false, isPaused = false, gameStarted = false, lastTime = 0;
     const baseDeltaTime=1000/60;
     const groundY=gameHeight-50;
@@ -283,72 +246,91 @@ function drawClouds(deltaFactor) {
     let isDebug = false;
     let debugTapCount = 0;
 
+    let nextSpawnInterval = 90;
 
-    let nextSpawnInterval = 90; // 次に湧くまでのフレーム相当（初期値はとりあえず90）
+    // ヘルパー
+    function clamp01(v){ return Math.max(0, Math.min(1, v)); }
+    function getEarlyEaseMultiplier(ms){
+      const t = clamp01(ms / EARLY_EASE_MS);
+      return EARLY_EASE_START_MULT + (1.0 - EARLY_EASE_START_MULT) * t;
+    }
+    function getMinPixelGap(ms){
+      const t = clamp01(ms / EARLY_EASE_MS);
+      const start = 280, end = 180;
+      return Math.round(start + (end - start) * t);
+    }
 
-
-    const player={x:50,y:groundY-50,width:50,height:50,originalHeight:50,dy:0,gravity:0.8,jumpForce:15,isGrounded:true,jumpsRemaining:2,isJumping:false,image:new Image(),imageLoaded:false};
+    // プレイヤー
+    const player={x:50,y:groundY-50,width:50,height:50,dy:0,gravity:0.8,jumpForce:15,isGrounded:true,jumpsRemaining:2,isJumping:false,image:new Image(),imageLoaded:false};
     player.image.src='./assets/Muru.png';
     player.image.onload=()=>{player.imageLoaded=true;player.width=(player.image.width/player.image.height)*player.height;};
 
     function drawPlayer(){ if(player.imageLoaded)ctx.drawImage(player.image,player.x,player.y,player.width,player.height); else{ctx.fillStyle='green';ctx.fillRect(player.x,player.y,player.width,player.height);} }
-    function updatePlayer(deltaFactor){
-      if(!player.isGrounded){player.dy+=player.gravity*deltaFactor;player.y+=player.dy*deltaFactor;}
+    function updatePlayer(d){
+      if(!player.isGrounded){player.dy+=player.gravity*d;player.y+=player.dy*d;}
       if(player.y+player.height>=groundY){player.y=groundY-player.height;player.dy=0;player.isGrounded=true;player.jumpsRemaining=2;}
     }
     function playerJump(){ startAudio(); if(isGameOver||isPaused||!gameStarted)return; if(player.jumpsRemaining>0){player.dy=-player.jumpForce;player.isGrounded=false;player.isJumping=true;player.jumpsRemaining--;}}
     function stopJump(){ if(player.isJumping&&player.dy<0){player.dy=Math.max(player.dy,-5);} player.isJumping=false; }
 
+    // 障害物
     class Obstacle {
-    constructor(type, img, y, size) {
-      this.x = gameWidth;
-      this.y = y;
-      this.type = type;
-      this.img = img;
-      this.height = size;
-      
-      const iw = img.naturalWidth || 1;
-      const ih = img.naturalHeight || 1;
-      const aspect = iw / ih;
-      this.width = this.height * aspect;
-        
-      this.passed = false;
+      constructor(type, img, y, size) {
+        this.x = gameWidth;
+        this.y = y;
+        this.type = type;
+        this.img = img;
+        this.height = size;
+        const iw = img.naturalWidth || 1;
+        const ih = img.naturalHeight || 1;
+        const aspect = iw / ih;
+        this.width = this.height * aspect;
+        this.passed = false;
+      }
+      draw() { ctx.drawImage(this.img, this.x, this.y - this.height, this.width, this.height); }
+      update(d) { this.x -= gameSpeed * d; }
+      getHitbox() {
+        const shrink = this.type === 'ground_large' ? 0.65 : 0.8;
+        const w = this.width * shrink, h = this.height * shrink;
+        return {
+          x: this.x + (this.width - w) / 2,
+          y: (this.y - this.height) + (this.height - h) / 2,
+          width: w, height: h
+        };
+      }
     }
 
-    draw() {
-      ctx.drawImage(this.img, this.x, this.y - this.height, this.width, this.height);
-    }
-
-    update(deltaFactor) {
-      this.x -= gameSpeed * deltaFactor;
-    }
-
-    getHitbox() {
-      const shrink = this.type === 'ground_large' ? 0.65 : 0.8;
-      const w = this.width * shrink;
-      const h = this.height * shrink;
-      return {
-        x: this.x + (this.width - w) / 2,
-        y: (this.y - this.height) + (this.height - h) / 2,
-        width: w,
-        height: h
-      };
-    }
-  }
-
-    const SCALE = 0.7; // 👈 全体スケール率
+    const SCALE = 0.7;
     function spawnObstacle(delta) {
       spawnTimer += delta;
 
-      // ← ここをランダム間隔で判定
+      // 時間経過で少しずつ短く（緩め）
+      let minSpawnInterval = Math.max(minSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 40);
+      let maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 70);
+
+      // 序盤ゆるめ倍率を掛ける
+      const easeMul = getEarlyEaseMultiplier(timeElapsed);
+      minSpawnInterval *= easeMul;
+      maxSpawnInterval *= easeMul;
+
+      // まだ湧かせない
       if (spawnTimer < nextSpawnInterval) return;
-      spawnTimer = 0;
 
-      // 難易度上昇に合わせてレンジを更新（ここは今のままでOK）
-      minSpawnInterval = Math.max(minSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 25);
-      maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 50);
+      // 序盤の画面内上限
+      if (timeElapsed < EARLY_MAX_ONSCREEN_OBS_MS) {
+        const onscreen = obstacles.filter(o => o.x + o.width > 0).length;
+        if (onscreen >= EARLY_MAX_ONSCREEN_OBS) return;
+      }
 
-      // どれを出すか決めて追加（ここは今のままでOK）
+      // 直前とのピクセル距離チェックで詰まり回避
+      const last = obstacles.length ? obstacles[obstacles.length - 1] : null;
+      const minGapPx = getMinPixelGap(timeElapsed);
+      if (last) {
+        const gapPx = gameWidth - (last.x + last.width);
+        if (gapPx < minGapPx) return;
+      }
+
+      // 出現内容
       const rand = Math.random();
       if (rand < 0.4) {
         const size = (40 + Math.random() * 20) * SCALE;
@@ -362,100 +344,125 @@ function drawClouds(deltaFactor) {
           obstacles.push(new Obstacle('ground', SPRITES.sunflower, groundY, size));
         }
       }
-      // ✅ 次回スポーンまでの時間をランダムに決め直す
+
+      // 次回間隔を引き直し
       nextSpawnInterval = minSpawnInterval + Math.random() * (maxSpawnInterval - minSpawnInterval);
+      spawnTimer = 0;
     }
 
-
-
-    function updateObstacles(d){ for(let i=obstacles.length-1;i>=0;i--){ obstacles[i].update(d); obstacles[i].draw(); if(obstacles[i].x+obstacles[i].width<0)obstacles.splice(i,1);} }
+    function updateObstacles(d){
+      for(let i=obstacles.length-1;i>=0;i--){
+        obstacles[i].update(d);
+        obstacles[i].draw();
+        if(obstacles[i].x+obstacles[i].width<0)obstacles.splice(i,1);
+      }
+    }
 
     function checkCollision(){
-      if (isDebug) return; // ★デバッグ中は当たり判定スキップ（無敵）
-      // …以下そのまま
+      if (isDebug) return; // デバッグは無敵
       const p={x:player.x,y:player.y,width:player.width*0.6,height:player.height*0.7};
-      for(const o of obstacles){ const h=o.getHitbox();
-        if(p.x<h.x+h.width&&p.x+p.width>h.x&&p.y<h.y+h.height&&p.y+p.height>h.y){ gameOver(); return; }
+      for(const o of obstacles){
+        const h=o.getHitbox();
+        if(p.x<h.x+h.width&&p.x+p.width>h.x&&p.y<h.y+h.height&&p.y+p.height>h.y){
+          gameOver(); return;
+        }
       }
     }
 
     function updateScore(){
-      for(const o of obstacles){ if(!o.passed&&o.x+o.width<player.x){ score++; o.passed=true; } }
+      for(const o of obstacles){
+        if(!o.passed&&o.x+o.width<player.x){ score++; o.passed=true; }
+      }
       scoreEl.textContent=score;
-      const tSec=timeElapsed/1000; gameSpeed=baseGameSpeed+tSec*gameSpeedAcceleration;
+      const tSec=timeElapsed/1000;
+      gameSpeed=baseGameSpeed+tSec*gameSpeedAcceleration;
     }
 
     function clearCanvas(){ ctx.clearRect(0,0,gameWidth,gameHeight); }
     function drawGround(){ ctx.fillStyle='#8B4513'; ctx.fillRect(0,groundY,gameWidth,gameHeight-groundY); }
 
-    
     function buildXIntentUrl(score) {
-    const text = `むるだっしゅ！スコアは「${score}」でした🌻\nhttps://t4l-ovo-t4l.github.io/murudash/`;
-    return `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`;
+      const text = `むるだっしゅ！スコアは「${score}」でした🌻\nhttps://t4l-ovo-t4l.github.io/murudash/`;
+      return `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`;
     }
 
-
-    
     function gameOver(){
-      if(isGameOver)return; isGameOver=true; gameStarted=false;
-      if(audioStarted){ try{ bgmAudio.pause(); bgmAudio.currentTime=0; endAudio.currentTime=0; endAudio.play(); }catch(_){ } }
-      if(score>highScore){ highScore=score; localStorage.setItem('muruHighScore',highScore); highScoreEl.textContent=`ハイスコア: ${highScore}`; }
-      finalScoreEl.textContent=score; shareButton.href = buildXIntentUrl(score); gameOverScreen.classList.remove('hidden'); gameOverScreen.classList.add('flex');
+      if(isGameOver)return;
+      isGameOver=true; gameStarted=false;
+      if(audioStarted){
+        try{
+          bgmAudio.pause(); bgmAudio.currentTime=0;
+          endAudio.currentTime=0; endAudio.play();
+        }catch(_){}
+      }
+      if(score>highScore){
+        highScore=score;
+        localStorage.setItem('muruHighScore',highScore);
+        highScoreEl.textContent=`ハイスコア: ${highScore}`;
+      }
+      finalScoreEl.textContent=score;
+      shareButton.href = buildXIntentUrl(score);
+      gameOverScreen.classList.remove('hidden');
+      gameOverScreen.classList.add('flex');
     }
 
     function restartGame(){
-      startAudio(); try{ if(bgmAudio){ bgmAudio.currentTime=0; bgmAudio.play(); } }catch(_){}
-      score=0; scoreEl.textContent=score; timeElapsed=0; gameSpeed=baseGameSpeed;
-      obstacles=[]; backgroundObjects=[]; groundObjects=[]; frame=0; spawnTimer=0;
-      isGameOver=false; isPaused=false; gameStarted=true; player.y=groundY-player.height; player.dy=0; player.isGrounded=true; player.jumpsRemaining=2;
-      gameOverScreen.classList.add('hidden'); gameOverScreen.classList.remove('flex'); pauseOverlay.classList.add('hidden');
-      lastTime=performance.now(); requestAnimationFrame(gameLoop);
+      startAudio();
+      try{ if(bgmAudio){ bgmAudio.currentTime=0; bgmAudio.play(); } }catch(_){}
+      score=0; scoreEl.textContent=score;
+      timeElapsed=0; gameSpeed=baseGameSpeed;
+      obstacles=[]; frame=0; spawnTimer=0;
+      isGameOver=false; isPaused=false; gameStarted=true;
+      player.y=groundY-player.height; player.dy=0; player.isGrounded=true; player.jumpsRemaining=2;
+      gameOverScreen.classList.add('hidden'); gameOverScreen.classList.remove('flex');
+      pauseOverlay.classList.add('hidden');
+
+      // 昼夜フェーズ初期化
+      dayPhase = 'morning'; phaseTimer = 0; setBackgroundTheme('morning');
+
+      // デバッグ初期化
+      isDebug = false; resetDebugTapCounter(); const dbg=document.getElementById('debugBadge'); if(dbg) dbg.remove();
+
+      // スポーン初期化
       spawnTimer = 0;
       nextSpawnInterval = minSpawnIntervalBase + Math.random() * (maxSpawnIntervalBase - minSpawnIntervalBase);
-        // ★昼夜フェーズ初期化
-      dayPhase = 'morning';
-      phaseTimer = 0;
-      setBackgroundTheme('morning');
-      // ★デバッグ初期化
-      isDebug = false;
-      resetDebugTapCounter();
-      const dbg = document.getElementById('debugBadge');
-      if (dbg) dbg.remove();
 
+      lastTime=performance.now(); requestAnimationFrame(gameLoop);
     }
 
     function togglePause(){
-      if(isGameOver||!gameStarted)return; isPaused=!isPaused;
-      if(isPaused){ try{ if(bgmAudio)bgmAudio.pause(); }catch(_){}
+      if(isGameOver||!gameStarted)return;
+      isPaused=!isPaused;
+      if(isPaused){
+        try{ if(bgmAudio)bgmAudio.pause(); }catch(_){}
         pauseOverlay.classList.remove('hidden'); pauseOverlay.classList.add('flex');
-      }else{ try{ if(bgmAudio)bgmAudio.play(); }catch(_){}
+      }else{
+        try{ if(bgmAudio)bgmAudio.play(); }catch(_){}
         pauseOverlay.classList.add('hidden'); pauseOverlay.classList.remove('flex');
-        lastTime=performance.now(); requestAnimationFrame(gameLoop); resetDebugTapCounter(); }
+        lastTime=performance.now(); requestAnimationFrame(gameLoop);
+        resetDebugTapCounter();
+      }
     }
 
     function enableDebugMode(){
       if(isDebug) return;
       isDebug = true;
-    
-      // 画面上にバッジを付ける（ハイスコア横に出す）
       const debugBadge = document.createElement('span');
       debugBadge.id = 'debugBadge';
       debugBadge.textContent = 'DEBUG';
       debugBadge.className = 'px-2 py-1 bg-pink-600 text-white text-xs font-bold rounded shadow-sm';
       highScoreEl.parentElement.appendChild(debugBadge);
     }
-    
-    function resetDebugTapCounter(){
-      debugTapCount = 0;
-    }
-
+    function resetDebugTapCounter(){ debugTapCount = 0; }
 
     function gameLoop(timestamp){
       if(isGameOver||isPaused||!gameStarted)return;
-      const deltaTime=timestamp-lastTime; lastTime=timestamp; const deltaFactor=deltaTime/(1000/60); timeElapsed+=deltaTime;
+      const deltaTime=timestamp-lastTime; lastTime=timestamp;
+      const deltaFactor=deltaTime/(1000/60);
+      timeElapsed+=deltaTime;
 
       updateBackgroundThemeByTime(deltaTime);
-      
+
       clearCanvas(); drawSky(deltaFactor); drawClouds(deltaFactor);
       drawGround(); updatePlayer(deltaFactor); drawPlayer();
       spawnObstacle(deltaFactor); updateObstacles(deltaFactor); checkCollision(); updateScore();
@@ -465,78 +472,45 @@ function drawClouds(deltaFactor) {
     // 入力
     window.addEventListener('keydown', e => {
       if (e.repeat) return;
-    
-      // ★ポーズ中：ジャンプ系5回でデバッグON
+
+      // ポーズ中：ジャンプ系5回でデバッグON
       if (isPaused && (e.code === 'Space' || e.code === 'ArrowUp')) {
         debugTapCount++;
-        if (debugTapCount >= 5) {
-          enableDebugMode();
-          resetDebugTapCounter();
-        }
-        return; // ポーズ中はジャンプさせない
+        if (debugTapCount >= 5) { enableDebugMode(); resetDebugTapCounter(); }
+        return;
       }
-    
       if (!gameStarted) return;
-    
+
       if (e.code === 'Space' || e.code === 'ArrowUp') playerJump();
       if (e.code === 'KeyP') togglePause();
     });
-    
     window.addEventListener('keyup', e => {
       if (e.code === 'Space' || e.code === 'ArrowUp') stopJump();
     });
-    
+
     jumpButton.addEventListener('pointerdown', e => {
       e.preventDefault();
-    
-      // ★ポーズ中：タップ5回でデバッグON
       if (isPaused) {
         debugTapCount++;
-        if (debugTapCount >= 5) {
-          enableDebugMode();
-          resetDebugTapCounter();
-        }
-        return; // ポーズ中はジャンプさせない
+        if (debugTapCount >= 5) { enableDebugMode(); resetDebugTapCounter(); }
+        return;
       }
-    
       playerJump();
     });
-    
-    jumpButton.addEventListener('pointerup', e => {
-      e.preventDefault();
-      stopJump();
-    });
-    
-    pauseButton.addEventListener('click', e => {
-      e.preventDefault();
-      togglePause();
-      // 解除したらカウントだけリセット（デバッグ状態は維持）
-      if (!isPaused) resetDebugTapCounter();
-    });
-    pauseButton.addEventListener('touchstart', e => {
-      e.preventDefault();
-      togglePause();
-      if (!isPaused) resetDebugTapCounter();
-    });
-    
+    jumpButton.addEventListener('pointerup', e => { e.preventDefault(); stopJump(); });
+
+    pauseButton.addEventListener('click', e => { e.preventDefault(); togglePause(); if (!isPaused) resetDebugTapCounter(); });
+    pauseButton.addEventListener('touchstart', e => { e.preventDefault(); togglePause(); if (!isPaused) resetDebugTapCounter(); });
+
     restartButton.addEventListener('click', e => {
-      e.preventDefault();
-      restartGame();
-      // リスタートでデバッグ解除＆バッジ消す
-      isDebug = false;
-      resetDebugTapCounter();
-      const dbg = document.getElementById('debugBadge');
-      if (dbg) dbg.remove();
+      e.preventDefault(); restartGame();
+      isDebug = false; resetDebugTapCounter(); const dbg=document.getElementById('debugBadge'); if(dbg) dbg.remove();
     });
     restartButton.addEventListener('touchstart', e => {
-      e.preventDefault();
-      restartGame();
-      isDebug = false;
-      resetDebugTapCounter();
-      const dbg = document.getElementById('debugBadge');
-      if (dbg) dbg.remove();
+      e.preventDefault(); restartGame();
+      isDebug = false; resetDebugTapCounter(); const dbg=document.getElementById('debugBadge'); if(dbg) dbg.remove();
     });
-    
+
     function handleGameStart(e){
       e.preventDefault();
       if (gameStarted) return;
@@ -547,24 +521,10 @@ function drawClouds(deltaFactor) {
       requestAnimationFrame(gameLoop);
       nextSpawnInterval = minSpawnIntervalBase + Math.random() * (maxSpawnIntervalBase - minSpawnIntervalBase);
       spawnTimer = 0;
-      resetDebugTapCounter(); // 念のため初期化
+      resetDebugTapCounter();
     }
     startButton.addEventListener('click', handleGameStart);
     startButton.addEventListener('touchstart', handleGameStart);
-
-    
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
