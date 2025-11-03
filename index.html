@@ -289,7 +289,7 @@ function drawClouds(deltaFactor) {
     }
   }
 
-
+    const SCALE = 0.7; // 👈 全体スケール率
     function spawnObstacle(delta) {
       spawnTimer += delta;
       if (spawnTimer < minSpawnInterval) return;
@@ -299,7 +299,6 @@ function drawClouds(deltaFactor) {
       maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 80);
 
       const rand = Math.random();
-      const SCALE = 0.7; // 👈 全体スケール率
 
       if (rand < 0.4) {
         const size = (40 + Math.random() * 20) * SCALE;
@@ -399,6 +398,7 @@ function drawClouds(deltaFactor) {
   </script>
 </body>
 </html>
+
 
 
 
