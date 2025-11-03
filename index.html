@@ -240,6 +240,9 @@ function drawClouds(deltaFactor) {
     const baseDeltaTime=1000/60;
     const groundY=gameHeight-50;
 
+    let nextSpawnInterval = 90; // 次に湧くまでのフレーム相当（初期値はとりあえず90）
+
+
     const player={x:50,y:groundY-50,width:50,height:50,originalHeight:50,dy:0,gravity:0.8,jumpForce:15,isGrounded:true,jumpsRemaining:2,isJumping:false,image:new Image(),imageLoaded:false};
     player.image.src='./assets/Muru.png';
     player.image.onload=()=>{player.imageLoaded=true;player.width=(player.image.width/player.image.height)*player.height;};
@@ -277,7 +280,7 @@ function drawClouds(deltaFactor) {
     }
 
     getHitbox() {
-      const shrink = this.type === 'ground_large' ? 0.65 : 0.85;
+      const shrink = this.type === 'ground_large' ? 0.65 : 0.8;
       const w = this.width * shrink;
       const h = this.height * shrink;
       return {
@@ -292,27 +295,33 @@ function drawClouds(deltaFactor) {
     const SCALE = 0.7; // 👈 全体スケール率
     function spawnObstacle(delta) {
       spawnTimer += delta;
-      if (spawnTimer < minSpawnInterval) return;
+
+      // ← ここをランダム間隔で判定
+      if (spawnTimer < nextSpawnInterval) return;
       spawnTimer = 0;
 
+      // 難易度上昇に合わせてレンジを更新（ここは今のままでOK）
       minSpawnInterval = Math.max(minSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 40);
       maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 80);
 
+      // どれを出すか決めて追加（ここは今のままでOK）
       const rand = Math.random();
-
       if (rand < 0.4) {
         const size = (40 + Math.random() * 20) * SCALE;
         const yPos = Math.random() < 0.3 ? groundY - 30 : groundY - 70 - Math.random() * 50;
         obstacles.push(new Obstacle('air', SPRITES.blueberry, yPos, size));
       } else {
         if (score > 10 && Math.random() < 0.3) {
-          obstacles.push(new Obstacle('ground_large', SPRITES.sunflower, groundY, 120 * SCALE * 1.1));
+          obstacles.push(new Obstacle('ground_large', SPRITES.sunflower, groundY, 120 * SCALE * 1.25));
         } else {
           const size = (60 + Math.random() * 20) * SCALE;
           obstacles.push(new Obstacle('ground', SPRITES.sunflower, groundY, size));
         }
       }
+      // ✅ 次回スポーンまでの時間をランダムに決め直す
+      nextSpawnInterval = minSpawnInterval + Math.random() * (maxSpawnInterval - minSpawnInterval);
     }
+
 
 
     function updateObstacles(d){ for(let i=obstacles.length-1;i>=0;i--){ obstacles[i].update(d); obstacles[i].draw(); if(obstacles[i].x+obstacles[i].width<0)obstacles.splice(i,1);} }
@@ -355,6 +364,8 @@ function drawClouds(deltaFactor) {
       isGameOver=false; isPaused=false; gameStarted=true; player.y=groundY-player.height; player.dy=0; player.isGrounded=true; player.jumpsRemaining=2;
       gameOverScreen.classList.add('hidden'); gameOverScreen.classList.remove('flex'); pauseOverlay.classList.add('hidden');
       lastTime=performance.now(); requestAnimationFrame(gameLoop);
+      spawnTimer = 0;
+      nextSpawnInterval = minSpawnIntervalBase + Math.random() * (maxSpawnIntervalBase - minSpawnIntervalBase);
     }
 
     function togglePause(){
@@ -398,6 +409,7 @@ function drawClouds(deltaFactor) {
   </script>
 </body>
 </html>
+
 
 
 
