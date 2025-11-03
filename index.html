@@ -277,7 +277,7 @@ function drawClouds(deltaFactor) {
     }
 
     getHitbox() {
-      const shrink = this.type === 'ground_large' ? 0.85 : 0.95;
+      const shrink = this.type === 'ground_large' ? 0.65 : 0.85;
       const w = this.width * shrink;
       const h = this.height * shrink;
       return {
@@ -306,7 +306,7 @@ function drawClouds(deltaFactor) {
         obstacles.push(new Obstacle('air', SPRITES.blueberry, yPos, size));
       } else {
         if (score > 10 && Math.random() < 0.3) {
-          obstacles.push(new Obstacle('ground_large', SPRITES.sunflower, groundY, 120 * SCALE));
+          obstacles.push(new Obstacle('ground_large', SPRITES.sunflower, groundY, 120 * SCALE * 1.1));
         } else {
           const size = (60 + Math.random() * 20) * SCALE;
           obstacles.push(new Obstacle('ground', SPRITES.sunflower, groundY, size));
@@ -398,6 +398,7 @@ function drawClouds(deltaFactor) {
   </script>
 </body>
 </html>
+
 
 
 
