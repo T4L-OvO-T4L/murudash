@@ -124,11 +124,11 @@
     const THEMES = {
       morning: { top: [160,210,235], bottom: [247,250,252] },
       evening: { top: [246,173, 85], bottom: [253,230,138] },
-      night:   { top: [ 31, 41, 55], bottom: [ 11, 16, 32] },
+      night:   { top: [45, 55, 90], bottom: [20, 25, 50] },
     };
     let skyCurrent = { top: [...THEMES.morning.top], bottom: [...THEMES.morning.bottom] };
     let skyTarget  = { top: [...THEMES.morning.top], bottom: [...THEMES.morning.bottom] };
-    const skyLerpSpeed = 0.06;
+    const skyLerpSpeed = 0.03;
     function setBackgroundTheme(theme){ const t = THEMES[theme] || THEMES.morning; skyTarget = { top:[...t.top], bottom:[...t.bottom] }; }
     function lerp(a,b,t){ return a+(b-a)*t; }
     function stepRGB(cur,tgt,t){ return [0,1,2].map(i=>lerp(cur[i],tgt[i],t)); }
@@ -143,6 +143,45 @@
       ctx.fillStyle=g; ctx.fillRect(0,0,gameWidth,gameHeight);
     }
     setBackgroundTheme('morning');
+
+// 雲用オブジェクト
+let clouds = Array.from({ length: 5 }, () => ({
+  x: Math.random() * gameWidth,
+  y: 40 + Math.random() * 90,
+  speed: 0.12 + Math.random() * 0.18, // 0.12〜0.30
+  size: 60 + Math.random() * 60       // 60〜120
+}));
+
+function drawClouds(deltaFactor) {
+  // 夜は少し暗めに
+  const isNight =
+    Math.abs(skyTarget.top[0] - THEMES.night.top[0]) < 5 &&
+    Math.abs(skyTarget.bottom[0] - THEMES.night.bottom[0]) < 5;
+  const alpha = isNight ? 0.65 : 0.8;
+  ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+
+for (let c of clouds) {
+  const speedBoost = 0.04 * gameSpeed; // ←ゲーム速度に応じた追加スピード
+  c.x -= (c.speed + speedBoost) * deltaFactor;
+
+    if (c.x < -c.size * 2) {
+      // ラップ時にランダムリセット
+      c.x = gameWidth + c.size;
+      c.y = 40 + Math.random() * 90;
+      c.speed = 0.12 + Math.random() * 0.18;
+      c.size = 60 + Math.random() * 60;
+    }
+    // ふわっとした形を2つ重ねて描く
+    ctx.beginPath();
+    ctx.ellipse(c.x, c.y, c.size, c.size * 0.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(c.x + c.size * 0.6, c.y + 10, c.size * 0.9, c.size * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+
 
     // 0-134 朝 / 135-199 夕 / 200-334 夜 / 335-399 夕 / 400→朝
     function updateBackgroundThemeByScore(score){
@@ -248,7 +287,7 @@
     function gameLoop(timestamp){
       if(isGameOver||isPaused||!gameStarted)return;
       const deltaTime=timestamp-lastTime; lastTime=timestamp; const deltaFactor=deltaTime/(1000/60); timeElapsed+=deltaTime;
-      clearCanvas(); drawSky(deltaFactor);
+      clearCanvas(); drawSky(deltaFactor); drawClouds(deltaFactor);
       drawGround(); updatePlayer(deltaFactor); drawPlayer();
       spawnObstacle(deltaFactor); updateObstacles(deltaFactor); checkCollision(); updateScore();
       frame++; requestAnimationFrame(gameLoop);
@@ -277,3 +316,4 @@
   </script>
 </body>
 </html>
+
