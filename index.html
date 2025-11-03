@@ -104,8 +104,8 @@
       try {
         bgmAudio = new Audio('./assets/BGM.mp3');
         bgmAudio.loop = true;
-        bgmAudio.volume = 0.5; // 🔊 BGMは半分
-        await bgmAudio.play(); // 初回はユーザー操作直後に呼ばれる
+        bgmAudio.volume = 0.5; // BGMは半分
+        await bgmAudio.play();
 
         endAudio = new Audio('./assets/END.mp3');
         endAudio.volume = 0.8;
@@ -209,7 +209,7 @@
     }
 
     function playerJump() {
-      startAudio(); // モバイルの初回ジェスチャで走らせる
+      startAudio();
       if (isGameOver || isPaused || !gameStarted) return;
 
       if (player.jumpsRemaining > 0) {
@@ -320,9 +320,9 @@
       if (spawnTimer < minSpawnInterval) return;
 
       spawnTimer = 0;
-      const next = Math.floor(Math.random() * (maxSpawnInterval - minSpawnInterval) + minSpawnInterval);
-      // 次の間隔は minSpawnInterval によって更新されるので保存
-      // (可読性のため変数名は使わずにそのまま進行)
+      // 次の間隔は時間経過で徐々に短くなる
+      minSpawnInterval = Math.max(minSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 40);
+      maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 80);
 
       const rand = Math.random();
       if (rand < 0.4) {
@@ -343,9 +343,6 @@
           obstacles.push(new Obstacle('ground', '🌻', groundY, fontSize));
         }
       }
-      // 次のスポーンまでのカウントを更新
-      minSpawnInterval = Math.max(minSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 40);
-      maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 80);
     }
 
     function updateObstacles(deltaFactor) {
@@ -536,6 +533,10 @@
       pauseButton.addEventListener('click', (e) => { e.preventDefault(); togglePause(); });
       pauseButton.addEventListener('touchstart', (e) => { e.preventDefault(); togglePause(); });
     }
+
+    // ⚠️ バグ修正: リスタートボタンにイベントを付与
+    restartButton.addEventListener('click', (e) => { e.preventDefault(); restartGame(); });
+    restartButton.addEventListener('touchstart', (e) => { e.preventDefault(); restartGame(); });
 
     function handleGameStart(e) {
       e.preventDefault();
