@@ -3,8 +3,13 @@
 <head>
 
 <!-- 🔒 セキュリティ強化 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; media-src 'self';">
 <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <link rel="preload" as="image" href="./assets/blueberry.svg">
+  <link rel="preload" as="image" href="./assets/sunflower.svg">
+  <link rel="preload" as="audio"  href="./assets/BGM.mp3">
+  <link rel="preload" as="audio"  href="./assets/END.mp3">
 
   
   <meta charset="UTF-8" />
@@ -123,6 +128,20 @@
     const startScreen = document.getElementById('startScreen');
     const startButton = document.getElementById('startButton');
 
+    // SVG読み込み関数
+    function loadImg(src) {
+      const img = new Image();
+      img.src = src;
+      return img;
+    }
+
+    // 素材ロード
+    const SPRITES = {
+      blueberry: loadImg('./assets/blueberry.svg'),
+      sunflower: loadImg('./assets/sunflower.svg')
+    };
+
+
     // 音
     let audioStarted = false;
     let bgmAudio, endAudio;
@@ -233,30 +252,68 @@ function drawClouds(deltaFactor) {
     function playerJump(){ startAudio(); if(isGameOver||isPaused||!gameStarted)return; if(player.jumpsRemaining>0){player.dy=-player.jumpForce;player.isGrounded=false;player.isJumping=true;player.jumpsRemaining--;}}
     function stopJump(){ if(player.isJumping&&player.dy<0){player.dy=Math.max(player.dy,-5);} player.isJumping=false; }
 
-    class Obstacle{
-      constructor(type,emoji,y,fontSize){ this.x=gameWidth; this.y=y; this.type=type; this.emoji=emoji; this.fontSize=fontSize; this.width=fontSize*0.8; this.height=fontSize*0.8; this.passed=false; }
-      draw(){ ctx.font=`${this.fontSize}px Arial`; ctx.fillText(this.emoji,this.x,this.y); }
-      update(d){ this.x-=gameSpeed*d; }
-      getHitbox(){ const shrink=this.type==='ground_large'?0.7:0.8; const w=this.width*shrink; const h=this.height*shrink; return {x:this.x+(this.width-w)/2,y:this.y-h,width:w,height:h}; }
+    class Obstacle {
+    constructor(type, img, y, size) {
+      this.x = gameWidth;
+      this.y = y;
+      this.type = type;
+      this.img = img;
+      this.height = size;
+      
+      const iw = img.naturalWidth || 1;
+      const ih = img.naturalHeight || 1;
+      const aspect = iw / ih;
+      this.width = this.height * aspect;
+        
+      this.passed = false;
     }
 
-    function supportsEmoji(emoji){ const c=document.createElement('canvas').getContext('2d'); c.canvas.width=c.canvas.height=20; c.fillText(emoji,0,15); return [...c.getImageData(0,0,20,20).data].some(v=>v!==0); }
-    const berryEmoji=supportsEmoji('🫐')?'🫐':'🍇';
+    draw() {
+      ctx.drawImage(this.img, this.x, this.y - this.height, this.width, this.height);
+    }
 
-    function spawnObstacle(delta){
-      spawnTimer+=delta; if(spawnTimer<minSpawnInterval)return; spawnTimer=0;
-      minSpawnInterval=Math.max(minSpawnIntervalBase-(timeElapsed/1000)*spawnIntervalReductionPerSec,40);
-      maxSpawnInterval=Math.max(maxSpawnIntervalBase-(timeElapsed/1000)*spawnIntervalReductionPerSec,80);
-      const rand=Math.random();
-      if(rand<0.4){
-        const fs=30+Math.random()*10; let yPos;
-        if(Math.random()<0.3){ yPos=groundY-30; } else { yPos=groundY-70-Math.random()*50; }
-        obstacles.push(new Obstacle('air',berryEmoji,yPos,fs));
-      }else{
-        if(score>10&&Math.random()<0.3){ const fs=110; obstacles.push(new Obstacle('ground_large','🌻',groundY,fs)); }
-        else{ const fs=40+Math.random()*10; obstacles.push(new Obstacle('ground','🌻',groundY,fs)); }
+    update(deltaFactor) {
+      this.x -= gameSpeed * deltaFactor;
+    }
+
+    getHitbox() {
+      const shrink = this.type === 'ground_large' ? 0.85 : 0.95;
+      const w = this.width * shrink;
+      const h = this.height * shrink;
+      return {
+        x: this.x + (this.width - w) / 2,
+        y: (this.y - this.height) + (this.height - h) / 2,
+        width: w,
+        height: h
+      };
+    }
+  }
+
+
+    function spawnObstacle(delta) {
+      spawnTimer += delta;
+      if (spawnTimer < minSpawnInterval) return;
+      spawnTimer = 0;
+
+      minSpawnInterval = Math.max(minSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 40);
+      maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 80);
+
+      const rand = Math.random();
+
+      if (rand < 0.4) {
+        const size = 40 + Math.random() * 20;
+        const yPos = Math.random() < 0.3 ? groundY - 30 : groundY - 70 - Math.random() * 50;
+        obstacles.push(new Obstacle('air', SPRITES.blueberry, yPos, size));
+      } else {
+        if (score > 10 && Math.random() < 0.3) {
+          obstacles.push(new Obstacle('ground_large', SPRITES.sunflower, groundY, 120));
+        } else {
+          const size = 60 + Math.random() * 20;
+          obstacles.push(new Obstacle('ground', SPRITES.sunflower, groundY, size));
+        }
       }
     }
+
 
     function updateObstacles(d){ for(let i=obstacles.length-1;i>=0;i--){ obstacles[i].update(d); obstacles[i].draw(); if(obstacles[i].x+obstacles[i].width<0)obstacles.splice(i,1);} }
 
@@ -341,6 +398,7 @@ function drawClouds(deltaFactor) {
   </script>
 </body>
 </html>
+
 
 
 
