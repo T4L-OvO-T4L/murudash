@@ -170,6 +170,56 @@
     let skyTarget  = { top: [...THEMES.morning.top], bottom: [...THEMES.morning.bottom] };
     const skyLerpSpeed = 0.03;
     function setBackgroundTheme(theme){ const t = THEMES[theme] || THEMES.morning; skyTarget = { top:[...t.top], bottom:[...t.bottom] }; }
+    // === 時間ベースの昼夜フェーズ管理 ===
+    // 所要時間（ミリ秒）
+    const T_MORNING_TO_EVENING = 95 * 1000;   // 1分35秒
+    const T_EVENING_TO_NIGHT   = 139 * 1000;  // 2分19秒
+    const T_NIGHT_TO_EVENING   = 95 * 1000;   // 1分35秒
+    const T_EVENING_TO_MORNING = 139 * 1000;  // 2分19秒
+
+    // フェーズ： morning -> evening1 -> night -> evening2 -> morning -> ...
+    let dayPhase = 'morning';
+    let phaseTimer = 0; // そのフェーズに入ってからの経過時間(ms)
+
+    // フェーズ切替の共通関数
+    function setPhase(next){
+      dayPhase = next;
+      phaseTimer = 0;
+
+      // 見た目のテーマは evening1/2 どっちも 'evening' を使う
+      if(next === 'morning') setBackgroundTheme('morning');
+      else if(next === 'night') setBackgroundTheme('night');
+      else setBackgroundTheme('evening');
+    }
+
+    
+    function updateBackgroundThemeByTime(deltaMs){
+      phaseTimer += deltaMs;
+
+      if(dayPhase === 'morning'){
+        if(phaseTimer >= T_MORNING_TO_EVENING){
+          setPhase('evening1');
+          // 朝→夕(1) 切替
+        }
+      }
+      else if(dayPhase === 'evening1'){
+        if(phaseTimer >= T_EVENING_TO_NIGHT){
+          setPhase('night');      // 夕(1)→夜
+          // 🔁 仕様：夜に入ったらタイマーリセット（setPhase内でリセット済み）
+        }
+      }
+      else if(dayPhase === 'night'){
+        if(phaseTimer >= T_NIGHT_TO_EVENING){
+          setPhase('evening2');   // 夜→夕(2)
+        }
+      }
+      else if(dayPhase === 'evening2'){
+        if(phaseTimer >= T_EVENING_TO_MORNING){
+          setPhase('morning');    // 夕(2)→朝（ここでまた一巡）
+        }
+      }
+    }
+
     function lerp(a,b,t){ return a+(b-a)*t; }
     function stepRGB(cur,tgt,t){ return [0,1,2].map(i=>lerp(cur[i],tgt[i],t)); }
     function drawSky(deltaFactor){
@@ -218,16 +268,6 @@ function drawClouds(deltaFactor) {
 
 
 
-
-    // 0-134 朝 / 135-199 夕 / 200-334 夜 / 335-399 夕 / 400→朝
-    function updateBackgroundThemeByScore(score){
-      const phase = score % 400;
-      if(phase <= 134){ setBackgroundTheme('morning'); }
-      else if(phase <= 199){ setBackgroundTheme('evening'); }
-      else if(phase <= 334){ setBackgroundTheme('night'); }
-      else if(phase <= 399){ setBackgroundTheme('evening'); }
-      else { setBackgroundTheme('morning'); }
-    }
 
     // ゲーム変数
     let score=0, highScore=localStorage.getItem('muruHighScore')||0;
@@ -335,7 +375,7 @@ function drawClouds(deltaFactor) {
 
     function updateScore(){
       for(const o of obstacles){ if(!o.passed&&o.x+o.width<player.x){ score++; o.passed=true; } }
-      scoreEl.textContent=score; updateBackgroundThemeByScore(score);
+      scoreEl.textContent=score;
       const tSec=timeElapsed/1000; gameSpeed=baseGameSpeed+tSec*gameSpeedAcceleration;
     }
 
@@ -366,6 +406,10 @@ function drawClouds(deltaFactor) {
       lastTime=performance.now(); requestAnimationFrame(gameLoop);
       spawnTimer = 0;
       nextSpawnInterval = minSpawnIntervalBase + Math.random() * (maxSpawnIntervalBase - minSpawnIntervalBase);
+        // ★昼夜フェーズ初期化
+      dayPhase = 'morning';
+      phaseTimer = 0;
+      setBackgroundTheme('morning');
     }
 
     function togglePause(){
@@ -380,6 +424,9 @@ function drawClouds(deltaFactor) {
     function gameLoop(timestamp){
       if(isGameOver||isPaused||!gameStarted)return;
       const deltaTime=timestamp-lastTime; lastTime=timestamp; const deltaFactor=deltaTime/(1000/60); timeElapsed+=deltaTime;
+
+      updateBackgroundThemeByTime(deltaTime);
+      
       clearCanvas(); drawSky(deltaFactor); drawClouds(deltaFactor);
       drawGround(); updatePlayer(deltaFactor); drawPlayer();
       spawnObstacle(deltaFactor); updateObstacles(deltaFactor); checkCollision(); updateScore();
@@ -412,6 +459,7 @@ function drawClouds(deltaFactor) {
   </script>
 </body>
 </html>
+
 
 
 
