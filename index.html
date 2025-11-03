@@ -3,14 +3,7 @@
 <head>
 
 <!-- 🔒 セキュリティ強化 -->
-<meta http-equiv="Content-Security-Policy" content="
-  default-src 'self';
-  script-src  'self' https://cdn.tailwindcss.com 'unsafe-inline';
-  style-src   'self' 'unsafe-inline' https://fonts.googleapis.com;
-  font-src    https://fonts.gstatic.com;
-  img-src     'self' data:;
-  media-src   'self';
-">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; media-src 'self';">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 
   
@@ -224,7 +217,7 @@ function drawClouds(deltaFactor) {
     let timeElapsed=0, obstacles=[], backgroundObjects=[], groundObjects=[];
     let frame=0, spawnTimer=0, minSpawnInterval=90, maxSpawnInterval=180;
     const minSpawnIntervalBase=90, maxSpawnIntervalBase=180, spawnIntervalReductionPerSec=4;
-    let is=false,isPaused=false,gameStarted=false,lastTime=0;
+    let isGameOver = false, isPaused = false, gameStarted = false, lastTime = 0;
     const baseDeltaTime=1000/60;
     const groundY=gameHeight-50;
 
@@ -295,7 +288,7 @@ function drawClouds(deltaFactor) {
       if(isGameOver)return; isGameOver=true; gameStarted=false;
       if(audioStarted){ try{ bgmAudio.pause(); bgmAudio.currentTime=0; endAudio.currentTime=0; endAudio.play(); }catch(_){ } }
       if(score>highScore){ highScore=score; localStorage.setItem('muruHighScore',highScore); highScoreEl.textContent=`ハイスコア: ${highScore}`; }
-      finalScoreEl.textContent=score; gameOverScreen.classList.remove('hidden'); gameOverScreen.classList.add('flex');
+      finalScoreEl.textContent=score; shareButton.href = buildXIntentUrl(score); gameOverScreen.classList.remove('hidden'); gameOverScreen.classList.add('flex');
     }
 
     function restartGame(){
@@ -348,6 +341,7 @@ function drawClouds(deltaFactor) {
   </script>
 </body>
 </html>
+
 
 
 
