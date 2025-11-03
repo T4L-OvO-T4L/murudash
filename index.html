@@ -183,6 +183,19 @@
       player.imageLoaded = false;
     };
 
+    // ブルーベリー対応チェック
+    function supportsEmoji(emoji) {
+      const ctx = document.createElement('canvas').getContext('2d');
+      ctx.canvas.width = ctx.canvas.height = 20;
+      ctx.fillText(emoji, 0, 15);
+      const data = ctx.getImageData(0, 0, 20, 20).data;
+      return [...data].some(v => v !== 0); // 何か描かれていればOK
+    }
+
+      // 🫐が使えない環境なら🍇に置き換える
+      const berryEmoji = supportsEmoji('🫐') ? '🫐' : '🍇';
+
+
     function drawPlayer() {
       const drawHeight = player.height;
       const drawY = player.y;
@@ -311,7 +324,7 @@
       }
       update(deltaFactor) { this.x -= gameSpeed * deltaFactor; }
       getHitbox() {
-      const shrink = this.type === 'ground_large' ? 0.6 : 0.8; // 🌻だけ少し小さく
+      const shrink = this.type === 'ground_large' ? 0.7 : 0.8; // 🌻だけ少し小さく
       const w = this.width * shrink;
       const h = this.height * shrink;
       return { x: this.x + (this.width - w) / 2, y: this.y - h, width: w, height: h };
@@ -557,5 +570,6 @@
   </script>
 </body>
 </html>
+
 
 
