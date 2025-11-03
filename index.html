@@ -1,770 +1,555 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>むるだっしゅ！</title>
-    <!-- Tailwind CSS CDN --><script src="https://cdn.tailwindcss.com"></script>
-    <!-- Tone.js (BGMと効果音用) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.min.js"></script>
-    <style>
-        /* Interフォントの読み込み */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
-        body {
-            font-family: 'Inter', sans-serif;
-            touch-action: manipulation; /* ダブルタップによるズームを防止 */
-            overflow: hidden; /* スクロールバーを非表示 */
-            overscroll-behavior: none; /* 端でのスクロール連鎖を防止 */
-        }
-        canvas {
-            background-color: #f7fafc; /* Tailwindのgray-100 */
-            display: block;
-            /* 背景のグラデーション（空） */
-            background-image: linear-gradient(to bottom, #a0d2eb, #f7fafc 80%);
-        }
-        /* ボタンのホバー/アクティブ時の視覚フィードバックを強化 */
-        .control-button {
-            transition: background-color 0.1s ease, transform 0.1s ease;
-        }
-        .control-button:active {
-            transform: scale(0.95);
-            background-color: #2c5282; /* Tailwindのblue-700 */
-        }
-        /* ポーズボタン用のスタイル */
-        .pause-button {
-            transition: background-color 0.1s ease, transform 0.1s ease;
-        }
-        .pause-button:active {
-            transform: scale(0.95);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>むるだっしゅ！</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      touch-action: manipulation;
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+    canvas {
+      background-color: #f7fafc;
+      display: block;
+      background-image: linear-gradient(to bottom, #a0d2eb, #f7fafc 80%);
+    }
+    .control-button { transition: background-color 0.1s ease, transform 0.1s ease; }
+    .control-button:active { transform: scale(0.95); background-color: #2c5282; }
+    .pause-button { transition: background-color 0.1s ease, transform 0.1s ease; }
+    .pause-button:active { transform: scale(0.95); }
+  </style>
 </head>
 <body class="bg-gray-200 flex flex-col items-center justify-center h-screen">
 
-    <!-- ゲーム情報表示エリア --><div class="w-full max-w-lg p-4 flex justify-between items-center bg-white rounded-t-lg shadow-md">
-        <div>
-            <h1 class="text-xl font-bold text-gray-800">むるだっしゅ！</h1>
-            <p class="text-sm text-gray-600">2段ジャンプでよけよう！</p>
-        </div>
-        <div class="flex items-center gap-4">
-            <div class="text-right">
-                <span class="text-2xl font-bold text-blue-600">スコア: <span id="score">0</span></span>
-                <span id="highScore" class="text-xs text-gray-500 block">ハイスコア: 0</span>
-            </div>
-             <!-- ポーズボタン -->
-            <button id="pauseButton" class="pause-button px-4 py-2 bg-yellow-500 text-white font-bold rounded-lg shadow-md text-sm">
-                ちょっと休憩
-            </button>
-        </div>
+  <!-- ヘッダー -->
+  <div class="w-full max-w-lg p-4 flex justify-between items-center bg-white rounded-t-lg shadow-md">
+    <div>
+      <h1 class="text-xl font-bold text-gray-800">むるだっしゅ！</h1>
+      <p class="text-sm text-gray-600">2段ジャンプもできるよ</p>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="text-right">
+        <span class="text-2xl font-bold text-blue-600">スコア: <span id="score">0</span></span>
+        <span id="highScore" class="text-xs text-gray-500 block">ハイスコア: 0</span>
+      </div>
+      <button id="pauseButton" class="pause-button px-4 py-2 bg-yellow-500 text-white font-bold rounded-lg shadow-md text-sm">
+        ちょっと休憩
+      </button>
+    </div>
+  </div>
+
+  <!-- キャンバス＆オーバーレイ -->
+  <div class="relative w-full max-w-lg">
+    <canvas id="gameCanvas" class="rounded-b-lg shadow-md"></canvas>
+
+    <!-- スタート画面 -->
+    <div id="startScreen" class="absolute inset-0 bg-black bg-opacity-70 flex-col justify-center items-center rounded-b-lg text-white p-8 text-center flex">
+      <h2 class="text-5xl font-bold mb-6">むるだっしゅ！</h2>
+      <p class="text-lg mb-4">ボタンを押してジャンプ！<br>空中でもう一回で2段ジャンプ！</p>
+      <p class="text-lg mb-8">障害物をよけまくろう！</p>
+      <button id="startButton" class="px-8 py-4 bg-green-600 text-white font-bold rounded-lg shadow-lg text-2xl hover:bg-green-700 transition-colors">
+        ゲームスタート
+      </button>
     </div>
 
-    <!-- ゲームキャンバスコンテナ (オーバーレイ用) -->
-    <div class="relative w-full max-w-lg">
-        <!-- ゲームキャンバス --><canvas id="gameCanvas" class="rounded-b-lg shadow-md"></canvas>
-        
-        <!-- スタート画面 (追加) -->
-        <div id="startScreen" class="absolute inset-0 bg-black bg-opacity-70 flex-col justify-center items-center rounded-b-lg text-white p-8 text-center flex">
-            <h2 class="text-5xl font-bold mb-6">むるだっしゅ！</h2>
-            <p class="text-lg mb-4">ボタンを押してジャンプ！<br>空中で もっかい押して2段ジャンプ！</p>
-            <p class="text-lg mb-8">障害物をよけまくろう！</p>
-            <!-- <p class="text-base mb-6 font-bold text-yellow-300">※ハイスコアは保存されないから<br>スクショ撮っておいてね！</p> (削除) -->
-            <button id="startButton" class="px-8 py-4 bg-green-600 text-white font-bold rounded-lg shadow-lg text-2xl hover:bg-green-700 transition-colors">
-                ゲームスタート
-            </button>
-        </div>
-
-        <!-- ポーズ中オーバーレイ (非表示) -->
-        <div id="pauseOverlay" class="absolute inset-0 bg-black bg-opacity-50 flex-col justify-center items-center rounded-b-lg text-white p-8 text-center hidden">
-            <h2 class="text-4xl font-bold mb-4">一時停止中</h2>
-            <p class="text-xl">(「ちょっと休憩」ボタンで再開)</p>
-        </div>
-
-        <!-- ゲームオーバー表示 (非表示) -->
-        <div id="gameOverScreen" class="absolute inset-0 bg-black bg-opacity-50 flex-col justify-center items-center rounded-lg text-white p-8 text-center hidden">
-            <h2 class="text-4xl font-bold mb-4">ゲームオーバー</h2>
-            <p class="text-xl mb-6">スコア: <span id="finalScore">0</span></p>
-            <button id="restartButton" class="px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-xl hover:bg-blue-700 transition-colors">
-                リスタート
-            </button>
-        </div>
+    <!-- ポーズ -->
+    <div id="pauseOverlay" class="absolute inset-0 bg-black bg-opacity-50 flex-col justify-center items-center rounded-b-lg text-white p-8 text-center hidden">
+      <h2 class="text-4xl font-bold mb-4">一時停止中</h2>
+      <p class="text-xl">(「ちょっと休憩」ボタンで再開)</p>
     </div>
 
-
-    <!-- スマホ用操作ボタン (ジャンプのみ) --><div class="w-full max-w-lg flex justify-center p-4 fixed bottom-0 left-1/2 -translate-x-1/2">
-        <button id="jumpButton" class="control-button w-3/4 py-8 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-2xl">
-            ジャンプ
-        </button>
+    <!-- ゲームオーバー -->
+    <div id="gameOverScreen" class="absolute inset-0 bg-black bg-opacity-50 flex-col justify-center items-center rounded-lg text-white p-8 text-center hidden">
+      <h2 class="text-4xl font-bold mb-4">がめおべら</h2>
+      <p class="text-xl mb-6">スコア: <span id="finalScore">0</span></p>
+      <button id="restartButton" class="px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-xl hover:bg-blue-700 transition-colors">
+        リスタート
+      </button>
     </div>
+  </div>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const scoreEl = document.getElementById('score');
-        const highScoreEl = document.getElementById('highScore');
-        const gameOverScreen = document.getElementById('gameOverScreen');
-        const finalScoreEl = document.getElementById('finalScore');
-        const restartButton = document.getElementById('restartButton');
-        const jumpButton = document.getElementById('jumpButton');
-        const pauseButton = document.getElementById('pauseButton');
-        const pauseOverlay = document.getElementById('pauseOverlay');
-        const startScreen = document.getElementById('startScreen'); // スタート画面
-        const startButton = document.getElementById('startButton'); // スタートボタン
+  <!-- スマホ用ジャンプ -->
+  <div class="w-full max-w-lg flex justify-center p-4 fixed bottom-0 left-1/2 -translate-x-1/2">
+    <button id="jumpButton" class="control-button w-3/4 py-8 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-2xl">
+      ジャンプ
+    </button>
+  </div>
 
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const highScoreEl = document.getElementById('highScore');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const finalScoreEl = document.getElementById('finalScore');
+    const restartButton = document.getElementById('restartButton');
+    const jumpButton = document.getElementById('jumpButton');
+    const pauseButton = document.getElementById('pauseButton');
+    const pauseOverlay = document.getElementById('pauseOverlay');
+    const startScreen = document.getElementById('startScreen');
+    const startButton = document.getElementById('startButton');
 
-        // --- Audio Setup ---
-        let audioStarted = false;
-        let bgmSynth, bgmPattern, jumpSfx, doubleJumpSfx, gameOverSfx;
+    // --- Audio (mp3) ---
+    let audioStarted = false;
+    let bgmAudio, endAudio;
 
-        async function startAudio() {
-            if (audioStarted) return;
-            try {
-                await Tone.start();
-                
-                // BGM: PluckSynthでアルペジオ風に
-                bgmSynth = new Tone.PluckSynth({
-                    attackNoise: 0.5,
-                    dampening: 4000,
-                    resonance: 0.7
-                }).toDestination();
-                bgmSynth.volume.value = -4; // BGM音量アップ (-8 -> -4)
+    async function startAudio() {
+      if (audioStarted) return;
+      try {
+        bgmAudio = new Audio('./assets/BGM.mp3');
+        bgmAudio.loop = true;
+        bgmAudio.volume = 0.5; // 🔊 BGMは半分
+        await bgmAudio.play(); // 初回はユーザー操作直後に呼ばれる
 
-                // ジャンプSE: MembraneSynth (太鼓風)
-                jumpSfx = new Tone.MembraneSynth({
-                    pitchDecay: 0.05,
-                    octaves: 10,
-                    oscillator: { type: "sine" },
-                    envelope: { attack: 0.001, decay: 0.4, sustain: 0.01, release: 1.4 }
-                }).toDestination();
-                jumpSfx.volume.value = -10;
+        endAudio = new Audio('./assets/END.mp3');
+        endAudio.volume = 0.8;
 
-                // 2段ジャンプSE (ジャンプSEと同じシンセで音程を変える)
-                doubleJumpSfx = new Tone.MembraneSynth({
-                    pitchDecay: 0.01,
-                    octaves: 10,
-                    oscillator: { type: "sine" },
-                    envelope: { attack: 0.001, decay: 0.2, sustain: 0.01, release: 0.7 }
-                }).toDestination();
-                doubleJumpSfx.volume.value = -8;
+        audioStarted = true;
+        console.log('Audio started');
+      } catch (e) {
+        console.error('Audio init failed:', e);
+      }
+    }
 
+    // キャンバスサイズ
+    const parentWidth = canvas.parentElement.clientWidth;
+    const gameWidth = Math.min(parentWidth, 768);
+    const gameHeight = 300;
+    canvas.width = gameWidth;
+    canvas.height = gameHeight;
 
-                // ゲームオーバーSE: 音楽的な和音 (変更前)
-                /*
-                const gameOverSynth = new Tone.PolySynth(Tone.Synth, {
-                    oscillator: { type: "triangle8" }, // 少し柔らかい音
-                    envelope: { attack: 0.05, decay: 0.5, sustain: 0.2, release: 1.0 },
-                    volume: -8 // 音量をBGMと同じくらいに
-                }).toDestination();
-                // フィルターで音をこもらせ、悲しい感じに
-                const gameOverFilter = new Tone.AutoFilter("2n").toDestination().start();
-                gameOverFilter.baseFrequency = 300;
-                gameOverFilter.octaves = 3;
-                gameOverSynth.connect(gameOverFilter);
-                */
+    // 変数
+    let score = 0;
+    let highScore = localStorage.getItem('muruHighScore') || 0;
+    let gameSpeed = 5;
+    let baseGameSpeed = 5;
+    let gameSpeedAcceleration = 0.05; // 1秒あたり加速
+    let timeElapsed = 0;
 
-                // ゲームオーバーSE: 明るい「ちゃんちゃん♪」風 (変更後)
-                const gameOverPluck = new Tone.PluckSynth({
-                    attackNoise: 0.2,
-                    dampening: 4000,
-                    resonance: 0.7,
-                    volume: -6 // BGMより少し大きく
-                }).toDestination();
+    let obstacles = [];
+    let backgroundObjects = [];
+    let groundObjects = [];
+    let frame = 0;
+    let spawnTimer = 0;
+    let minSpawnInterval = 90;
+    let maxSpawnInterval = 180;
+    const minSpawnIntervalBase = 90;
+    const maxSpawnIntervalBase = 180;
+    const spawnIntervalReductionPerSec = 4;
 
+    let isGameOver = false;
+    let isPaused = false;
+    let gameStarted = false;
 
-                // 2つの音を同時にトリガーする関数として gameOverSfx を定義
-                gameOverSfx = () => {
-                    const now = Tone.now();
-                    // 暗い感じのマイナーコード (変更前)
-                    // gameOverSynth.triggerAttackRelease(["C3", "Eb3", "G3", "Bb3"], "1.5n", now);
-                    
-                    // 明るい「ちゃんちゃん♪」 (G4 -> C5)
-                    gameOverPluck.triggerAttack("G4", now);
-                    // ★★★ エラー修正: 行頭の 'G' を削除 ★★★
-                    gameOverPluck.triggerAttack("C5", now + 0.15); // 0.15秒遅れて高い音
-                };
+    // デルタタイム
+    let lastTime = 0;
+    const baseDeltaTime = 1000 / 60;
 
-                // BGMパターン (よりリッチに)
-                bgmPattern = new Tone.Sequence((time, note) => {
-                    bgmSynth.triggerAttack(note, time);
-                }, ["C4", ["E4", "G4"], "G4", "E4", "C4", ["D4", "F4"], "F4", "D4"], "8n");
-                
-                bgmPattern.start(0);
-                Tone.Transport.bpm.value = 140; // 少しテンポアップ
-                Tone.Transport.start();
-                
-                audioStarted = true;
-                console.log("Audio context started.");
-            } catch (e) {
-                console.error("Audio could not start: ", e);
-            }
-        }
-        // --- End Audio Setup ---
+    highScoreEl.textContent = `ハイスコア: ${highScore}`;
 
-        // キャンバスのサイズ
-        const parentWidth = canvas.parentElement.clientWidth;
-        const gameWidth = Math.min(parentWidth, 768); 
-        const gameHeight = 300;
-        canvas.width = gameWidth;
-        canvas.height = gameHeight;
-        
-        console.log(`Canvas initialized: ${gameWidth}x${gameHeight}`); // デバッグログ
+    // 地面
+    const groundY = gameHeight - 50;
 
-        // ゲーム変数
-        let score = 0;
-        let highScore = localStorage.getItem('muruHighScore') || 0; // (保存機能 復活)
-        let gameSpeed = 5;
-        let baseGameSpeed = 5;
-        // let gameSpeedMultiplier = 0.0008; (スコア基準から時間基準に変更)
-        let gameSpeedAcceleration = 0.05; // 1秒あたりに増える速度
-        let timeElapsed = 0; // 経過時間 (ミリ秒)
+    // プレイヤー
+    const player = {
+      x: 50,
+      y: groundY - 50,
+      width: 50,
+      height: 50,
+      originalHeight: 50,
+      dy: 0,
+      gravity: 0.8,
+      jumpForce: 15,
+      isGrounded: true,
+      jumpsRemaining: 2,
+      isJumping: false,
+      image: new Image(),
+      imageLoaded: false
+    };
 
-        let obstacles = [];
-        let backgroundObjects = []; // 流れる背景用
-        let groundObjects = []; // 流れる地面用
-        let frame = 0;
-        let spawnTimer = 0;
-        let minSpawnInterval = 90; // 難易度アップ (100 -> 90)
-        let maxSpawnInterval = 180; // 難易度アップ (200 -> 180)
-        let minSpawnIntervalBase = 90;
-        let maxSpawnIntervalBase = 180;
-        // let spawnIntervalReductionRate = 0.7; (スコア基準から時間基準に変更)
-        let spawnIntervalReductionPerSec = 4; // 1秒あたりに短縮されるフレーム数
-        let nextSpawnInterval = minSpawnInterval;
-        let isGameOver = false;
-        let isPaused = false; // ポーズ状態
-        let gameStarted = false; // スタート画面用
+    player.image.src = './assets/Muru.png';
+    player.image.onload = () => {
+      player.imageLoaded = true;
+      player.width = (player.image.width / player.image.height) * player.height;
+    };
+    player.image.onerror = () => {
+      console.error('画像の読み込みに失敗しました。');
+      player.imageLoaded = false;
+    };
 
-        // --- デルタタイム(FPS固定化)用 ---
-        let lastTime = 0;
-        const baseDeltaTime = 1000 / 60; // 60FPSを基準
-        // ---
+    function drawPlayer() {
+      const drawHeight = player.height;
+      const drawY = player.y;
+      if (player.imageLoaded) {
+        ctx.drawImage(player.image, player.x, drawY, player.width, drawHeight);
+      } else {
+        ctx.fillStyle = 'green';
+        ctx.fillRect(player.x, drawY, player.width, drawHeight);
+      }
+    }
 
-        highScoreEl.textContent = `ハイスコア: ${highScore}`;
+    function updatePlayer(deltaFactor) {
+      if (!player.isGrounded) {
+        player.dy += player.gravity * deltaFactor;
+        player.y += player.dy * deltaFactor;
+      }
+      if (player.y + player.height >= groundY) {
+        player.y = groundY - player.height;
+        player.dy = 0;
+        player.isGrounded = true;
+        player.jumpsRemaining = 2;
+      }
+      player.height = player.originalHeight;
+    }
 
-        // 地面のY座標
-        const groundY = gameHeight - 50;
+    function playerJump() {
+      startAudio(); // モバイルの初回ジェスチャで走らせる
+      if (isGameOver || isPaused || !gameStarted) return;
 
-        // プレイヤー設定
-        const player = {
-            x: 50,
-            y: groundY - 50, // Y座標を (地面 - 高さ) で初期化
-            width: 50,
-            height: 50,
-            originalHeight: 50,
-            dy: 0,
-            gravity: 0.8,
-            jumpForce: 15,
-            isGrounded: true,
-            jumpsRemaining: 2, // 2段ジャンプ用
-            isJumping: false, // 可変ジャンプ用
-            image: new Image(),
-            imageLoaded: false
-        };
-        
-        console.log("Player object initialized:", player); // デバッグログ
+      if (player.jumpsRemaining > 0) {
+        player.dy = -player.jumpForce;
+        player.isGrounded = false;
+        player.isJumping = true;
+        player.jumpsRemaining--;
+      }
+    }
 
+    function stopJump() {
+      if (player.isJumping && player.dy < 0) {
+        player.dy = Math.max(player.dy, -5);
+      }
+      player.isJumping = false;
+    }
 
-        // 主人公画像の読み込み
-        player.image.src = 'https://corsproxy.io/?https://drive.google.com/uc?id=1-BD0XjJD5OiQWy1t2vtnsglN1OPKL2N4';
-        player.image.onload = () => {
-            player.imageLoaded = true;
-            player.width = (player.image.width / player.image.height) * player.height;
-        };
-        player.image.onerror = () => {
-            console.error('画像の読み込みに失敗しました。');
-            player.imageLoaded = false;
-        };
+    // 背景
+    class BackgroundObject {
+      constructor(emoji, y, fontSize, speedMultiplier) {
+        this.x = gameWidth;
+        this.y = y;
+        this.emoji = emoji;
+        this.fontSize = fontSize;
+        this.speedMultiplier = speedMultiplier;
+      }
+      draw() {
+        ctx.font = `${this.fontSize}px Arial`;
+        ctx.globalAlpha = 0.5;
+        ctx.fillText(this.emoji, this.x, this.y);
+        ctx.globalAlpha = 1.0;
+      }
+      update(deltaFactor) { this.x -= gameSpeed * this.speedMultiplier * deltaFactor; }
+    }
+    function spawnBackgroundObject() {
+      if (Math.random() < 0.01) {
+        const y = Math.random() * (gameHeight / 2);
+        const fontSize = 20 + Math.random() * 30;
+        const speedMultiplier = 0.2 + Math.random() * 0.3;
+        backgroundObjects.push(new BackgroundObject('☁️', y, fontSize, speedMultiplier));
+      }
+    }
+    function updateBackgroundObjects(deltaFactor) {
+      for (let i = backgroundObjects.length - 1; i >= 0; i--) {
+        backgroundObjects[i].update(deltaFactor);
+        backgroundObjects[i].draw();
+        if (backgroundObjects[i].x < -50) backgroundObjects.splice(i, 1);
+      }
+    }
 
-        // プレイヤークラスの描画
-        function drawPlayer() {
-            const drawHeight = player.height;
-            const drawY = player.y; // updatePlayerで計算されたplayer.yをそのまま使う
-            
-            if (player.imageLoaded) {
-                ctx.drawImage(player.image, player.x, drawY, player.width, drawHeight);
-            } else {
-                ctx.fillStyle = 'green';
-                ctx.fillRect(player.x, drawY, player.width, drawHeight);
-            }
-        }
+    // 地面の粒
+    class GroundObject {
+      constructor(text, y, fontSize, color) {
+        this.x = gameWidth;
+        this.y = y;
+        this.text = text;
+        this.fontSize = fontSize;
+        this.color = color;
+      }
+      draw() {
+        ctx.font = `${this.fontSize}px Arial`;
+        ctx.fillStyle = this.color;
+        ctx.fillText(this.text, this.x, this.y);
+      }
+      update(deltaFactor) { this.x -= gameSpeed * deltaFactor; }
+    }
+    function spawnGroundObject() {
+      if (Math.random() < 0.05) {
+        const y = groundY + 10 + Math.random() * 30;
+        const fontSize = 5 + Math.random() * 5;
+        const color = Math.random() < 0.5 ? '#A0522D' : '#696969';
+        const text = Math.random() < 0.5 ? '•' : '·';
+        groundObjects.push(new GroundObject(text, y, fontSize, color));
+      }
+    }
+    function updateGroundObjects(deltaFactor) {
+      for (let i = groundObjects.length - 1; i >= 0; i--) {
+        groundObjects[i].update(deltaFactor);
+        groundObjects[i].draw();
+        if (groundObjects[i].x < -10) groundObjects.splice(i, 1);
+      }
+    }
 
-        // プレイヤー更新 (デルタタイム対応)
-        function updatePlayer(deltaFactor) {
-            // 重力
-            if (!player.isGrounded) {
-                player.dy += player.gravity * deltaFactor;
-                player.y += player.dy * deltaFactor;
-            }
-            
-            // 地面に着地
-            if (player.y + player.height >= groundY) { // >= で判定
-                player.y = groundY - player.height; // Y座標を (地面 - 高さ) にスナップ
-                player.dy = 0;
-                player.isGrounded = true;
-                player.jumpsRemaining = 2; // ジャンプ回数リセット
-            }
-            
-            player.height = player.originalHeight;
-        }
+    // 障害物
+    class Obstacle {
+      constructor(type, emoji, y, fontSize) {
+        this.x = gameWidth;
+        this.y = y;
+        this.type = type; // 'ground', 'air', 'ground_large'
+        this.emoji = emoji;
+        this.fontSize = fontSize;
+        this.width = fontSize * 0.8;
+        this.height = fontSize * 0.8;
+        this.passed = false;
+      }
+      draw() {
+        ctx.font = `${this.fontSize}px Arial`;
+        ctx.fillText(this.emoji, this.x, this.y);
+      }
+      update(deltaFactor) { this.x -= gameSpeed * deltaFactor; }
+      getHitbox() {
+        return { x: this.x, y: this.y - this.height, width: this.width, height: this.height };
+      }
+    }
 
-        // ジャンプ開始処理
-        function playerJump() {
-            startAudio(); 
-            
-            // ポーズ中またはゲーム開始前はジャンプできない
-            if (isGameOver || isPaused || !gameStarted) return;
+    function spawnObstacle(deltaFactor) {
+      spawnTimer += deltaFactor;
+      if (spawnTimer < minSpawnInterval) return;
 
-            if (player.jumpsRemaining > 0) {
-                player.dy = -player.jumpForce;
-                player.isGrounded = false;
-                player.isJumping = true; 
-                
-                if (player.jumpsRemaining === 1) { // 2段ジャンプ
-                    if (audioStarted) doubleJumpSfx.triggerAttackRelease("G4", "8n");
-                } else { // 1段ジャンプ
-                    if (audioStarted) jumpSfx.triggerAttackRelease("C3", "8n");
-                }
-                
-                player.jumpsRemaining--;
-            }
-        }
+      spawnTimer = 0;
+      const next = Math.floor(Math.random() * (maxSpawnInterval - minSpawnInterval) + minSpawnInterval);
+      // 次の間隔は minSpawnInterval によって更新されるので保存
+      // (可読性のため変数名は使わずにそのまま進行)
 
-        // ジャンプボタンを離した時の処理 (可変ジャンプ用)
-        function stopJump() {
-            if (player.isJumping && player.dy < 0) {
-                player.dy = Math.max(player.dy, -5); 
-            }
-            player.isJumping = false;
-        }
-
-        // --- 流れる背景 ---
-        class BackgroundObject {
-            constructor(emoji, y, fontSize, speedMultiplier) {
-                this.x = gameWidth;
-                this.y = y;
-                this.emoji = emoji;
-                this.fontSize = fontSize;
-                this.speedMultiplier = speedMultiplier;
-            }
-            draw() {
-                ctx.font = `${this.fontSize}px Arial`;
-                ctx.globalAlpha = 0.5; // 半透明にする
-                ctx.fillText(this.emoji, this.x, this.y);
-                ctx.globalAlpha = 1.0; // 透明度を戻す
-            }
-            update(deltaFactor) { // デルタタイム対応
-                this.x -= gameSpeed * this.speedMultiplier * deltaFactor;
-            }
-        }
-
-        function spawnBackgroundObject() {
-            if (Math.random() < 0.01) {
-                const y = Math.random() * (gameHeight / 2); // 画面の上半分
-                const fontSize = 20 + Math.random() * 30;
-                const speedMultiplier = 0.2 + Math.random() * 0.3; // 速度を遅く
-                backgroundObjects.push(new BackgroundObject('☁️', y, fontSize, speedMultiplier));
-            }
-        }
-
-        function updateBackgroundObjects(deltaFactor) { // デルタタイム対応
-            for (let i = backgroundObjects.length - 1; i >= 0; i--) {
-                backgroundObjects[i].update(deltaFactor);
-                backgroundObjects[i].draw();
-                if (backgroundObjects[i].x < -50) { // 画面外
-                    backgroundObjects.splice(i, 1);
-                }
-            }
-        }
-        // --- 流れる背景 ここまで ---
-
-        // --- 流れる地面 ---
-        class GroundObject {
-            constructor(text, y, fontSize, color) {
-                this.x = gameWidth;
-                this.y = y;
-                this.text = text;
-                this.fontSize = fontSize;
-                this.color = color;
-            }
-            draw() {
-                ctx.font = `${this.fontSize}px Arial`;
-                ctx.fillStyle = this.color;
-                ctx.fillText(this.text, this.x, this.y);
-            }
-            update(deltaFactor) { // デルタタイム対応
-                this.x -= gameSpeed * deltaFactor; // 背景と違い、フルスピードで移動
-            }
-        }
-
-        function spawnGroundObject() {
-            // 一定確率で小石やじゃりを生成
-            if (Math.random() < 0.05) {
-                const y = groundY + 10 + Math.random() * 30; // 地面の中
-                const fontSize = 5 + Math.random() * 5;
-                const color = Math.random() < 0.5 ? '#A0522D' : '#696969'; // シエナ or グレイ
-                const text = Math.random() < 0.5 ? '•' : '·';
-                groundObjects.push(new GroundObject(text, y, fontSize, color));
-            }
-        }
-
-        function updateGroundObjects(deltaFactor) { // デルタタイム対応
-            for (let i = groundObjects.length - 1; i >= 0; i--) {
-                groundObjects[i].update(deltaFactor);
-                groundObjects[i].draw();
-                if (groundObjects[i].x < -10) { // 画面外
-                    groundObjects.splice(i, 1);
-                }
-            }
-        }
-        // --- 流れる地面 ここまで ---
-
-
-        // 障害物クラス
-        class Obstacle {
-            constructor(type, emoji, y, fontSize) {
-                this.x = gameWidth;
-                this.y = y;
-                this.type = type; // 'ground', 'air', 'ground_large'
-                this.emoji = emoji;
-                this.fontSize = fontSize;
-                this.width = fontSize * 0.8; 
-                this.height = fontSize * 0.8;
-                this.passed = false;
-            }
-            draw() {
-                ctx.font = `${this.fontSize}px Arial`;
-                ctx.fillText(this.emoji, this.x, this.y);
-            }
-            update(deltaFactor) { // デルタタイム対応
-                this.x -= gameSpeed * deltaFactor;
-            }
-            getHitbox() {
-                return {
-                    x: this.x,
-                    y: this.y - this.height, 
-                    width: this.width,
-                    height: this.height
-                };
-            }
-        }
-
-        function spawnObstacle(deltaFactor) { // デルタタイム対応
-            spawnTimer += deltaFactor; // デルタタイムでタイマーを加算
-            if (spawnTimer < nextSpawnInterval) {
-                return;
-            }
-
-            spawnTimer = 0;
-            nextSpawnInterval = Math.floor(Math.random() * (maxSpawnInterval - minSpawnInterval) + minSpawnInterval);
-            
-            const rand = Math.random();
-            
-            // 40%で空中 (ブルーベリー)
-            if (rand < 0.4) {
-                const fontSize = 30 + Math.random() * 10;
-                let yPos;
-                // 空中障害物のうち、30%は低空
-                if (Math.random() < 0.3) {
-                    yPos = groundY - 30; // 低空 (小ジャンプで越えられる)
-                } else {
-                    yPos = groundY - 70 - Math.random() * 50; // 通常の空中
-                }
-                obstacles.push(new Obstacle('air', '🫐', yPos, fontSize));
-            } 
-            // 60%で地上 (ひまわり) - (出現率アップ)
-            else {
-                // 地上障害物のうち、スコア10以上なら30%で大きなひまわり
-                if (score > 10 && Math.random() < 0.3) {
-                    const fontSize = 110; // サイズアップ
-                    obstacles.push(new Obstacle('ground_large', '🌻', groundY, fontSize));
-                } else {
-                    // 通常のひまわり
-                    const fontSize = 40 + Math.random() * 10;
-                    obstacles.push(new Obstacle('ground', '🌻', groundY, fontSize));
-                }
-            }
-        }
-
-        function updateObstacles(deltaFactor) { // デルタタイム対応
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                obstacles[i].update(deltaFactor);
-                obstacles[i].draw();
-                if (obstacles[i].x + obstacles[i].width < 0) {
-                    obstacles.splice(i, 1);
-                }
-            }
-        }
-
-        function checkCollision() {
-            const playerHitbox = {
-                x: player.x,
-                y: player.y, // player.yをそのまま使う
-                width: player.width * 0.8, 
-                height: player.height * 0.8
-            };
-
-            for (const obstacle of obstacles) {
-                const obsHitbox = obstacle.getHitbox();
-                if (
-                    playerHitbox.x < obsHitbox.x + obsHitbox.width &&
-                    playerHitbox.x + playerHitbox.width > obsHitbox.x &&
-                    playerHitbox.y < obsHitbox.y + obsHitbox.height &&
-                    playerHitbox.y + playerHitbox.height > obsHitbox.y
-                ) {
-                    gameOver();
-                    return;
-                }
-            }
-        }
-
-        function updateScore() {
-            for (const obstacle of obstacles) {
-                if (!obstacle.passed && obstacle.x + obstacle.width < player.x) {
-                    score++;
-                    obstacle.passed = true;
-                }
-            }
-            scoreEl.textContent = score;
-            
-            // --- 時間経過で難易度を更新 ---
-            const timeInSeconds = timeElapsed / 1000;
-            
-            // 1. 速度を時間で加速
-            gameSpeed = baseGameSpeed + timeInSeconds * gameSpeedAcceleration;
-            
-            // 2. スポーン間隔を時間で短縮
-            minSpawnInterval = Math.max(minSpawnIntervalBase - timeInSeconds * spawnIntervalReductionPerSec, 40); // 最低40フレーム
-            maxSpawnInterval = Math.max(maxSpawnIntervalBase - timeInSeconds * spawnIntervalReductionPerSec, 80); // 最低80フレーム
-        }
-
-        function drawGround() {
-            ctx.fillStyle = '#8B4513'; // 茶色 (SaddleBrown)
-            ctx.fillRect(0, groundY, gameWidth, gameHeight - groundY);
-        }
-
-        function clearCanvas() {
-            // キャンバス全体をクリア (背景グラデーションはCSSで描画される)
-            ctx.clearRect(0, 0, gameWidth, gameHeight);
-        }
-
-        function gameOver() {
-            // ★★★ 修正: ゲームオーバー処理が何度も実行されるのを防ぐ
-            if (isGameOver) return;
-
-            isGameOver = true;
-            gameStarted = false; // ゲーム終了
-            if (audioStarted) {
-                // gameOverSfx.triggerAttackRelease("1n"); // ノイズ (変更前)
-                gameOverSfx(); // 爆発音 (変更後)
-                Tone.Transport.stop();
-                // ★★★ 修正: Transportを止めればPatternも止まるため、この行は不要 (エラーの原因)
-                // bgmPattern.stop(); 
-            }
-
-AN:            if (score > highScore) {
-                highScore = score;
-                localStorage.setItem('muruHighScore', highScore); // (保存機能 復活)
-                highScoreEl.textContent = `ハイスコア: ${highScore}`;
-            }
-            finalScoreEl.textContent = score;
-            gameOverScreen.classList.remove('hidden');
-            gameOverScreen.classList.add('flex');
-        }
-
-        function restartGame() {
-            startAudio(); 
-            if (audioStarted) {
-                Tone.Transport.start();
-                bgmPattern.start(0);
-            }
-            
-            score = 0;
-            scoreEl.textContent = score; // スコア表示をリセット
-            timeElapsed = 0; // 経過時間リセット
-            gameSpeed = baseGameSpeed; 
-            minSpawnInterval = minSpawnIntervalBase; 
-            maxSpawnInterval = maxSpawnIntervalBase; 
-            obstacles = [];
-            backgroundObjects = []; // 背景リセット
-            groundObjects = []; // 地面リセット
-            frame = 0;
-            spawnTimer = 0;
-            isGameOver = false;
-            isPaused = false; // ポーズ解除
-            gameStarted = true; // ゲーム開始
-            player.y = groundY - player.height; // Y座標を (地面 - 高さ) でリセット
-            player.dy = 0;
-            player.isGrounded = true;
-            player.jumpsRemaining = 2; // ジャンプ回数リセット
-            
-            gameOverScreen.classList.add('hidden');
-            gameOverScreen.classList.remove('flex');
-            pauseOverlay.classList.add('hidden'); // ポーズ画面も隠す
-            
-            // ループを再開
-            lastTime = performance.now(); // デルタタイムリセット
-            requestAnimationFrame(gameLoop);
-        }
-        
-        // --- ポーズ機能 ---
-        function togglePause() {
-            // ゲームオーバー中、またはゲーム開始前はポーズできない
-            if (isGameOver || !gameStarted) return;
-            
-            isPaused = !isPaused;
-            
-            if (isPaused) {
-                // ポーズ
-                if (audioStarted) {
-                    Tone.Transport.pause();
-                }
-                pauseOverlay.classList.remove('hidden');
-                pauseOverlay.classList.add('flex');
-            } else {
-                // 再開
-                if (audioStarted) {
-                    Tone.Transport.start();
-                }
-                pauseOverlay.classList.add('hidden');
-                pauseOverlay.classList.remove('flex');
-                
-                // ループを再開
-                lastTime = performance.now(); // デルタタイムリセット
-                requestAnimationFrame(gameLoop);
-            }
-        }
-
-        // メインゲームループ (デルタタイム対応)
-        function gameLoop(timestamp) {
-            // ゲームオーバーまたはポーズ中ならループを停止
-            if (isGameOver || isPaused || !gameStarted) {
-                return;
-            }
-
-            // デルタタイム計算
-            const deltaTime = timestamp - lastTime;
-            lastTime = timestamp;
-            const deltaFactor = deltaTime / baseDeltaTime;
-
-            // 経過時間を加算
-            timeElapsed += deltaTime;
-
-            // デルタタイムが極端に大きい場合（タブが非アクティブだった場合など）はスキップ
-            if (deltaFactor > 4) {
-                requestAnimationFrame(gameLoop);
-                return;
-            }
-
-
-            clearCanvas();
-            
-            // 背景を描画 (地面より奥)
-            spawnBackgroundObject();
-            updateBackgroundObjects(deltaFactor);
-            
-            // 地面を描画
-            drawGround();
-            
-            // 地面の小石を描画
-            spawnGroundObject();
-            updateGroundObjects(deltaFactor);
-
-            // プレイヤー
-            updatePlayer(deltaFactor);
-            drawPlayer();
-
-            // 障害物
-            spawnObstacle(deltaFactor);
-            updateObstacles(deltaFactor);
-
-            // 当たり判定とスコア
-            checkCollision();
-            updateScore();
-
-            frame++;
-            // 次のフレームを要求
-            requestAnimationFrame(gameLoop);
-        }
-
-        // --- イベントリスナー ---
-
-        // PC用 (デバッグ)
-        window.addEventListener('keydown', (e) => {
-            if (e.repeat) return; // キー押しっぱなしによる連打防止
-            
-            if (!gameStarted) return; // ゲーム開始前はキーを受け付けない
-
-            if (e.code === 'Space' || e.code === 'ArrowUp') {
-                playerJump();
-            }
-            // Pキーでポーズ (デバッグ用)
-            if (e.code === 'KeyP') {
-                togglePause();
-            }
-        });
-        window.addEventListener('keyup', (e) => {
-            if (e.code === 'Space' || e.code === 'ArrowUp') {
-                stopJump(); // キーを離したらジャンプを止める (可変ジャンプ)
-            }
-        });
-
-        // スマホ用 (タッチ)
-        if (jumpButton) {
-            jumpButton.addEventListener('pointerdown', (e) => {
-                e.preventDefault(); 
-                playerJump();
-            });
-            jumpButton.addEventListener('pointerup', (e) => {
-                e.preventDefault();
-                stopJump(); // 指を離したらジャンプを止める (可変ジャンプ)
-            });
+      const rand = Math.random();
+      if (rand < 0.4) {
+        const fontSize = 30 + Math.random() * 10;
+        let yPos;
+        if (Math.random() < 0.3) {
+          yPos = groundY - 30; // 低空
         } else {
-            console.error("Jump button not found!");
+          yPos = groundY - 70 - Math.random() * 50;
         }
-        
-        // ポーズボタン
-        if (pauseButton) {
-            pauseButton.addEventListener('click', (e) => {
-                e.preventDefault();
-                togglePause();
-            });
-            pauseButton.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                togglePause();
-            });
+        obstacles.push(new Obstacle('air', '🫐', yPos, fontSize));
+      } else {
+        if (score > 10 && Math.random() < 0.3) {
+          const fontSize = 110;
+          obstacles.push(new Obstacle('ground_large', '🌻', groundY, fontSize));
+        } else {
+          const fontSize = 40 + Math.random() * 10;
+          obstacles.push(new Obstacle('ground', '🌻', groundY, fontSize));
         }
+      }
+      // 次のスポーンまでのカウントを更新
+      minSpawnInterval = Math.max(minSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 40);
+      maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 80);
+    }
 
+    function updateObstacles(deltaFactor) {
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        obstacles[i].update(deltaFactor);
+        obstacles[i].draw();
+        if (obstacles[i].x + obstacles[i].width < 0) obstacles.splice(i, 1);
+      }
+    }
 
-        // リスタートボタン
-        restartButton.addEventListener('click', restartGame);
-        restartButton.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            restartGame();
-        });
-
-        // スタートボタン
-        function handleGameStart(e) {
-            e.preventDefault();
-            
-            if (gameStarted) return; // 既に開始している場合は何もしない
-
-            console.log("Game Start!");
-            gameStarted = true;
-            
-            startAudio(); // 音楽再生開始
-            startScreen.classList.add('hidden'); // スタート画面を隠す
-            
-            // ゲームループを開始
-            lastTime = performance.now();
-            requestAnimationFrame(gameLoop);
+    function checkCollision() {
+      const playerHitbox = {
+        x: player.x,
+        y: player.y,
+        width: player.width * 0.8,
+        height: player.height * 0.8
+      };
+      for (const obstacle of obstacles) {
+        const obsHit = obstacle.getHitbox();
+        if (
+          playerHitbox.x < obsHit.x + obsHit.width &&
+          playerHitbox.x + playerHitbox.width > obsHit.x &&
+          playerHitbox.y < obsHit.y + obsHit.height &&
+          playerHitbox.y + playerHitbox.height > obsHit.y
+        ) {
+          gameOver();
+          return;
         }
+      }
+    }
 
-        startButton.addEventListener('click', handleGameStart);
-        startButton.addEventListener('touchstart', handleGameStart);
+    function updateScore() {
+      for (const obstacle of obstacles) {
+        if (!obstacle.passed && obstacle.x + obstacle.width < player.x) {
+          score++;
+          obstacle.passed = true;
+        }
+      }
+      scoreEl.textContent = score;
 
-        // ゲーム開始 (削除)
-        // gameLoop();
-    </script>
+      const timeInSeconds = timeElapsed / 1000;
+      gameSpeed = baseGameSpeed + timeInSeconds * gameSpeedAcceleration;
+      minSpawnInterval = Math.max(minSpawnIntervalBase - timeInSeconds * spawnIntervalReductionPerSec, 40);
+      maxSpawnInterval = Math.max(maxSpawnIntervalBase - timeInSeconds * spawnIntervalReductionPerSec, 80);
+    }
+
+    function drawGround() {
+      ctx.fillStyle = '#8B4513';
+      ctx.fillRect(0, groundY, gameWidth, gameHeight - groundY);
+    }
+
+    function clearCanvas() {
+      ctx.clearRect(0, 0, gameWidth, gameHeight);
+    }
+
+    function gameOver() {
+      if (isGameOver) return;
+      isGameOver = true;
+      gameStarted = false;
+
+      // 音
+      if (audioStarted) {
+        try {
+          bgmAudio.pause();
+          bgmAudio.currentTime = 0;
+          endAudio.currentTime = 0;
+          endAudio.play();
+        } catch (_) {}
+      }
+
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('muruHighScore', highScore);
+        highScoreEl.textContent = `ハイスコア: ${highScore}`;
+      }
+      finalScoreEl.textContent = score;
+      gameOverScreen.classList.remove('hidden');
+      gameOverScreen.classList.add('flex');
+    }
+
+    function restartGame() {
+      startAudio();
+      try {
+        if (bgmAudio) {
+          bgmAudio.currentTime = 0;
+          bgmAudio.play();
+        }
+      } catch (_) {}
+
+      score = 0;
+      scoreEl.textContent = score;
+      timeElapsed = 0;
+      gameSpeed = baseGameSpeed;
+      minSpawnInterval = minSpawnIntervalBase;
+      maxSpawnInterval = maxSpawnIntervalBase;
+      obstacles = [];
+      backgroundObjects = [];
+      groundObjects = [];
+      frame = 0;
+      spawnTimer = 0;
+      isGameOver = false;
+      isPaused = false;
+      gameStarted = true;
+      player.y = groundY - player.height;
+      player.dy = 0;
+      player.isGrounded = true;
+      player.jumpsRemaining = 2;
+
+      gameOverScreen.classList.add('hidden');
+      gameOverScreen.classList.remove('flex');
+      pauseOverlay.classList.add('hidden');
+
+      lastTime = performance.now();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function togglePause() {
+      if (isGameOver || !gameStarted) return;
+      isPaused = !isPaused;
+
+      if (isPaused) {
+        try { if (bgmAudio) bgmAudio.pause(); } catch (_) {}
+        pauseOverlay.classList.remove('hidden');
+        pauseOverlay.classList.add('flex');
+      } else {
+        try { if (bgmAudio) bgmAudio.play(); } catch (_) {}
+        pauseOverlay.classList.add('hidden');
+        pauseOverlay.classList.remove('flex');
+        lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
+      }
+    }
+
+    // ループ
+    function gameLoop(timestamp) {
+      if (isGameOver || isPaused || !gameStarted) return;
+
+      const deltaTime = timestamp - lastTime;
+      lastTime = timestamp;
+      const deltaFactor = deltaTime / baseDeltaTime;
+
+      timeElapsed += deltaTime;
+
+      if (deltaFactor > 4) {
+        requestAnimationFrame(gameLoop);
+        return;
+      }
+
+      clearCanvas();
+      spawnBackgroundObject();
+      updateBackgroundObjects(deltaFactor);
+
+      drawGround();
+
+      spawnGroundObject();
+      updateGroundObjects(deltaFactor);
+
+      updatePlayer(deltaFactor);
+      drawPlayer();
+
+      spawnObstacle(deltaFactor);
+      updateObstacles(deltaFactor);
+
+      checkCollision();
+      updateScore();
+
+      frame++;
+      requestAnimationFrame(gameLoop);
+    }
+
+    // 入力
+    window.addEventListener('keydown', (e) => {
+      if (e.repeat) return;
+      if (!gameStarted) return;
+      if (e.code === 'Space' || e.code === 'ArrowUp') playerJump();
+      if (e.code === 'KeyP') togglePause();
+    });
+    window.addEventListener('keyup', (e) => {
+      if (e.code === 'Space' || e.code === 'ArrowUp') stopJump();
+    });
+
+    if (jumpButton) {
+      jumpButton.addEventListener('pointerdown', (e) => { e.preventDefault(); playerJump(); });
+      jumpButton.addEventListener('pointerup',   (e) => { e.preventDefault(); stopJump();  });
+    }
+
+    if (pauseButton) {
+      pauseButton.addEventListener('click', (e) => { e.preventDefault(); togglePause(); });
+      pauseButton.addEventListener('touchstart', (e) => { e.preventDefault(); togglePause(); });
+    }
+
+    function handleGameStart(e) {
+      e.preventDefault();
+      if (gameStarted) return;
+      console.log('Game Start!');
+      gameStarted = true;
+      startAudio();
+      startScreen.classList.add('hidden');
+      lastTime = performance.now();
+      requestAnimationFrame(gameLoop);
+    }
+
+    startButton.addEventListener('click', handleGameStart);
+    startButton.addEventListener('touchstart', handleGameStart);
+  </script>
 </body>
 </html>
-
-
