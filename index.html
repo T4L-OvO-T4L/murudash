@@ -5,8 +5,10 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="preload" as="image" href="./assets/blueberry.svg">
 <link rel="preload" as="image" href="./assets/sunflower.svg">
+<link rel="preload" as="image" href="./assets/Donguri.svg">
 <link rel="preload" as="audio" href="./assets/BGM.mp3">
 <link rel="preload" as="audio" href="./assets/END.mp3">
+<link rel="preload" as="audio" href="./assets/pick.mp3">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <title>むるだっしゅ！</title>
@@ -20,7 +22,7 @@
   .pause-button { transition: background-color .1s, transform .1s; }
   .pause-button:active { transform: scale(.95); }
   .icon-inline { display:inline-block; width:1.1em; height:1.1em; vertical-align:-0.15em; margin-left:.15em; }
-  /* スマホで「ジャンプ」文字が選択されるの防止 */
+  /* スマホで「ジャンプ」選択されるの防止 */
   .no-select { user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
   .no-highlight { -webkit-tap-highlight-color:transparent; }
 </style>
@@ -58,7 +60,7 @@
   <!-- スタート -->
   <div id="startScreen" class="absolute inset-0 bg-black bg-opacity-70 flex-col justify-center items-center rounded-b-lg text-white p-8 text-center flex">
     <h2 class="text-5xl font-bold mb-6">むるだっしゅ！</h2>
-    <p class="text-lg mb-4">ボタンでジャンプ！空中でもう一回で2段ジャンプ！</p>
+    <p class="text-lg mb-4">ボタンでジャンプ！2段ジャンプもできる！</p>
     <p class="text-lg mb-8">障害物をよけまくろう！</p>
     <button id="startButton" class="px-8 py-4 bg-green-600 text-white font-bold rounded-lg shadow-lg text-2xl hover:bg-green-700 transition-colors">
       ゲームスタート
@@ -96,8 +98,11 @@
     を避けながらハイスコアを目指そう！
   </p>
   <p>
-    たまに落ちてるどんぐり<span class="icon-inline" aria-hidden="true" style="width:1.1em;height:1.1em;">🌰</span>は拾いたいね。
+    たまに落ちてるどんぐり
+    <img src="./assets/Donguri.svg" alt="donguri" class="icon-inline">
+    は拾いたいね。
   </p>
+
 </div>
 
 <!-- ジャンプボタン（選択無効） -->
@@ -124,18 +129,27 @@ const startScreen = document.getElementById('startScreen');
 const startButton = document.getElementById('startButton');
 
 function loadImg(src){ const img=new Image(); img.src=src; return img; }
-const SPRITES={ blueberry:loadImg('./assets/blueberry.svg'), sunflower:loadImg('./assets/sunflower.svg') };
+const SPRITES={ blueberry:loadImg('./assets/blueberry.svg'), sunflower:loadImg('./assets/sunflower.svg'), donguri: loadImg('./assets/Donguri.svg') };
 
 /* ===== オーディオ ===== */
-let audioStarted=false, bgmAudio, endAudio;
+let audioStarted=false, bgmAudio, endAudio, pickupSound;
 async function startAudio(){
   if(audioStarted) return;
   try{
+    // BGM/SE はユーザー操作トリガで初期化
     bgmAudio = new Audio('./assets/BGM.mp3');
     bgmAudio.volume = 0.5;
     bgmAudio.loop = true;
     await bgmAudio.play();
-    endAudio = new Audio('./assets/END.mp3'); endAudio.volume=0.5;
+
+    endAudio = new Audio('./assets/END.mp3');
+    endAudio.volume=0.5;
+
+    // ★ ピコーンmp3
+    pickupSound = new Audio('./assets/pick.mp3');
+    pickupSound.volume = 1.0; // BGMに負けない音量
+    pickupSound.preload = 'auto';
+
     audioStarted = true;
   }catch(e){ console.error(e); }
 }
@@ -218,13 +232,13 @@ function drawClouds(deltaFactor){
 /* ===== ゲーム本体 ===== */
 let score=0, highScore=localStorage.getItem('muruHighScore')||0; highScoreEl.textContent=`ハイスコア: ${highScore}`;
 
-/* 速度：上限13 */
+/* 速度：上限13（無限加速しない） */
 let gameSpeed=5, baseGameSpeed=5, gameSpeedAcceleration=0.05;
 const GAME_SPEED_MAX = 13;
 
 let timeElapsed=0, obstacles=[], frame=0, spawnTimer=0;
 
-/* 湧き調整 */
+/* 障害物の湧き調整 */
 const minSpawnIntervalBase=105;
 const maxSpawnIntervalBase=155;
 const spawnIntervalReductionPerSec=4;
@@ -243,40 +257,67 @@ const DEBUG_TAPS_TO_ENABLE = 5;
 
 let nextSpawnInterval=90;
 
-/* === どんぐり（地上/空中） === */
-class Acorn{
-  constructor(type,x,y,size){
-    this.type=type; this.x=x; this.y=y; this.size=size; this.t=Math.random()*Math.PI*2;
+/* === どんぐり（地上/空中、速度固定、頻度↑） === */
+class Acorn {
+  constructor(type, x, y, size) {
+    this.type = type;
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.t = Math.random() * Math.PI * 2;
   }
-  update(d){
-    this.x -= gameSpeed*d;
-    if(this.type==='air'){
-      this.t += 0.05*d;
-      this.y += Math.sin(this.t)*0.2*d;
+
+  update(d) {
+    const fixedSpeed = 0.5 * baseGameSpeed;
+    this.x -= fixedSpeed * d;
+    if (this.type === 'air') {
+      this.t += 0.05 * d;
+      this.y += Math.sin(this.t) * 0.2 * d;
     }
   }
-  draw(){
-    ctx.font = `${this.size}px Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji, sans-serif`;
-    ctx.textBaseline = 'alphabetic';
-    ctx.fillText('🌰', this.x, this.y);
+
+  draw() {
+    const img = SPRITES.donguri; // ★ Donguri.svg 使用
+    if (img.complete) {
+      const w = this.size;
+      const h = this.size;
+      ctx.drawImage(img, this.x, this.y - h, w, h);
+    }
   }
-  getHitbox(){ return { x:this.x - this.size*0.1, y:this.y - this.size, width:this.size*0.8, height:this.size }; }
+
+  getHitbox() {
+    return {
+      x: this.x - this.size * 0.1,
+      y: this.y - this.size,
+      width: this.size * 0.8,
+      height: this.size
+    };
+  }
 }
-let acorns=[]; let acornSpawnTimer=0; let nextAcornInterval = 8000 + Math.random()*7000; // 8-15s
+
+
+  
+let acorns=[]; 
+let acornSpawnTimer=0; 
+let nextAcornInterval = 4000 + Math.random()*2000; // ★ 約5秒に1個（4〜6s）
+
 function spawnAcorn(delta){
   acornSpawnTimer += delta;
   if(acornSpawnTimer < nextAcornInterval) return;
   acornSpawnTimer = 0;
-  nextAcornInterval = 9000 + Math.random()*9000; // 9-18s
+  nextAcornInterval = 4000 + Math.random()*2000; // 次も4〜6s
+
   const size = 28 + Math.floor(Math.random()*6);
   const x = gameWidth + 10;
-  if(Math.random()<0.5){
-    const y = (gameHeight - 50) - 6; // groundY-6
+
+  if(Math.random() < 0.5){
+    const y = (gameHeight - 50) - 6; // 地上
     acorns.push(new Acorn('ground', x, y, size));
   }else{
-    const minY = (gameHeight - 50) - 120;
+    // 空中：二段ジャンプで届く高さも含む（60〜160px上）
+    const minY = (gameHeight - 50) - 160;
     const maxY = (gameHeight - 50) - 60;
-    const y = Math.floor(minY + Math.random()*(maxY-minY));
+    const y = Math.floor(minY + Math.random()*(maxY - minY));
     acorns.push(new Acorn('air', x, y, size));
   }
 }
@@ -291,7 +332,13 @@ function tryCollectAcorns(){
   for(let i=acorns.length-1;i>=0;i--){
     const a=acorns[i], h=a.getHitbox();
     const hit=(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y);
-    if(hit){ score += 10; acorns.splice(i,1); }
+    if(hit){
+      score += 10;
+      acorns.splice(i,1);
+      if(pickupSound){
+        try { pickupSound.currentTime = 0; pickupSound.play(); } catch(_){}
+      }
+    }
   }
 }
 
@@ -424,7 +471,7 @@ function restartGame(){
   startAudio(); try{ if(bgmAudio){ bgmAudio.currentTime=0; bgmAudio.play(); } }catch(_){}
   score=0; scoreEl.textContent=score; timeElapsed=0; gameSpeed=baseGameSpeed;
   obstacles=[]; acorns=[]; frame=0; spawnTimer=0; acornSpawnTimer=0;
-  nextAcornInterval = 8000 + Math.random()*7000;
+  nextAcornInterval = 4000 + Math.random()*2000; // 4〜6s
   isGameOver=false; isPaused=false; gameStarted=true;
   player.y=groundY-player.height; player.dy=0; player.isGrounded=true; player.jumpsRemaining=2;
   gameOverScreen.classList.add('hidden'); gameOverScreen.classList.remove('flex'); pauseOverlay.classList.add('hidden');
@@ -435,7 +482,7 @@ function restartGame(){
   const dbg = document.getElementById('debugBadge'); if(dbg) dbg.remove();
 
   spawnTimer=0;
-  nextSpawnInterval = minSpawnIntervalBase + Math.random()*(maxSpawnIntervalBase - maxSpawnIntervalBase);
+  nextSpawnInterval = minSpawnIntervalBase + Math.random()*(maxSpawnIntervalBase - minSpawnIntervalBase); // ★修正
 
   lastTime=performance.now(); requestAnimationFrame(gameLoop);
 }
