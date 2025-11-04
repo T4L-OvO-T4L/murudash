@@ -274,6 +274,7 @@ function drawStars(df){
 /* ===== 地面（色味調整＋速度一致） ===== */
 const groundY = gameHeight - 50;
 function drawGround(){ ctx.fillStyle='#8B5A2B'; ctx.fillRect(0,groundY,gameWidth,50); }
+initStars(); 
 
 let groundGrains = [];   // 細かい砂
 let groundPebbles = [];  // 小石
@@ -517,7 +518,7 @@ function gameOver(){
 }
 function restartGame(){
   startAudio(); try{ if(bgmAudio){ bgmAudio.currentTime=0; bgmAudio.play(); } }catch(_){}
-  score=0; initStars(); scoreEl.textContent=score; timeElapsed=0; gameSpeed=baseGameSpeed;
+  score=0; scoreEl.textContent=score; timeElapsed=0; gameSpeed=baseGameSpeed;
   obstacles=[]; acorns=[]; frame=0; spawnTimer=0;
   // ★ どんぐり抽選タイマ初期化（端末差なし）
   acornSpawnTimerMs = 0; acornNextIntervalMs = nextAcornIntervalMs();
