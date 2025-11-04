@@ -52,9 +52,11 @@
   </div>
 </div>
 
-<!-- キャンバス -->
+<!-- キャンバス＆オーバーレイ -->
 <div class="relative w-full max-w-[768px] mt-2">
   <canvas id="gameCanvas" class="rounded-b-lg shadow-md"></canvas>
+
+  <!-- スタート -->
   <div id="startScreen" class="absolute inset-0 bg-black bg-opacity-70 flex flex-col justify-center items-center rounded-b-lg text-white p-8 text-center">
     <h2 class="text-5xl font-bold mb-6">むるだっしゅ！</h2>
     <p class="text-lg mb-4">ボタンでジャンプ！空中でもう一回で2段ジャンプ！</p>
@@ -63,10 +65,14 @@
       ゲームスタート
     </button>
   </div>
+
+  <!-- ポーズ -->
   <div id="pauseOverlay" class="absolute inset-0 bg-black bg-opacity-50 hidden flex-col justify-center items-center text-white p-8 text-center rounded-b-lg">
     <h2 class="text-4xl font-bold mb-4">一時停止中</h2>
     <p class="text-xl">(「ちょっち休憩」で再開)</p>
   </div>
+
+  <!-- ゲームオーバー -->
   <div id="gameOverScreen" class="absolute inset-0 bg-black bg-opacity-50 hidden flex-col justify-center items-center text-white p-8 text-center rounded-b-lg">
     <h2 class="text-4xl font-bold mb-4">がめおべら</h2>
     <p class="text-xl mb-6">スコア: <span id="finalScore">0</span></p>
@@ -77,6 +83,19 @@
   </div>
 </div>
 
+<!-- ルール -->
+<div class="w-full max-w-[768px] text-gray-200 text-sm mt-3 mb-20 px-1 leading-relaxed text-center">
+  <p class="mb-1">
+    ひまわり<img src="./assets/sunflower.svg" alt="sunflower" class="icon-inline">
+    やブルーベリー<img src="./assets/blueberry.svg" alt="blueberry" class="icon-inline">
+    を<br class="sm:hidden"/>避けながらハイスコアを目指そう！
+  </p>
+  <p>
+    たまに落ちてるどんぐり<img src="./assets/Donguri.svg" alt="donguri" class="icon-inline">
+    は拾いたいむるね
+  </p>
+</div>
+
 <!-- ジャンプボタン -->
 <div class="w-full max-w-[768px] flex justify-center p-4 fixed bottom-0 left-1/2 -translate-x-1/2 no-select no-highlight">
   <button id="jumpButton" class="control-button w-full py-12 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-2xl" draggable="false">
@@ -85,7 +104,7 @@
 </div>
 
 <script>
-/* ====== 基本セットアップ ====== */
+/* ===== 基本セットアップ ===== */
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const scoreEl = document.getElementById('score');
@@ -98,6 +117,7 @@ const pauseButton = document.getElementById('pauseButton');
 const pauseOverlay = document.getElementById('pauseOverlay');
 const restartButton = document.getElementById('restartButton');
 const jumpButton = document.getElementById('jumpButton');
+const startButton = document.getElementById('startButton');
 
 function loadImg(src){ const img=new Image(); img.src=src; return img; }
 const SPRITES={
@@ -106,8 +126,8 @@ const SPRITES={
   donguri:  loadImg('./assets/Donguri.svg')
 };
 
-/* ====== オーディオ ====== */
-let bgmAudio,endAudio,pickupSound,audioStarted=false;
+/* ===== オーディオ ===== */
+let audioStarted=false, bgmAudio, endAudio, pickupSound;
 async function startAudio(){
   if(audioStarted) return;
   try{
@@ -115,92 +135,242 @@ async function startAudio(){
     endAudio=new Audio('./assets/END.mp3'); endAudio.volume=0.5;
     pickupSound=new Audio('./assets/pick.mp3'); pickupSound.volume=1.0; pickupSound.preload='auto';
     audioStarted=true;
-  }catch(e){console.error(e);}
+  }catch(e){ console.error(e); }
 }
 
-/* ====== 画面設定 ====== */
+/* ===== 画面サイズ ===== */
 const gameWidth=Math.min(canvas.parentElement.clientWidth,768);
 const gameHeight=300;
 canvas.width=gameWidth; canvas.height=gameHeight;
-const groundY=gameHeight-50;
 
-/* ====== 地面 ====== */
+/* ===== 空・雲（明るめに） ===== */
+const THEMES={ morning:{top:[160,210,235],bottom:[247,250,252]} }; // 朝固定で暗くならんように
+let skyCurrent={ top:[...THEMES.morning.top], bottom:[...THEMES.morning.bottom] };
+function drawSky(){
+  const g=ctx.createLinearGradient(0,0,0,gameHeight);
+  g.addColorStop(0,`rgb(${skyCurrent.top.join(',')})`);
+  g.addColorStop(0.8,`rgb(${skyCurrent.bottom.join(',')})`);
+  ctx.fillStyle=g; ctx.fillRect(0,0,gameWidth,gameHeight);
+}
+let clouds = Array.from({length:6},()=>({
+  x: Math.random()*gameWidth,
+  y: 30 + Math.random()*100,
+  base: 0.35 + Math.random()*0.35,
+  size: 70 + Math.random()*70
+}));
+function drawClouds(df){
+  ctx.fillStyle=`rgba(255,255,255,0.42)`;
+  const speedBoost = 1 + (gameSpeed / 10);
+  for(const c of clouds){
+    const v = c.base * speedBoost;
+    c.x -= v * df;
+    if(c.x < -220){ c.x = gameWidth + 120; c.y = 30 + Math.random()*100; }
+    ctx.beginPath(); ctx.ellipse(c.x, c.y, c.size, c.size*0.55, 0, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(c.x + c.size*0.6, c.y + 10, c.size*0.9, c.size*0.48, 0, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+/* ===== 地面（床色寄せ） ===== */
+const groundY=gameHeight-50;
 const FLOOR_BASE={r:139,g:90,b:43};
-function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
 function rgbStr(r,g,b){return`rgb(${r|0},${g|0},${b|0})`;}
 function rgbaStr(r,g,b,a){return`rgba(${r|0},${g|0},${b|0},${a})`;}
-function drawGround(){ctx.fillStyle='#8B5A2B';ctx.fillRect(0,groundY,gameWidth,50);}
-
+function drawGround(){ ctx.fillStyle='#8B5A2B'; ctx.fillRect(0,groundY,gameWidth,50); }
 let groundGrains=[],groundPebbles=[],groundStreaks=[];
 function initGroundDetails(){
-  const gN=Math.floor(gameWidth*0.38),pN=Math.floor(gameWidth*0.08),sN=Math.floor(gameWidth*0.05);
+  const gN=Math.floor(gameWidth*0.38), pN=Math.floor(gameWidth*0.08), sN=Math.floor(gameWidth*0.05);
   groundGrains=Array.from({length:gN},()=>({
-    x:Math.random()*gameWidth,y:groundY+8+Math.random()*38,r:0.8+Math.random()*1.4,
+    x:Math.random()*gameWidth, y:groundY+8+Math.random()*38, r:0.8+Math.random()*1.4,
     color:rgbStr(FLOOR_BASE.r+Math.random()*10,FLOOR_BASE.g+Math.random()*8,FLOOR_BASE.b+Math.random()*6)
   }));
   groundPebbles=Array.from({length:pN},()=>({
-    x:Math.random()*gameWidth,y:groundY+10+Math.random()*36,w:2+Math.random()*3,h:1+Math.random()*2,
+    x:Math.random()*gameWidth, y:groundY+10+Math.random()*36, w:2+Math.random()*3, h:1+Math.random()*2,
     color:rgbStr(FLOOR_BASE.r-6+Math.random()*12,FLOOR_BASE.g-6+Math.random()*12,FLOOR_BASE.b-6+Math.random()*12)
   }));
   groundStreaks=Array.from({length:sN},()=>({
-    x:Math.random()*gameWidth,y:groundY+6+Math.random()*10,len:8+Math.random()*18,
+    x:Math.random()*gameWidth, y:groundY+6+Math.random()*10, len:8+Math.random()*18,
     color:rgbaStr(FLOOR_BASE.r-8+Math.random()*8,FLOOR_BASE.g-8+Math.random()*8,FLOOR_BASE.b-8+Math.random()*8,0.55)
   }));
 }
 initGroundDetails();
 function drawGroundDetails(df){
   const v=gameSpeed*df;
-  for(const g of groundGrains){g.x-=v;if(g.x<-2){g.x=gameWidth+Math.random()*40;}ctx.fillStyle=g.color;ctx.beginPath();ctx.arc(g.x,g.y,g.r,0,Math.PI*2);ctx.fill();}
-  for(const p of groundPebbles){p.x-=v;if(p.x<-3){p.x=gameWidth+Math.random()*60;}ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,p.w,p.h);}
-  for(const s of groundStreaks){s.x-=v;if(s.x<-s.len){s.x=gameWidth+Math.random()*80;}ctx.strokeStyle=s.color;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(s.x,s.y);ctx.lineTo(s.x+s.len,s.y);ctx.stroke();}
+  for(const g of groundGrains){ g.x-=v; if(g.x<-2) g.x=gameWidth+Math.random()*40; ctx.fillStyle=g.color; ctx.beginPath(); ctx.arc(g.x,g.y,g.r,0,Math.PI*2); ctx.fill(); }
+  for(const p of groundPebbles){ p.x-=v; if(p.x<-3) p.x=gameWidth+Math.random()*60; ctx.fillStyle=p.color; ctx.fillRect(p.x,p.y,p.w,p.h); }
+  for(const s of groundStreaks){ s.x-=v; if(s.x<-s.len) s.x=gameWidth+Math.random()*80; ctx.strokeStyle=s.color; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(s.x,s.y); ctx.lineTo(s.x+s.len,s.y); ctx.stroke(); }
 }
 
-/* ====== ゲーム進行 ====== */
-let gameSpeed=5,baseGameSpeed=5,gameSpeedAcceleration=0.05,timeElapsed=0,score=0,isPaused=false,isGameOver=false,gameStarted=false,lastTime=0,obstacles=[];
+/* ===== ゲーム本体 ===== */
+let score=0, highScore=localStorage.getItem('muruHighScore')||0; highScoreEl.textContent=`ハイスコア: ${highScore}`;
+let gameSpeed=5, baseGameSpeed=5, gameSpeedAcceleration=0.05;
+const GAME_SPEED_MAX=13;
 
-/* ====== どんぐり（5秒ごとに30％抽選） ====== */
-class Acorn{
-  constructor(type,x,y,size){this.type=type;this.x=x;this.y=y;this.size=size;this.t=Math.random()*Math.PI*2;}
-  update(deltaMs){const fixedSpeed=0.5*baseGameSpeed;const df=deltaMs/(1000/60);this.x-=fixedSpeed*df;if(this.type==='air'){this.t+=0.05*df;this.y+=Math.sin(this.t)*0.2*df;}}
-  draw(){const img=SPRITES.donguri;if(img&&img.complete){ctx.drawImage(img,this.x,this.y-this.size,this.size,this.size);}}
-  getHitbox(){return{x:this.x-this.size*0.05,y:this.y-this.size*1.02,width:this.size*0.9,height:this.size*1.02};}
-}
-let acorns=[],acornSpawnTimer=0;
-function randIntervalMs(){return 5000+Math.random()*2000;}
-let nextAcornInterval=randIntervalMs();
-function maybeSpawnAcorn(){if(Math.random()>=0.3)return;const x=gameWidth+20;const size=56+Math.floor(Math.random()*12);if(Math.random()<0.5){acorns.push(new Acorn('ground',x,groundY-6,size));}else{const y=groundY-160+Math.random()*100;acorns.push(new Acorn('air',x,y,size));}}
-function spawnAcorn(deltaMs){acornSpawnTimer+=deltaMs;if(acornSpawnTimer<nextAcornInterval)return;acornSpawnTimer=0;nextAcornInterval=randIntervalMs();maybeSpawnAcorn();}
-function updateAcorns(deltaMs){for(let i=acorns.length-1;i>=0;i--){acorns[i].update(deltaMs);acorns[i].draw();if(acorns[i].x<-50)acorns.splice(i,1);}}
-function tryCollectAcorns(){const p={x:player.x,y:player.y,width:player.width*0.6,height:player.height*0.7};for(let i=acorns.length-1;i>=0;i--){const a=acorns[i],h=a.getHitbox();if(p.x<h.x+h.width&&p.x+p.width>h.x&&p.y<h.y+h.height&&p.y+p.height>h.y){score+=10;acorns.splice(i,1);if(pickupSound){pickupSound.currentTime=0;pickupSound.play();}}}}
+let timeElapsed=0, obstacles=[], frame=0, spawnTimer=0;
+const minSpawnIntervalBase=105, maxSpawnIntervalBase=155, spawnIntervalReductionPerSec=4;
+const EARLY_EASE_MS=15000, EARLY_EASE_START_MULT=1.15;
+function clamp01(v){ return Math.max(0,Math.min(1,v)); }
+function getEarlyEaseMultiplier(ms){ const t=clamp01(ms/EARLY_EASE_MS); return EARLY_EASE_START_MULT + (1.0-EARLY_EASE_START_MULT)*t; }
+function getMinPixelGap(ms){ const t=clamp01(ms/EARLY_EASE_MS); const s=Math.round(gameWidth*0.42), e=Math.round(gameWidth*0.32); return Math.round(s+(e-s)*t); }
+function currentOnscreenLimit(ms){ if(ms<45000) return 2; if(ms<120000) return 3; return 4; }
 
-/* ====== プレイヤー ====== */
-const player={x:50,y:groundY-50,width:50,height:50,dy:0,gravity:0.8,jumpForce:15,isGrounded:true,jumpsRemaining:2,image:new Image(),imageLoaded:false};
+let isGameOver=false, isPaused=false, gameStarted=false, lastTime=0;
+
+/* ===== プレイヤー ===== */
+const player={x:50,y:groundY-50,width:50,height:50,dy:0,gravity:0.8,jumpForce:15,isGrounded:true,jumpsRemaining:2,isJumping:false,image:new Image(),imageLoaded:false};
 player.image.src='./assets/Muru.png';
-player.image.onload=()=>{player.imageLoaded=true;player.width=(player.image.width/player.image.height)*player.height;};
-function drawPlayer(){if(player.imageLoaded)ctx.drawImage(player.image,player.x,player.y,player.width,player.height);else{ctx.fillStyle='green';ctx.fillRect(player.x,player.y,player.width,player.height);}}
-function updatePlayer(d){if(!player.isGrounded){player.dy+=player.gravity*d;player.y+=player.dy*d;}if(player.y+player.height>=groundY){player.y=groundY-player.height;player.dy=0;player.isGrounded=true;player.jumpsRemaining=2;}}
-function playerJump(){if(isGameOver||isPaused||!gameStarted)return;if(player.jumpsRemaining>0){player.dy=-player.jumpForce;player.isGrounded=false;player.jumpsRemaining--;}}
-function stopJump(){if(player.dy<0)player.dy=Math.max(player.dy,-5);}
+player.image.onload=()=>{ player.imageLoaded=true; player.width=(player.image.width/player.image.height)*player.height; };
+function drawPlayer(){ if(player.imageLoaded) ctx.drawImage(player.image,player.x,player.y,player.width,player.height); else{ ctx.fillStyle='green'; ctx.fillRect(player.x,player.y,player.width,player.height);} }
+function updatePlayer(d){ if(!player.isGrounded){ player.dy+=player.gravity*d; player.y+=player.dy*d; } if(player.y+player.height>=groundY){ player.y=groundY-player.height; player.dy=0; player.isGrounded=true; player.jumpsRemaining=2; } }
+function playerJump(){ startAudio(); if(isGameOver||isPaused||!gameStarted) return; if(player.jumpsRemaining>0){ player.dy=-player.jumpForce; player.isGrounded=false; player.isJumping=true; player.jumpsRemaining--; } }
+function stopJump(){ if(player.isJumping && player.dy<0){ player.dy=Math.max(player.dy,-5); } player.isJumping=false; }
 
-/* ====== メインループ ====== */
-function gameLoop(ts){
-  if(isGameOver||isPaused||!gameStarted)return;
-  const dt=ts-lastTime;lastTime=ts;const df=dt/(1000/60);timeElapsed+=dt;
-  ctx.clearRect(0,0,gameWidth,gameHeight);
-  drawGround();drawGroundDetails(df);
-  updatePlayer(df);drawPlayer();
-  spawnAcorn(dt);updateAcorns(dt);tryCollectAcorns();
-  scoreEl.textContent=score;
-  requestAnimationFrame(gameLoop);
+/* ===== 障害物 ===== */
+class Obstacle{
+  constructor(type,img,y,size){
+    this.x=gameWidth; this.y=y; this.type=type; this.img=img; this.height=size;
+    const iw=img.naturalWidth||1, ih=img.naturalHeight||1, aspect=iw/ih;
+    this.width=this.height*aspect; this.passed=false;
+  }
+  draw(){ ctx.drawImage(this.img,this.x,this.y-this.height,this.width,this.height); }
+  update(d){ this.x -= gameSpeed*d; }
+  getHitbox(){ const shrink=this.type==='ground_large'?0.65:0.8; const w=this.width*shrink, h=this.height*shrink; return { x:this.x+(this.width-w)/2, y:(this.y-this.height)+(this.height-h)/2, width:w, height:h }; }
+}
+const SCALE=0.7;
+let nextSpawnInterval=90;
+function spawnObstacle(delta){
+  spawnTimer += delta;
+  let minSpawnInterval = Math.max(minSpawnIntervalBase - (timeElapsed/1000)*spawnIntervalReductionPerSec, 40);
+  let maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed/1000)*spawnIntervalReductionPerSec, 70);
+  const easeMul = getEarlyEaseMultiplier(timeElapsed); minSpawnInterval*=easeMul; maxSpawnInterval*=easeMul;
+
+  function lateDensityMul(ms){ if(ms<60000) return 1.0; if(ms<120000) return 0.85; return 0.72; }
+  const ld = lateDensityMul(timeElapsed); minSpawnInterval*=ld; maxSpawnInterval*=ld;
+
+  if(spawnTimer < nextSpawnInterval) return;
+
+  const onscreen = obstacles.filter(o => (o.x + o.width > 0) && (o.x < gameWidth)).length;
+  const limit = currentOnscreenLimit(timeElapsed); if(onscreen >= limit) return;
+
+  const last = obstacles.length ? obstacles[obstacles.length-1] : null;
+  const minGapPx = getMinPixelGap(timeElapsed);
+  if(last){ const gapPx = gameWidth - (last.x + last.width); if(gapPx < minGapPx) return; }
+
+  const rand=Math.random();
+  if(rand<0.4){
+    const size=(40+Math.random()*20)*SCALE;
+    const yPos = Math.random()<0.3 ? groundY-30 : groundY-70-Math.random()*50;
+    obstacles.push(new Obstacle('air',SPRITES.blueberry,yPos,size));
+  }else{
+    if(score>10 && Math.random()<0.3) obstacles.push(new Obstacle('ground_large',SPRITES.sunflower,groundY,120*SCALE*1.25));
+    else obstacles.push(new Obstacle('ground',SPRITES.sunflower,groundY,(60+Math.random()*20)*SCALE));
+  }
+
+  nextSpawnInterval = minSpawnInterval + Math.random()*(maxSpawnInterval - minSpawnInterval);
+  spawnTimer=0;
+}
+function updateObstacles(d){
+  for(let i=obstacles.length-1;i>=0;i--){
+    obstacles[i].update(d); obstacles[i].draw();
+    if(obstacles[i].x + obstacles[i].width < 0) obstacles.splice(i,1);
+  }
 }
 
-/* ====== 操作 ====== */
-jumpButton.addEventListener('pointerdown',()=>playerJump());
-jumpButton.addEventListener('pointerup',()=>stopJump());
-pauseButton.addEventListener('click',()=>{isPaused=!isPaused;pauseOverlay.classList.toggle('hidden',!isPaused);if(!isPaused){lastTime=performance.now();requestAnimationFrame(gameLoop);}});
-restartButton.addEventListener('click',()=>location.reload());
-document.getElementById('startButton').addEventListener('click',()=>{
-  startAudio();gameStarted=true;startScreen.classList.add('hidden');lastTime=performance.now();requestAnimationFrame(gameLoop);
+/* ===== どんぐり（5秒±1秒ごとに30%で出現・端末差なし） ===== */
+class Acorn{
+  constructor(type,x,y,size){ this.type=type; this.x=x; this.y=y; this.size=size; this.t=Math.random()*Math.PI*2; }
+  update(deltaMs){ const df=deltaMs/(1000/60); const fixedSpeed=0.5*baseGameSpeed; this.x-=fixedSpeed*df; if(this.type==='air'){ this.t+=0.05*df; this.y += Math.sin(this.t)*0.2*df; } }
+  draw(){ const img=SPRITES.donguri; if(img && img.complete){ ctx.drawImage(img,this.x,this.y-this.size,this.size,this.size); } }
+  getHitbox(){ return { x:this.x-this.size*0.05, y:this.y-this.size*1.02, width:this.size*0.9, height:this.size*1.02 }; }
+}
+let acorns=[], acornSpawnTimer=0;
+function randIntervalMs(){ return 5000 + Math.random()*2000; }
+let nextAcornInterval = randIntervalMs();
+function maybeSpawnAcorn(){ if(Math.random()>=0.30) return; const x=gameWidth+20; const size=56 + Math.floor(Math.random()*12); if(Math.random()<0.5){ acorns.push(new Acorn('ground',x,groundY-6,size)); }else{ const y=groundY-160 + Math.random()*100; acorns.push(new Acorn('air',x,y,size)); } }
+function spawnAcorn(deltaMs){ acornSpawnTimer += deltaMs; if(acornSpawnTimer < nextAcornInterval) return; acornSpawnTimer=0; nextAcornInterval=randIntervalMs(); maybeSpawnAcorn(); }
+function updateAcorns(deltaMs){ for(let i=acorns.length-1;i>=0;i--){ acorns[i].update(deltaMs); acorns[i].draw(); if(acorns[i].x<-50) acorns.splice(i,1); } }
+function tryCollectAcorns(){ const p={x:player.x,y:player.y,width:player.width*0.6,height:player.height*0.7}; for(let i=acorns.length-1;i>=0;i--){ const a=acorns[i], h=a.getHitbox(); if(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y){ score+=10; acorns.splice(i,1); if(pickupSound){ try{ pickupSound.currentTime=0; pickupSound.play(); }catch(_){ } } } } }
+
+/* ===== 当たり判定 / スコア / 速度 ===== */
+function checkCollision(){
+  const p={x:player.x,y:player.y,width:player.width*0.6,height:player.height*0.7};
+  for(const o of obstacles){
+    const h=o.getHitbox();
+    if(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y){ gameOver(); return; }
+  }
+}
+function updateScore(){
+  for(const o of obstacles){ if(!o.passed && o.x+o.width < player.x){ score++; o.passed=true; } }
+  tryCollectAcorns();
+  scoreEl.textContent=score;
+  const tSec=timeElapsed/1000;
+  gameSpeed=Math.min(baseGameSpeed + tSec*gameSpeedAcceleration, GAME_SPEED_MAX);
+}
+
+/* ===== 終了処理 ===== */
+function buildXIntentUrl(score){ const text=`むるだっしゅ！スコアは「${score}」でした🌻`; return `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`; }
+function gameOver(){
+  if(isGameOver) return;
+  isGameOver=true; gameStarted=false;
+  try{ if(bgmAudio){ bgmAudio.pause(); bgmAudio.currentTime=0; } if(endAudio){ endAudio.currentTime=0; endAudio.play(); } }catch(_){}
+  const hs=Number(highScore)||0; if(score>hs){ localStorage.setItem('muruHighScore', score); highScoreEl.textContent=`ハイスコア: ${score}`; }
+  finalScoreEl.textContent=score; shareButton.href=buildXIntentUrl(score);
+  gameOverScreen.classList.remove('hidden');
+}
+
+/* ===== ループ ===== */
+function gameLoop(ts){
+  if(isGameOver||isPaused||!gameStarted) return;
+  const dt=ts-lastTime; lastTime=ts; const df=dt/(1000/60); timeElapsed+=dt;
+
+  // 背景
+  drawSky(); drawClouds(df);
+
+  // 地面
+  drawGround(); drawGroundDetails(df);
+
+  // プレイヤー／障害物／どんぐり
+  updatePlayer(df); drawPlayer();
+  spawnObstacle(df); updateObstacles(df);
+  spawnAcorn(dt); updateAcorns(dt);
+
+  // 判定・スコア・速度
+  checkCollision(); updateScore();
+
+  frame++; requestAnimationFrame(gameLoop);
+}
+
+/* ===== 操作 ===== */
+jumpButton.addEventListener('pointerdown', e=>{ e.preventDefault(); playerJump(); });
+jumpButton.addEventListener('pointerup',   e=>{ e.preventDefault(); stopJump(); });
+window.addEventListener('keydown', e=>{ if(e.repeat) return; if(!gameStarted) return; if(e.code==='Space'||e.code==='ArrowUp') playerJump(); if(e.code==='KeyP') togglePause(); });
+window.addEventListener('keyup', e=>{ if(e.code==='Space'||e.code==='ArrowUp') stopJump(); });
+
+function togglePause(){
+  if(isGameOver||!gameStarted) return;
+  isPaused=!isPaused;
+  pauseOverlay.classList.toggle('hidden',!isPaused);
+  if(!isPaused){ lastTime=performance.now(); requestAnimationFrame(gameLoop); }
+}
+pauseButton.addEventListener('click', e=>{ e.preventDefault(); togglePause(); });
+
+restartButton.addEventListener('click', e=>{
+  e.preventDefault();
+  // ソフトリスタート
+  score=0; scoreEl.textContent=0; timeElapsed=0; gameSpeed=baseGameSpeed;
+  obstacles=[]; acorns=[]; spawnTimer=0; acornSpawnTimer=0; nextAcornInterval=randIntervalMs();
+  isGameOver=false; isPaused=false; gameStarted=true;
+  player.y=groundY-player.height; player.dy=0; player.isGrounded=true; player.jumpsRemaining=2;
+  gameOverScreen.classList.add('hidden');
+  try{ if(bgmAudio){ bgmAudio.currentTime=0; bgmAudio.play(); } }catch(_){}
+  lastTime=performance.now(); requestAnimationFrame(gameLoop);
+});
+
+startButton.addEventListener('click', e=>{
+  e.preventDefault();
+  if(gameStarted) return;
+  startAudio();
+  gameStarted=true; startScreen.classList.add('hidden');
+  lastTime=performance.now(); requestAnimationFrame(gameLoop);
 });
 </script>
 </body>
