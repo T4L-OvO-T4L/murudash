@@ -21,8 +21,10 @@ https://kuronekotsuki.booth.pm/items/4672957
 | キャラクター | Muru.png | 自作 | ムルルをモチーフにしたオリジナル描き下ろし |
 | BGM | BGM.mp3 | 自作 | オリジナルBGM |
 | 効果音（ゲームオーバー） | END.mp3 | [効果音ラボ](https://soundeffect-lab.info/) | 使用許諾：商用利用可・クレジット任意 |
+| 効果音（どんぐり拾得） | pick.mp3 | [効果音ラボ](https://soundeffect-lab.info/) | 使用許諾：商用利用可・クレジット任意 |
 | ブルーベリー | blueberry.svg | [Twemoji](https://github.com/twitter/twemoji) | Licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) |
 | ひまわり | sunflower.svg | イラストAC | AI → SVG 変換済み |
+| どんぐり | Donguri.svg | イラストAC | AI → SVG 変換済み |
 
 ---
 
@@ -45,5 +47,6 @@ https://kuronekotsuki.booth.pm/items/4672957
 - 効果音提供：「効果音ラボ」 https://soundeffect-lab.info/  
 
 - むるだっしゅ！制作：たる（X:@T4L_OvO_）
+
 
 
