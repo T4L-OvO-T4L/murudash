@@ -14,7 +14,7 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
   body { font-family:'Inter',sans-serif; touch-action:manipulation; overflow:hidden; overscroll-behavior:none; background:#1a202c; }
-  canvas { display:block; width:100%; } /* 👈 コンテナ幅いっぱいに */
+  canvas { display:block; }
   .control-button { transition: background-color .1s, transform .1s; }
   .control-button:active { transform: scale(.95); background:#2c5282; }
   .pause-button { transition: background-color .1s, transform .1s; }
@@ -30,8 +30,8 @@
   ※音が出ます。ご注意ください。
 </div>
 
-<!-- ヘッダー（最大幅↑） -->
-<div class="w-full max-w-screen-xl p-3 bg-white rounded-t-lg shadow-md">
+<!-- ヘッダー -->
+<div class="w-full max-w-[1024px] p-3 bg-white rounded-t-lg shadow-md">
   <div class="flex items-center justify-between gap-3">
     <div class="text-left">
       <span class="text-xl sm:text-2xl font-bold text-blue-600">
@@ -47,8 +47,8 @@
   </div>
 </div>
 
-<!-- キャンバス＆オーバーレイ（最大幅↑） -->
-<div class="relative w-full max-w-screen-xl mt-2 mb-24">
+<!-- キャンバス＆オーバーレイ -->
+<div class="relative w-full max-w-[1024px] mt-2 mb-24">
   <canvas id="gameCanvas" class="rounded-b-lg shadow-md"></canvas>
 
   <!-- スタート -->
@@ -82,8 +82,8 @@
   </div>
 </div>
 
-<!-- ジャンプボタン（最大幅↑） -->
-<div class="w-full max-w-screen-xl flex justify-center p-4 fixed bottom-0 left-1/2 -translate-x-1/2">
+<!-- ジャンプボタン -->
+<div class="w-full max-w-[1024px] flex justify-center p-4 fixed bottom-0 left-1/2 -translate-x-1/2">
   <button id="jumpButton" class="control-button w-full py-12 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-2xl">ジャンプ</button>
 </div>
 
@@ -113,43 +113,19 @@ async function startAudio(){
   try{
     bgmAudio = new Audio('./assets/BGM.mp3');
     bgmAudio.volume = 0.5;
-    bgmAudio.loop = true;
+    bgmAudio.loop = true; // ループは使うけど、ループ検知は時間逆行で拾う
     await bgmAudio.play();
     endAudio = new Audio('./assets/END.mp3'); endAudio.volume=0.5;
     audioStarted = true;
   }catch(e){ console.error(e); }
 }
 
-/* ===== 画面サイズ（横長 & リサイズ対応） ===== */
-let gameWidth = 0, gameHeight = 0, groundY = 0;
-function computeDims(){
-  const parentWidth = canvas.parentElement.clientWidth; // コンテナ幅
-  // 横長寄せ：最大1280px、高さは幅の32%（最低280px）
-  const w = Math.min(parentWidth, 1280);
-  const h = Math.max(280, Math.round(w * 0.32));
-  return {w, h};
-}
-function applyResize(){
-  const {w, h} = computeDims();
-  gameWidth = w; gameHeight = h;
-  canvas.width = gameWidth;
-  canvas.height = gameHeight;
-  groundY = gameHeight - 50;
-
-  // プレイヤーの足元を地面に合わせ直す
-  if (player) {
-    const wasOnGround = player.y + player.height >= groundY - 0.5;
-    if (wasOnGround) {
-      player.y = groundY - player.height;
-      player.dy = 0; player.isGrounded = true;
-    }
-  }
-}
-window.addEventListener('resize', applyResize);
-window.addEventListener('orientationchange', applyResize);
-
-/* 初回適用 */
-applyResize();
+/* ===== 画面サイズ（横長） ===== */
+const parentWidth = canvas.parentElement.clientWidth;
+// 横長寄せ：最大 1024px。高さは幅の約 32%（dinoっぽい薄め）
+const gameWidth = Math.min(parentWidth, 1024);
+const gameHeight = Math.max(280, Math.round(gameWidth * 0.32));
+canvas.width = gameWidth; canvas.height = gameHeight;
 
 /* ===== 空のテーマ（曲タイミング連動） ===== */
 const THEMES={
@@ -161,11 +137,11 @@ let skyCurrent = { top:[...THEMES.morning.top], bottom:[...THEMES.morning.bottom
 let skyTarget  = { top:[...THEMES.morning.top], bottom:[...THEMES.morning.bottom] };
 const skyLerpSpeed = 0.03;
 
-let phaseName = 'morning';
+let phaseName = 'morning'; // 'morning' | 'evening' | 'night'
 function setBackgroundTheme(themeKey){
   const t = THEMES[themeKey] || THEMES.morning;
   skyTarget = { top:[...t.top], bottom:[...t.bottom] };
-  phaseName = themeKey;
+  phaseName = themeKey; // 雲の夜判定にも使う
 }
 function drawSky(deltaFactor){
   const t = Math.min(1, skyLerpSpeed * deltaFactor);
@@ -174,37 +150,50 @@ function drawSky(deltaFactor){
     skyCurrent.bottom[i] += (skyTarget.bottom[i] - skyCurrent.bottom[i]) * t;
   }
   const g = ctx.createLinearGradient(0,0,0,gameHeight);
-  g.addColorStop(0, `rgb(${skyCurrent.top.map(x=>x|0).join(',')})`);
-  g.addColorStop(0.8, `rgb(${skyCurrent.bottom.map(x=>x|0).join(',')})`);
+  const top = `rgb(${skyCurrent.top.map(x=>x|0).join(',')})`;
+  const bottom = `rgb(${skyCurrent.bottom.map(x=>x|0).join(',')})`;
+  g.addColorStop(0, top); g.addColorStop(0.8, bottom);
   ctx.fillStyle = g; ctx.fillRect(0,0,gameWidth,gameHeight);
 }
 
 /* ===== 曲タイミング連動 ===== */
-const EVENING_MARK_S = 95;
+const EVENING_MARK_S = 95;   // 1:35で夕方
 const EPS = 0.25;
-let lastAudioTime = 0, loopCount = 0, eveningTriggeredThisCycle = false;
+
+let lastAudioTime = 0;
+let loopCount = 0;                 // 1回ループで+1
+let eveningTriggeredThisCycle = false;
 
 function resetAudioSyncState(){
   lastAudioTime = 0;
   loopCount = 0;
   eveningTriggeredThisCycle = false;
-  setBackgroundTheme('morning');
+  setBackgroundTheme('morning'); // 初期は朝
 }
+
 function updateSkyByMusic(){
   if(!bgmAudio) return;
   const t = bgmAudio.currentTime || 0;
+
+  // 各周一回だけ夕方化
   if(!eveningTriggeredThisCycle && t >= EVENING_MARK_S - EPS){
-    setBackgroundTheme('evening'); eveningTriggeredThisCycle = true;
+    setBackgroundTheme('evening');
+    eveningTriggeredThisCycle = true;
   }
+
+  // ループ検知（currentTime が逆行したら）
   if(t + EPS < lastAudioTime){
-    loopCount++; eveningTriggeredThisCycle = false;
-    setBackgroundTheme((loopCount % 2 === 1) ? 'night' : 'morning');
+    loopCount++;
+    eveningTriggeredThisCycle = false; // 次周の夕方トリガ解放
+    const toNight = (loopCount % 2 === 1);
+    setBackgroundTheme(toNight ? 'night' : 'morning'); // 1周目→夜、2周目→朝、交互
   }
+
   lastAudioTime = t;
 }
 
 /* ===== 雲 ===== */
-let clouds = Array.from({length:6},()=>({
+let clouds = Array.from({length:6},()=>({ // 横長に合わせて雲1個増量
   x: Math.random()*gameWidth,
   y: 40 + Math.random()*Math.max(90, gameHeight*0.35),
   speed: 0.12 + Math.random()*0.18,
@@ -225,35 +214,43 @@ function drawClouds(deltaFactor){
 /* ===== ゲーム本体 ===== */
 let score=0, highScore=localStorage.getItem('muruHighScore')||0; highScoreEl.textContent=`ハイスコア: ${highScore}`;
 
-/* 速度：上限13（ちょい速） */
+/* 速度：ベース＋加速、ただし上限を設けて打ち止め（ちょい速く） */
 let gameSpeed=5, baseGameSpeed=5, gameSpeedAcceleration=0.05;
-const GAME_SPEED_MAX = 13;
+const GAME_SPEED_MAX = 13; // ★ 12→13（到達時間は ~140s のまま）
 
 let timeElapsed=0, obstacles=[], frame=0, spawnTimer=0;
 
-/* 横長用の湧き調整 */
-const minSpawnIntervalBase=105;
-const maxSpawnIntervalBase=155;
+/* 横長に合わせて少し詰め気味（でも等間隔感を維持） */
+const minSpawnIntervalBase=105;  // 110→105
+const maxSpawnIntervalBase=155;  // 160→155
 const spawnIntervalReductionPerSec=4;
 
-/* 画面内同時表示：序盤2、90秒以降は最大3 */
-function currentOnscreenLimit(ms){ return (ms < 90_000) ? 2 : 3; }
+/* 序盤の密度ゆるめ（軽め） */
+const EARLY_EASE_MS = 15_000;
+const EARLY_EASE_START_MULT = 1.15;
 
-/* デバッグ：ポーズ中5タップ/キーで無敵ON */
+/* 画面内同時表示の上限：基本2 / 90秒以降は最大3 */
+function currentOnscreenLimit(ms){
+  return (ms < 90_000) ? 2 : 3;
+}
+
 let isGameOver=false, isPaused=false, gameStarted=false, lastTime=0;
-let isDebug=false, debugTapCount=0;
+const groundY = gameHeight - 50;
+
+/* ★ デバッグ：ポーズ中にジャンプ/スペース5回で無敵ON */
+let isDebug=false;
+let debugTapCount=0;
 const DEBUG_TAPS_TO_ENABLE = 5;
 
 let nextSpawnInterval=90;
 
-/* ユーティリティ */
 function clamp01(v){ return Math.max(0, Math.min(1, v)); }
-const EARLY_EASE_MS = 15_000, EARLY_EASE_START_MULT = 1.15;
 function getEarlyEaseMultiplier(ms){ const t=clamp01(ms/EARLY_EASE_MS); return EARLY_EASE_START_MULT + (1.0 - EARLY_EASE_START_MULT) * t; }
 function getMinPixelGap(ms){
+  // 横幅に応じて“画面上の最小距離”を割合でチューニング
   const t=clamp01(ms/EARLY_EASE_MS);
-  const start = Math.round(gameWidth * 0.42);
-  const end   = Math.round(gameWidth * 0.32);
+  const start = Math.round(gameWidth * 0.42); // 開始は画面の42%ぶん空ける
+  const end   = Math.round(gameWidth * 0.32); // だんだん32%まで詰める
   return Math.round(start + (end - start) * t);
 }
 
@@ -270,11 +267,10 @@ function enableDebugMode(){
 function resetDebugTapCounter(){ debugTapCount = 0; }
 
 /* プレイヤー */
-const player={x:50,y:0,width:50,height:50,dy:0,gravity:0.8,jumpForce:15,isGrounded:true,jumpsRemaining:2,isJumping:false,image:new Image(),imageLoaded:false};
+const player={x:50,y:groundY-50,width:50,height:50,dy:0,gravity:0.8,jumpForce:15,isGrounded:true,jumpsRemaining:2,isJumping:false,image:new Image(),imageLoaded:false};
 player.image.src='./assets/Muru.png';
-player.image.onload=()=>{player.imageLoaded=true;player.width=(player.image.width/player.image.height)*player.height; player.y=groundY-player.height;};
+player.image.onload=()=>{player.imageLoaded=true;player.width=(player.image.width/player.image.height)*player.height;};
 
-/* 描画・更新 */
 function drawPlayer(){ if(player.imageLoaded) ctx.drawImage(player.image,player.x,player.y,player.width,player.height); else { ctx.fillStyle='green'; ctx.fillRect(player.x,player.y,player.width,player.height); } }
 function updatePlayer(d){
   if(!player.isGrounded){ player.dy+=player.gravity*d; player.y+=player.dy*d; }
@@ -295,6 +291,7 @@ class Obstacle{
   getHitbox(){ const shrink=this.type==='ground_large'?0.65:0.8; const w=this.width*shrink,h=this.height*shrink;
     return { x:this.x+(this.width-w)/2, y:(this.y-this.height)+(this.height-h)/2, width:w, height:h }; }
 }
+
 const SCALE=0.7;
 function spawnObstacle(delta){
   spawnTimer += delta;
@@ -305,6 +302,7 @@ function spawnObstacle(delta){
   const easeMul = getEarlyEaseMultiplier(timeElapsed);
   minSpawnInterval *= easeMul; maxSpawnInterval *= easeMul;
 
+  // まだ湧かせない
   if(spawnTimer < nextSpawnInterval) return;
 
   // 画面内同時上限（0〜gameWidth の範囲だけ数える）
@@ -312,7 +310,7 @@ function spawnObstacle(delta){
   const limit = currentOnscreenLimit(timeElapsed);
   if(onscreen >= limit) return;
 
-  // 直前とのピクセル距離チェック
+  // 直前とのピクセル距離チェック（詰まり回避）
   const last = obstacles.length ? obstacles[obstacles.length-1] : null;
   const minGapPx = getMinPixelGap(timeElapsed);
   if(last){
@@ -335,9 +333,11 @@ function spawnObstacle(delta){
     }
   }
 
+  // 次回までの間隔
   nextSpawnInterval = minSpawnInterval + Math.random()*(maxSpawnInterval - minSpawnInterval);
   spawnTimer = 0;
 }
+
 function updateObstacles(d){
   for(let i=obstacles.length-1;i>=0;i--){
     obstacles[i].update(d);
@@ -346,7 +346,6 @@ function updateObstacles(d){
   }
 }
 
-/* 当たり判定 */
 function checkCollision(){
   if(isDebug) return; // 無敵
   const p={x:player.x,y:player.y,width:player.width*0.6,height:player.height*0.7};
@@ -364,12 +363,10 @@ function updateScore(){
   gameSpeed = Math.min(baseGameSpeed + tSec*gameSpeedAcceleration, GAME_SPEED_MAX);
 }
 
-/* ユーティリティ描画 */
 function clearCanvas(){ ctx.clearRect(0,0,gameWidth,gameHeight); }
 function drawGround(){ ctx.fillStyle='#8B4513'; ctx.fillRect(0,groundY,gameWidth,gameHeight-groundY); }
 function buildXIntentUrl(score){ const text=`むるだっしゅ！スコアは「${score}」でした🌻\nhttps://t4l-ovo-t4l.github.io/murudash/`; return `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`; }
 
-/* ゲーム状態遷移 */
 function gameOver(){
   if(isGameOver) return;
   isGameOver=true; gameStarted=false;
@@ -378,6 +375,7 @@ function gameOver(){
   finalScoreEl.textContent=score; shareButton.href=buildXIntentUrl(score);
   gameOverScreen.classList.remove('hidden'); gameOverScreen.classList.add('flex');
 }
+
 function restartGame(){
   startAudio(); try{ if(bgmAudio){ bgmAudio.currentTime=0; bgmAudio.play(); } }catch(_){}
   score=0; scoreEl.textContent=score; timeElapsed=0; gameSpeed=baseGameSpeed;
@@ -385,16 +383,20 @@ function restartGame(){
   player.y=groundY-player.height; player.dy=0; player.isGrounded=true; player.jumpsRemaining=2;
   gameOverScreen.classList.add('hidden'); gameOverScreen.classList.remove('flex'); pauseOverlay.classList.add('hidden');
 
+  // 曲連動の状態もリセットして朝スタート
   resetAudioSyncState();
 
+  // デバッグ解除＆バッジ除去
   isDebug = false; resetDebugTapCounter();
   const dbg = document.getElementById('debugBadge'); if(dbg) dbg.remove();
 
+  // スポーン初期化
   spawnTimer=0;
   nextSpawnInterval = minSpawnIntervalBase + Math.random()*(maxSpawnIntervalBase - minSpawnIntervalBase);
 
   lastTime=performance.now(); requestAnimationFrame(gameLoop);
 }
+
 function togglePause(){
   if(isGameOver||!gameStarted) return;
   isPaused=!isPaused;
@@ -410,14 +412,13 @@ function togglePause(){
   }
 }
 
-/* ループ */
-let lastTime=0, frame=0;
 function gameLoop(ts){
   if(isGameOver||isPaused||!gameStarted) return;
   const dt = ts - lastTime; lastTime = ts;
   const df = dt / (1000/60);
   timeElapsed += dt;
 
+  // 曲タイミングに合わせて空を制御
   updateSkyByMusic();
 
   clearCanvas(); drawSky(df); drawClouds(df);
@@ -426,11 +427,11 @@ function gameLoop(ts){
   frame++; requestAnimationFrame(gameLoop);
 }
 
-/* 入力 */
+/* ===== 入力 ===== */
 window.addEventListener('keydown', e=>{
   if(e.repeat) return;
 
-  // ポーズ中：スペース/↑キー5回でデバッグON
+  // ★ポーズ中：スペース/↑キー5回でデバッグON
   if(isPaused && (e.code==='Space' || e.code==='ArrowUp')){
     debugTapCount++;
     if(debugTapCount >= DEBUG_TAPS_TO_ENABLE){ enableDebugMode(); resetDebugTapCounter(); }
@@ -443,7 +444,7 @@ window.addEventListener('keydown', e=>{
 });
 window.addEventListener('keyup', e=>{ if(e.code==='Space'||e.code==='ArrowUp') stopJump(); });
 
-// タッチ/クリック
+// タッチ/クリックボタン側でも同じトリガ
 jumpButton.addEventListener('pointerdown', e=>{
   e.preventDefault();
   if(isPaused){
@@ -468,11 +469,10 @@ function handleGameStart(e){
   startAudio();
   startScreen.classList.add('hidden');
 
+  // 朝から開始 & 連動状態初期化
   resetAudioSyncState();
 
-  // 念のため開始時にも最新寸法で再計算
-  applyResize();
-
+  // デバッグ解除＆バッジ除去（保険）
   isDebug = false; resetDebugTapCounter();
   const dbg = document.getElementById('debugBadge'); if(dbg) dbg.remove();
 
