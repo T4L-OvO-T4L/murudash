@@ -31,7 +31,7 @@
 </div>
 
 <!-- ヘッダー -->
-<div class="w-full max-w-lg p-3 bg-white rounded-t-lg shadow-md">
+<div class="w-full max-w-[1024px] p-3 bg-white rounded-t-lg shadow-md">
   <div class="flex items-center justify-between gap-3">
     <div class="text-left">
       <span class="text-xl sm:text-2xl font-bold text-blue-600">
@@ -48,7 +48,7 @@
 </div>
 
 <!-- キャンバス＆オーバーレイ -->
-<div class="relative w-full max-w-lg mt-2 mb-24">
+<div class="relative w-full max-w-[1024px] mt-2 mb-24">
   <canvas id="gameCanvas" class="rounded-b-lg shadow-md"></canvas>
 
   <!-- スタート -->
@@ -83,7 +83,7 @@
 </div>
 
 <!-- ジャンプボタン -->
-<div class="w-full max-w-lg flex justify-center p-4 fixed bottom-0 left-1/2 -translate-x-1/2">
+<div class="w-full max-w-[1024px] flex justify-center p-4 fixed bottom-0 left-1/2 -translate-x-1/2">
   <button id="jumpButton" class="control-button w-full py-12 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-2xl">ジャンプ</button>
 </div>
 
@@ -120,10 +120,11 @@ async function startAudio(){
   }catch(e){ console.error(e); }
 }
 
-/* ===== 画面サイズ ===== */
+/* ===== 画面サイズ（横長） ===== */
 const parentWidth = canvas.parentElement.clientWidth;
-const gameWidth = Math.min(parentWidth, 768);
-const gameHeight = 300;
+// 横長寄せ：最大 1024px。高さは幅の約 32%（dinoっぽい薄め）
+const gameWidth = Math.min(parentWidth, 1024);
+const gameHeight = Math.max(280, Math.round(gameWidth * 0.32));
 canvas.width = gameWidth; canvas.height = gameHeight;
 
 /* ===== 空のテーマ（曲タイミング連動） ===== */
@@ -192,9 +193,9 @@ function updateSkyByMusic(){
 }
 
 /* ===== 雲 ===== */
-let clouds = Array.from({length:5},()=>({
+let clouds = Array.from({length:6},()=>({ // 横長に合わせて雲1個増量
   x: Math.random()*gameWidth,
-  y: 40 + Math.random()*90,
+  y: 40 + Math.random()*Math.max(90, gameHeight*0.35),
   speed: 0.12 + Math.random()*0.18,
   size: 60 + Math.random()*60
 }));
@@ -213,23 +214,30 @@ function drawClouds(deltaFactor){
 /* ===== ゲーム本体 ===== */
 let score=0, highScore=localStorage.getItem('muruHighScore')||0; highScoreEl.textContent=`ハイスコア: ${highScore}`;
 
-/* 速度：ベース＋加速、ただし上限を設けて打ち止め */
+/* 速度：ベース＋加速、ただし上限を設けて打ち止め（ちょい速く） */
 let gameSpeed=5, baseGameSpeed=5, gameSpeedAcceleration=0.05;
-const GAME_SPEED_MAX = 12; // ★ 上限スピード（11〜14くらいが体感ちょうど）
+const GAME_SPEED_MAX = 13; // ★ 12→13（到達時間は ~140s のまま）
 
 let timeElapsed=0, obstacles=[], frame=0, spawnTimer=0;
-const minSpawnIntervalBase=110, maxSpawnIntervalBase=160, spawnIntervalReductionPerSec=4;
+
+/* 横長に合わせて少し詰め気味（でも等間隔感を維持） */
+const minSpawnIntervalBase=105;  // 110→105
+const maxSpawnIntervalBase=155;  // 160→155
+const spawnIntervalReductionPerSec=4;
 
 /* 序盤の密度ゆるめ（軽め） */
 const EARLY_EASE_MS = 15_000;
 const EARLY_EASE_START_MULT = 1.15;
-const EARLY_MAX_ONSCREEN_OBS_MS = 12_000;
-const EARLY_MAX_ONSCREEN_OBS = 5;
+
+/* 画面内同時表示の上限：基本2 / 90秒以降は最大3 */
+function currentOnscreenLimit(ms){
+  return (ms < 90_000) ? 2 : 3;
+}
 
 let isGameOver=false, isPaused=false, gameStarted=false, lastTime=0;
 const groundY = gameHeight - 50;
 
-/* ★ デバッグ（復活）：ポーズ中に5回で無敵ON */
+/* ★ デバッグ：ポーズ中にジャンプ/スペース5回で無敵ON */
 let isDebug=false;
 let debugTapCount=0;
 const DEBUG_TAPS_TO_ENABLE = 5;
@@ -238,7 +246,13 @@ let nextSpawnInterval=90;
 
 function clamp01(v){ return Math.max(0, Math.min(1, v)); }
 function getEarlyEaseMultiplier(ms){ const t=clamp01(ms/EARLY_EASE_MS); return EARLY_EASE_START_MULT + (1.0 - EARLY_EASE_START_MULT) * t; }
-function getMinPixelGap(ms){ const t=clamp01(ms/EARLY_EASE_MS); const start=240, end=160; return Math.round(start + (end - start) * t); }
+function getMinPixelGap(ms){
+  // 横幅に応じて“画面上の最小距離”を割合でチューニング
+  const t=clamp01(ms/EARLY_EASE_MS);
+  const start = Math.round(gameWidth * 0.42); // 開始は画面の42%ぶん空ける
+  const end   = Math.round(gameWidth * 0.32); // だんだん32%まで詰める
+  return Math.round(start + (end - start) * t);
+}
 
 /* デバッグON/OFF */
 function enableDebugMode(){
@@ -252,6 +266,7 @@ function enableDebugMode(){
 }
 function resetDebugTapCounter(){ debugTapCount = 0; }
 
+/* プレイヤー */
 const player={x:50,y:groundY-50,width:50,height:50,dy:0,gravity:0.8,jumpForce:15,isGrounded:true,jumpsRemaining:2,isJumping:false,image:new Image(),imageLoaded:false};
 player.image.src='./assets/Muru.png';
 player.image.onload=()=>{player.imageLoaded=true;player.width=(player.image.width/player.image.height)*player.height;};
@@ -264,6 +279,7 @@ function updatePlayer(d){
 function playerJump(){ startAudio(); if(isGameOver||isPaused||!gameStarted) return; if(player.jumpsRemaining>0){ player.dy=-player.jumpForce; player.isGrounded=false; player.isJumping=true; player.jumpsRemaining--; } }
 function stopJump(){ if(player.isJumping && player.dy<0){ player.dy=Math.max(player.dy,-5); } player.isJumping=false; }
 
+/* 障害物 */
 class Obstacle{
   constructor(type,img,y,size){
     this.x=gameWidth; this.y=y; this.type=type; this.img=img; this.height=size;
@@ -286,13 +302,15 @@ function spawnObstacle(delta){
   const easeMul = getEarlyEaseMultiplier(timeElapsed);
   minSpawnInterval *= easeMul; maxSpawnInterval *= easeMul;
 
+  // まだ湧かせない
   if(spawnTimer < nextSpawnInterval) return;
 
-  if(timeElapsed < EARLY_MAX_ONSCREEN_OBS_MS){
-    const onscreen = obstacles.filter(o=>o.x + o.width > 0).length;
-    if(onscreen >= EARLY_MAX_ONSCREEN_OBS) return;
-  }
+  // 画面内同時上限（0〜gameWidth の範囲だけ数える）
+  const onscreen = obstacles.filter(o => (o.x + o.width > 0) && (o.x < gameWidth)).length;
+  const limit = currentOnscreenLimit(timeElapsed);
+  if(onscreen >= limit) return;
 
+  // 直前とのピクセル距離チェック（詰まり回避）
   const last = obstacles.length ? obstacles[obstacles.length-1] : null;
   const minGapPx = getMinPixelGap(timeElapsed);
   if(last){
@@ -300,6 +318,7 @@ function spawnObstacle(delta){
     if(gapPx < minGapPx) return;
   }
 
+  // 出現内容
   const rand = Math.random();
   if(rand < 0.4){
     const size = (40 + Math.random()*20) * SCALE;
@@ -314,6 +333,7 @@ function spawnObstacle(delta){
     }
   }
 
+  // 次回までの間隔
   nextSpawnInterval = minSpawnInterval + Math.random()*(maxSpawnInterval - minSpawnInterval);
   spawnTimer = 0;
 }
@@ -335,7 +355,7 @@ function checkCollision(){
   }
 }
 
-/* ★ 速度は上限で打ち止め。以降は密度と集中力勝負。 */
+/* 速度は上限で打ち止め。以降は密度と集中力勝負。 */
 function updateScore(){
   for(const o of obstacles){ if(!o.passed && o.x+o.width < player.x){ score++; o.passed=true; } }
   scoreEl.textContent = score;
