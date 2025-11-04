@@ -23,7 +23,7 @@
 </head>
 <body class="bg-gray-800 flex flex-col items-center justify-start min-h-screen pt-3 sm:pt-4 pb-28">
 
-<!-- 注意書き -->
+<!-- 注意書き（iOS Safari行は削除済み） -->
 <div class="w-full text-center bg-gray-900 text-gray-300 text-[11px] py-1 shadow-md">
   ※本作品は <a href="https://kuronekotsuki.booth.pm/items/4672957" target="_blank" rel="noopener noreferrer" class="underline hover:text-white transition">｢ムルル｣</a> をモチーフにした非公式ファン作品です。<br class="sm:hidden">
   権利者様とは一切関係ありません。<br>
@@ -157,7 +157,6 @@ function drawSky(deltaFactor){
 
 /* ===== 曲タイミング連動 ===== */
 const EVENING_MARK_S = 95;   // 1:35で夕方
-const LOOP_MARK_S    = 133;  // 2:13（参考値）※実検出は時間逆行で行う
 const EPS = 0.25;
 
 let lastAudioTime = 0;
@@ -181,7 +180,7 @@ function updateSkyByMusic(){
     eveningTriggeredThisCycle = true;
   }
 
-  // ループ検知（時間逆行）
+  // ループ検知（currentTime が逆行したら）
   if(t + EPS < lastAudioTime){
     loopCount++;
     eveningTriggeredThisCycle = false; // 次周の夕方トリガ解放
@@ -214,12 +213,12 @@ function drawClouds(deltaFactor){
 /* ===== ゲーム本体 ===== */
 let score=0, highScore=localStorage.getItem('muruHighScore')||0; highScoreEl.textContent=`ハイスコア: ${highScore}`;
 
-/* 速度：ベース＋加速、ただし上限を設けて“物理的に無理”を回避 */
+/* 速度：ベース＋加速、ただし上限を設けて打ち止め */
 let gameSpeed=5, baseGameSpeed=5, gameSpeedAcceleration=0.05;
-const GAME_SPEED_MAX = 12; // ★ 上限スピード（好みで 11〜14 辺り）
+const GAME_SPEED_MAX = 12; // ★ 上限スピード（11〜14くらいが体感ちょうど）
 
 let timeElapsed=0, obstacles=[], frame=0, spawnTimer=0;
-const minSpawnIntervalBase=110, maxSpawnIntervalBase=160, spawnIntervalReductionPerSec=4; // ほんの少し密度↑
+const minSpawnIntervalBase=110, maxSpawnIntervalBase=160, spawnIntervalReductionPerSec=4;
 
 /* 序盤の密度ゆるめ（軽め） */
 const EARLY_EASE_MS = 15_000;
@@ -230,12 +229,28 @@ const EARLY_MAX_ONSCREEN_OBS = 5;
 let isGameOver=false, isPaused=false, gameStarted=false, lastTime=0;
 const groundY = gameHeight - 50;
 
-let isDebug=false, debugTapCount=0;
+/* ★ デバッグ（復活）：ポーズ中に5回で無敵ON */
+let isDebug=false;
+let debugTapCount=0;
+const DEBUG_TAPS_TO_ENABLE = 5;
+
 let nextSpawnInterval=90;
 
 function clamp01(v){ return Math.max(0, Math.min(1, v)); }
 function getEarlyEaseMultiplier(ms){ const t=clamp01(ms/EARLY_EASE_MS); return EARLY_EASE_START_MULT + (1.0 - EARLY_EASE_START_MULT) * t; }
 function getMinPixelGap(ms){ const t=clamp01(ms/EARLY_EASE_MS); const start=240, end=160; return Math.round(start + (end - start) * t); }
+
+/* デバッグON/OFF */
+function enableDebugMode(){
+  if(isDebug) return;
+  isDebug = true;
+  const badge = document.createElement('span');
+  badge.id = 'debugBadge';
+  badge.textContent = 'DEBUG';
+  badge.className = 'px-2 py-1 bg-pink-600 text-white text-xs font-bold rounded shadow-sm ml-1';
+  highScoreEl.parentElement.appendChild(badge);
+}
+function resetDebugTapCounter(){ debugTapCount = 0; }
 
 const player={x:50,y:groundY-50,width:50,height:50,dy:0,gravity:0.8,jumpForce:15,isGrounded:true,jumpsRemaining:2,isJumping:false,image:new Image(),imageLoaded:false};
 player.image.src='./assets/Muru.png';
@@ -312,7 +327,7 @@ function updateObstacles(d){
 }
 
 function checkCollision(){
-  if(isDebug) return;
+  if(isDebug) return; // 無敵
   const p={x:player.x,y:player.y,width:player.width*0.6,height:player.height*0.7};
   for(const o of obstacles){
     const h=o.getHitbox();
@@ -351,8 +366,12 @@ function restartGame(){
   // 曲連動の状態もリセットして朝スタート
   resetAudioSyncState();
 
+  // デバッグ解除＆バッジ除去
+  isDebug = false; resetDebugTapCounter();
+  const dbg = document.getElementById('debugBadge'); if(dbg) dbg.remove();
+
   // スポーン初期化
-  spawnTimer=0; nextSpawnInterval=minSpawnIntervalBase + Math.random()*(maxSpawnIntervalBase - maxSpawnIntervalBase + maxSpawnIntervalBase); // same as base draw
+  spawnTimer=0;
   nextSpawnInterval = minSpawnIntervalBase + Math.random()*(maxSpawnIntervalBase - minSpawnIntervalBase);
 
   lastTime=performance.now(); requestAnimationFrame(gameLoop);
@@ -361,8 +380,16 @@ function restartGame(){
 function togglePause(){
   if(isGameOver||!gameStarted) return;
   isPaused=!isPaused;
-  if(isPaused){ try{ if(bgmAudio)bgmAudio.pause(); }catch(_){} pauseOverlay.classList.remove('hidden'); pauseOverlay.classList.add('flex'); }
-  else{ try{ if(bgmAudio)bgmAudio.play(); }catch(_){} pauseOverlay.classList.add('hidden'); pauseOverlay.classList.remove('flex'); lastTime=performance.now(); requestAnimationFrame(gameLoop); debugTapCount=0; }
+  if(isPaused){
+    try{ if(bgmAudio)bgmAudio.pause(); }catch(_){}
+    pauseOverlay.classList.remove('hidden'); pauseOverlay.classList.add('flex');
+    resetDebugTapCounter();
+  }else{
+    try{ if(bgmAudio)bgmAudio.play(); }catch(_){}
+    pauseOverlay.classList.add('hidden'); pauseOverlay.classList.remove('flex');
+    lastTime=performance.now(); requestAnimationFrame(gameLoop);
+    resetDebugTapCounter();
+  }
 }
 
 function gameLoop(ts){
@@ -383,14 +410,30 @@ function gameLoop(ts){
 /* ===== 入力 ===== */
 window.addEventListener('keydown', e=>{
   if(e.repeat) return;
-  if(isPaused && (e.code==='Space'||e.code==='ArrowUp')){ debugTapCount++; return; }
+
+  // ★ポーズ中：スペース/↑キー5回でデバッグON
+  if(isPaused && (e.code==='Space' || e.code==='ArrowUp')){
+    debugTapCount++;
+    if(debugTapCount >= DEBUG_TAPS_TO_ENABLE){ enableDebugMode(); resetDebugTapCounter(); }
+    return;
+  }
+
   if(!gameStarted) return;
   if(e.code==='Space'||e.code==='ArrowUp') playerJump();
   if(e.code==='KeyP') togglePause();
 });
 window.addEventListener('keyup', e=>{ if(e.code==='Space'||e.code==='ArrowUp') stopJump(); });
 
-jumpButton.addEventListener('pointerdown', e=>{ e.preventDefault(); if(isPaused){ debugTapCount++; return; } playerJump(); });
+// タッチ/クリックボタン側でも同じトリガ
+jumpButton.addEventListener('pointerdown', e=>{
+  e.preventDefault();
+  if(isPaused){
+    debugTapCount++;
+    if(debugTapCount >= DEBUG_TAPS_TO_ENABLE){ enableDebugMode(); resetDebugTapCounter(); }
+    return;
+  }
+  playerJump();
+});
 jumpButton.addEventListener('pointerup',   e=>{ e.preventDefault(); stopJump(); });
 
 pauseButton.addEventListener('click', e=>{ e.preventDefault(); togglePause(); });
@@ -408,6 +451,10 @@ function handleGameStart(e){
 
   // 朝から開始 & 連動状態初期化
   resetAudioSyncState();
+
+  // デバッグ解除＆バッジ除去（保険）
+  isDebug = false; resetDebugTapCounter();
+  const dbg = document.getElementById('debugBadge'); if(dbg) dbg.remove();
 
   lastTime = performance.now();
   requestAnimationFrame(gameLoop);
