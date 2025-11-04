@@ -3,7 +3,7 @@
 この作品は「ムルル」をモチーフにした非公式ファン作品です。  
 権利者様とは一切関係ありません。
 
-ムルル Mururu【オリジナル3Dモデル】
+ムルル Mururu【オリジナル3Dモデル】  
 https://kuronekotsuki.booth.pm/items/4672957
 
 ---
@@ -45,4 +45,5 @@ https://kuronekotsuki.booth.pm/items/4672957
 - 効果音提供：「効果音ラボ」 https://soundeffect-lab.info/  
 
 - むるだっしゅ！制作：たる（X:@T4L_OvO_）
+
 
