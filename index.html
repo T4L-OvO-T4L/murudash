@@ -207,57 +207,65 @@ let groundPebbles = [];  // 小石
 let groundStreaks = [];  // 地表の横線
 
 function initGroundDetails(){
-  const grainsN = Math.floor(gameWidth * 0.6); // 密度高め
-  const pebblesN = Math.floor(gameWidth * 0.12);
-  const streaksN = Math.floor(gameWidth * 0.08);
+  // ★ 全体量ちょい減らし
+  const grainsN  = Math.floor(gameWidth * 0.38); // 細かい砂
+  const pebblesN = Math.floor(gameWidth * 0.08); // 小石
+  const streaksN = Math.floor(gameWidth * 0.05); // 地表ライン
 
+  // 焦げ茶レンジ
+  // 砂…明るめの焦げ茶、砂利…濃い焦げ茶
   groundGrains = Array.from({length:grainsN},()=>({
     x: Math.random()*gameWidth,
     y: groundY + 8 + Math.random()*38,
     r: 0.8 + Math.random()*1.4,
-    shade: 180 + Math.floor(Math.random()*40) // 砂色
+    shade: 120 + Math.floor(Math.random()*20) // 120–140
   }));
   groundPebbles = Array.from({length:pebblesN},()=>({
     x: Math.random()*gameWidth,
     y: groundY + 10 + Math.random()*36,
     w: 2 + Math.random()*3,
     h: 1 + Math.random()*2,
-    shade: 120 + Math.floor(Math.random()*40) // 濃い粒
+    shade: 80 + Math.floor(Math.random()*20) // 80–100
   }));
   groundStreaks = Array.from({length:streaksN},()=>({
     x: Math.random()*gameWidth,
     y: groundY + 6 + Math.random()*10,
     len: 8 + Math.random()*18,
-    shade: 160 + Math.floor(Math.random()*40)
+    shade: 95 + Math.floor(Math.random()*20) // 95–115
   }));
 }
+
 initGroundDetails();
 
 function drawGroundDetails(df){
-  const v = (gameSpeed * 1.2) * df; // 粒の流速：ゲーム速度よりちょい速
-  // 砂
+  const v = (gameSpeed * 1.2) * df;
+
+  // 砂（明るめの焦げ茶ドット）
   for(const g of groundGrains){
     g.x -= v;
     if(g.x < -2){ g.x = gameWidth + Math.random()*40; g.y = groundY + 8 + Math.random()*38; }
-    ctx.fillStyle = `rgb(${g.shade}, ${g.shade-15}, ${g.shade-30})`;
+    ctx.fillStyle = `rgb(${g.shade}, ${g.shade-10}, ${g.shade-25})`;
     ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, Math.PI*2); ctx.fill();
   }
-  // 小石
+
+  // 小石（濃い焦げ茶の小さな矩形）
   for(const p of groundPebbles){
     p.x -= v * 1.15;
     if(p.x < -3){ p.x = gameWidth + Math.random()*60; p.y = groundY + 10 + Math.random()*36; }
-    ctx.fillStyle = `rgb(${p.shade}, ${p.shade-25}, ${p.shade-35})`;
+    ctx.fillStyle = `rgb(${p.shade}, ${p.shade-10}, ${p.shade-15})`;
     ctx.fillRect(p.x, p.y, p.w, p.h);
   }
-  // ストリーク
+
+  // ストリーク（横線も焦げ茶、やや薄く）
   for(const s of groundStreaks){
     s.x -= v * 1.4;
     if(s.x < -s.len){ s.x = gameWidth + Math.random()*80; s.y = groundY + 6 + Math.random()*10; }
-    ctx.strokeStyle = `rgba(${s.shade}, ${s.shade-30}, ${s.shade-45}, 0.7)`;
+    ctx.strokeStyle = `rgba(${s.shade}, ${s.shade-15}, ${s.shade-25}, 0.65)`;
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(s.x + s.len, s.y); ctx.stroke();
   }
 }
+
 
 /* ===== ゲーム本体 ===== */
 let score=0, highScore=localStorage.getItem('muruHighScore')||0; highScoreEl.textContent=`ハイスコア: ${highScore}`;
@@ -267,7 +275,13 @@ const GAME_SPEED_MAX=13;
 let timeElapsed=0, obstacles=[], frame=0, spawnTimer=0;
 const minSpawnIntervalBase=105, maxSpawnIntervalBase=155, spawnIntervalReductionPerSec=4;
 const EARLY_EASE_MS=15000, EARLY_EASE_START_MULT=1.15;
-function currentOnscreenLimit(ms){ return (ms<90000)?2:3; }
+  
+function currentOnscreenLimit(ms){
+  if(ms < 45000)  return 2; // 〜45s
+  if(ms < 120000) return 3; // 45s〜2分
+  return 4;                 // 2分〜
+}
+
 
 let isGameOver=false, isPaused=false, gameStarted=false, lastTime=0;
 let isDebug=false, debugTapCount=0; const DEBUG_TAPS_TO_ENABLE=5;
@@ -284,14 +298,25 @@ class Acorn{
   draw(){
     const img=SPRITES.donguri; if(img && img.complete){ const w=this.size,h=this.size; ctx.drawImage(img,this.x,this.y-h,w,h); }
   }
-  getHitbox(){ return { x:this.x - this.size*0.1, y:this.y - this.size, width:this.size*0.8, height:this.size }; }
+  getHitbox(){
+      return {
+      x: this.x - this.size * 0.05,
+      y: this.y - this.size * 1.02,
+      width:  this.size * 0.9,
+      height: this.size * 1.02
+      };
+  }
+
 }
-let acorns=[], acornSpawnTimer=0, nextAcornInterval=1800+Math.random()*1400; // 1.8〜3.2s
+let acorns = [], acornSpawnTimer = 0, nextAcornInterval = 600 + Math.random()*500; // ★ 0.6〜1.1s
+
 function spawnAcorn(delta){
   acornSpawnTimer+=delta;
   if(acornSpawnTimer<nextAcornInterval) return;
-  acornSpawnTimer=0; nextAcornInterval=1800+Math.random()*1400;
-  const size=28+Math.floor(Math.random()*6), x=gameWidth+10;
+  acornSpawnTimer = 0; nextAcornInterval = 600 + Math.random()*500; // ★ 0.6〜1.1s
+
+  const size = 56 + Math.floor(Math.random()*12); // ★ 2倍（元:28±）
+
   if(Math.random()<0.5){
     const y=groundY-6; acorns.push(new Acorn('ground',x,y,size));
   }else{
@@ -347,6 +372,16 @@ function spawnObstacle(delta){
   let minSpawnInterval = Math.max(minSpawnIntervalBase - (timeElapsed/1000)*spawnIntervalReductionPerSec, 40);
   let maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed/1000)*spawnIntervalReductionPerSec, 70);
   const easeMul = getEarlyEaseMultiplier(timeElapsed); minSpawnInterval*=easeMul; maxSpawnInterval*=easeMul;
+  
+  function lateDensityMul(ms){
+  if(ms < 60000) return 1.0;   // 〜60s はそのまま
+  if(ms < 120000) return 0.85; // 1〜2分で15%詰める
+  return 0.72;                 // 2分以降 28%詰める
+  }
+  const ld = lateDensityMul(timeElapsed);
+  minSpawnInterval *= ld;
+  maxSpawnInterval *= ld;
+  
   if(spawnTimer < nextSpawnInterval) return;
   const onscreen = obstacles.filter(o => (o.x + o.width > 0) && (o.x < gameWidth)).length;
   const limit = currentOnscreenLimit(timeElapsed); if(onscreen >= limit) return;
@@ -396,7 +431,8 @@ function gameOver(){
 function restartGame(){
   startAudio(); try{ if(bgmAudio){ bgmAudio.currentTime=0; bgmAudio.play(); } }catch(_){}
   score=0; scoreEl.textContent=score; timeElapsed=0; gameSpeed=baseGameSpeed;
-  obstacles=[]; acorns=[]; frame=0; spawnTimer=0; acornSpawnTimer=0; nextAcornInterval=1800+Math.random()*1400;
+  obstacles=[]; acorns=[]; frame=0; spawnTimer=0; acornSpawnTimer = 0; nextAcornInterval = 600 + Math.random()*500; // ★ 0.6〜1.1s
+
   isGameOver=false; isPaused=false; gameStarted=true;
   player.y=groundY-player.height; player.dy=0; player.isGrounded=true; player.jumpsRemaining=2;
   gameOverScreen.classList.add('hidden'); gameOverScreen.classList.remove('flex'); pauseOverlay.classList.add('hidden');
