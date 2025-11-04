@@ -150,7 +150,7 @@
     const gameHeight = 300;
     canvas.width = gameWidth; canvas.height = gameHeight;
 
-    // 空のグラデーション（昼夕夜）
+    // ===== 空のグラデーション定義 =====
     const THEMES = {
       morning: { top: [160,210,235], bottom: [247,250,252] },
       evening: { top: [246,173, 85], bottom: [253,230,138] },
@@ -161,26 +161,29 @@
     const skyLerpSpeed = 0.03;
     function setBackgroundTheme(theme){ const t = THEMES[theme] || THEMES.morning; skyTarget = { top:[...t.top], bottom:[...t.bottom] }; }
 
-    const T_MORNING_TO_EVENING = 95 * 1000;
-    const T_EVENING_TO_NIGHT   = 139 * 1000;
-    const T_NIGHT_TO_EVENING   = 95 * 1000;
-    const T_EVENING_TO_MORNING = 139 * 1000;
+    // ✅ フェーズを配列で管理（夕→夜→夕→朝の巡回を確実に回す）
+    const PHASES = [
+      { name:'morning',  theme:'morning', duration: 95*1000 },
+      { name:'evening1', theme:'evening', duration:139*1000 },
+      { name:'night',    theme:'night',   duration: 95*1000 },
+      { name:'evening2', theme:'evening', duration:139*1000 },
+    ];
+    let phaseIndex = 0;
+    let phaseElapsed = 0;
+    let phaseName = PHASES[0].name;
 
-    let dayPhase = 'morning';
-    let phaseTimer = 0;
-    function setPhase(next){
-      dayPhase = next;
-      phaseTimer = 0;
-      if(next === 'morning') setBackgroundTheme('morning');
-      else if(next === 'night') setBackgroundTheme('night');
-      else setBackgroundTheme('evening');
+    function enterPhase(i){
+      phaseIndex = (i + PHASES.length) % PHASES.length;
+      phaseElapsed = 0;
+      phaseName = PHASES[phaseIndex].name;
+      setBackgroundTheme(PHASES[phaseIndex].theme);
     }
-    function updateBackgroundThemeByTime(deltaMs){
-      phaseTimer += deltaMs;
-      if(dayPhase === 'morning'){ if(phaseTimer >= T_MORNING_TO_EVENING) setPhase('evening1'); }
-      else if(dayPhase === 'evening1'){ if(phaseTimer >= T_EVENING_TO_NIGHT) setPhase('night'); }
-      else if(dayPhase === 'night'){ if(phaseTimer >= T_NIGHT_TO_EVENING) setPhase('evening2'); }
-      else if(dayPhase === 'evening2'){ if(phaseTimer >= T_EVENING_TO_MORNING) setPhase('morning'); }
+    function updatePhase(deltaMs){
+      phaseElapsed += deltaMs;
+      while (phaseElapsed >= PHASES[phaseIndex].duration) {
+        phaseElapsed -= PHASES[phaseIndex].duration;
+        enterPhase(phaseIndex + 1);
+      }
     }
 
     function lerp(a,b,t){ return a+(b-a)*t; }
@@ -195,7 +198,8 @@
       g.addColorStop(0,top); g.addColorStop(0.8,bottom);
       ctx.fillStyle=g; ctx.fillRect(0,0,gameWidth,gameHeight);
     }
-    setBackgroundTheme('morning');
+    // 初期フェーズ
+    enterPhase(0);
 
     // 雲
     let clouds = Array.from({ length: 5 }, () => ({
@@ -205,8 +209,8 @@
       size: 60 + Math.random() * 60
     }));
     function drawClouds(deltaFactor) {
-      const isNight = Math.abs(skyTarget.top[0] - THEMES.night.top[0]) < 5 &&
-                      Math.abs(skyTarget.bottom[0] - THEMES.night.bottom[0]) < 5;
+      // ✅ 夜判定はフェーズ名で
+      const isNight = (phaseName === 'night');
       const alpha = isNight ? 0.35 : 0.45;
       ctx.fillStyle = `rgba(255, 255, 255, ${alpha})`;
       for (let c of clouds) {
@@ -228,16 +232,16 @@
 
     let timeElapsed=0, obstacles=[], frame=0, spawnTimer=0;
 
-    // ★ 湧きベース間隔をマイルド化
+    // ★ 湧きベース間隔（前回より少し詰める）
     const minSpawnIntervalBase=120, maxSpawnIntervalBase=170, spawnIntervalReductionPerSec=3;
 
-    // ★ 序盤ゆるゆる（1.6倍→45秒かけて通常へ）
-    const EARLY_EASE_MS = 45_000;
-    const EARLY_EASE_START_MULT = 1.6;
+    // ★ 序盤ゆるめ：弱めに（1.25倍 → 25秒で通常へ）
+    const EARLY_EASE_MS = 25_000;
+    const EARLY_EASE_START_MULT = 1.25;
 
-    // ★ 序盤は画面内の最大障害物数を制限
-    const EARLY_MAX_ONSCREEN_OBS_MS = 30_000;
-    const EARLY_MAX_ONSCREEN_OBS = 3;
+    // ★ 序盤 最大同時数：4個まで（前回3→4で“少なすぎ”解消）
+    const EARLY_MAX_ONSCREEN_OBS_MS = 20_000;
+    const EARLY_MAX_ONSCREEN_OBS = 4;
 
     let isGameOver = false, isPaused = false, gameStarted = false, lastTime = 0;
     const baseDeltaTime=1000/60;
@@ -255,8 +259,9 @@
       return EARLY_EASE_START_MULT + (1.0 - EARLY_EASE_START_MULT) * t;
     }
     function getMinPixelGap(ms){
+      // 直後湧き防止：序盤ちょい広め→通常へ
       const t = clamp01(ms / EARLY_EASE_MS);
-      const start = 280, end = 180;
+      const start = 240, end = 170;
       return Math.round(start + (end - start) * t);
     }
 
@@ -292,11 +297,7 @@
       getHitbox() {
         const shrink = this.type === 'ground_large' ? 0.65 : 0.8;
         const w = this.width * shrink, h = this.height * shrink;
-        return {
-          x: this.x + (this.width - w) / 2,
-          y: (this.y - this.height) + (this.height - h) / 2,
-          width: w, height: h
-        };
+        return { x: this.x + (this.width - w) / 2, y: (this.y - this.height) + (this.height - h) / 2, width: w, height: h };
       }
     }
 
@@ -308,7 +309,7 @@
       let minSpawnInterval = Math.max(minSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 40);
       let maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed / 1000) * spawnIntervalReductionPerSec, 70);
 
-      // 序盤ゆるめ倍率を掛ける
+      // 序盤ゆるめ倍率（弱）を掛ける
       const easeMul = getEarlyEaseMultiplier(timeElapsed);
       minSpawnInterval *= easeMul;
       maxSpawnInterval *= easeMul;
@@ -417,8 +418,8 @@
       gameOverScreen.classList.add('hidden'); gameOverScreen.classList.remove('flex');
       pauseOverlay.classList.add('hidden');
 
-      // 昼夜フェーズ初期化
-      dayPhase = 'morning'; phaseTimer = 0; setBackgroundTheme('morning');
+      // ✅ フェーズも確実にリセット
+      enterPhase(0);
 
       // デバッグ初期化
       isDebug = false; resetDebugTapCounter(); const dbg=document.getElementById('debugBadge'); if(dbg) dbg.remove();
@@ -461,7 +462,8 @@
       const deltaFactor=deltaTime/(1000/60);
       timeElapsed+=deltaTime;
 
-      updateBackgroundThemeByTime(deltaTime);
+      // ✅ フェーズ更新（夕方で止まらない）
+      updatePhase(deltaTime);
 
       clearCanvas(); drawSky(deltaFactor); drawClouds(deltaFactor);
       drawGround(); updatePlayer(deltaFactor); drawPlayer();
