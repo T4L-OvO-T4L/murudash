@@ -87,7 +87,7 @@
   </div>
 </div>
 
-<!-- ルール（中央揃え・文言差し替え・英語後にSVG） -->
+<!-- ルール -->
 <div class="w-full max-w-[768px] text-gray-200 text-sm mt-3 mb-20 px-1 leading-relaxed text-center">
   <p class="mb-1">
     ひまわり<img src="./assets/sunflower.svg" alt="sunflower" class="icon-inline">
@@ -142,13 +142,13 @@ async function startAudio(){
   }catch(e){ console.error(e); }
 }
 
-/* ===== 画面サイズ（従来レイアウト） ===== */
+/* ===== 画面サイズ ===== */
 const parentWidth = canvas.parentElement.clientWidth;
 const gameWidth  = Math.min(parentWidth, 768);
 const gameHeight = 300;
 canvas.width = gameWidth; canvas.height = gameHeight;
 
-/* ===== 空のテーマ（曲タイミング連動 / フェードゆっくり） ===== */
+/* ===== 空のテーマ ===== */
 const THEMES={ morning:{top:[160,210,235],bottom:[247,250,252]}, evening:{top:[246,173,85],bottom:[253,230,138]}, night:{top:[45,55,90],bottom:[20,25,50]} };
 let skyCurrent={ top:[...THEMES.morning.top], bottom:[...THEMES.morning.bottom] };
 let skyTarget ={ top:[...THEMES.morning.top], bottom:[...THEMES.morning.bottom] };
@@ -176,29 +176,28 @@ function updateSkyByMusic(){
   lastAudioTime=t;
 }
 
-/* ===== 雲（スピード増＋ゲーム速度連動で疾走感） ===== */
+/* ===== 雲（ゲーム速度連動） ===== */
 let clouds = Array.from({length:6},()=>({
   x: Math.random()*gameWidth,
   y: 30 + Math.random()*100,
-  base: 0.35 + Math.random()*0.35,   // ★元:0.12-0.30 → 0.35-0.70 に強化
+  base: 0.35 + Math.random()*0.35,
   size: 70 + Math.random()*70
 }));
 function drawClouds(df){
   const isNight=(phaseName==='night');
   const alpha=isNight?0.30:0.42;
   ctx.fillStyle=`rgba(255,255,255,${alpha})`;
-  const speedBoost = 1 + (gameSpeed / 10); // ゲームが速いほど雲も速く
+  const speedBoost = 1 + (gameSpeed / 10);
   for(const c of clouds){
-    const v = c.base * speedBoost;        // 強化後の速度
-    c.x -= v * df * 1.0;                  // dfで60fps換算
+    const v = c.base * speedBoost;
+    c.x -= v * df;
     if(c.x < -220){ c.x = gameWidth + 120; c.y = 30 + Math.random()*100; }
-    // 2パーツで雲
     ctx.beginPath(); ctx.ellipse(c.x, c.y, c.size, c.size*0.55, 0, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.ellipse(c.x + c.size*0.6, c.y + 10, c.size*0.9, c.size*0.48, 0, 0, Math.PI*2); ctx.fill();
   }
 }
 
-/* ===== 地面（砂・砂利・ストリークで流れを強調） ===== */
+/* ===== 地面（色&量調整済） ===== */
 const groundY = gameHeight - 50;
 function drawGround(){ ctx.fillStyle='#8B5A2B'; ctx.fillRect(0,groundY,gameWidth,50); }
 
@@ -207,13 +206,10 @@ let groundPebbles = [];  // 小石
 let groundStreaks = [];  // 地表の横線
 
 function initGroundDetails(){
-  // ★ 全体量ちょい減らし
-  const grainsN  = Math.floor(gameWidth * 0.38); // 細かい砂
-  const pebblesN = Math.floor(gameWidth * 0.08); // 小石
-  const streaksN = Math.floor(gameWidth * 0.05); // 地表ライン
+  const grainsN  = Math.floor(gameWidth * 0.38);
+  const pebblesN = Math.floor(gameWidth * 0.08);
+  const streaksN = Math.floor(gameWidth * 0.05);
 
-  // 焦げ茶レンジ
-  // 砂…明るめの焦げ茶、砂利…濃い焦げ茶
   groundGrains = Array.from({length:grainsN},()=>({
     x: Math.random()*gameWidth,
     y: groundY + 8 + Math.random()*38,
@@ -234,13 +230,13 @@ function initGroundDetails(){
     shade: 95 + Math.floor(Math.random()*20) // 95–115
   }));
 }
-
 initGroundDetails();
 
+/* ★ 地面スクロール速度＝障害物（= gameSpeed）に完全一致させる */
 function drawGroundDetails(df){
-  const v = (gameSpeed * 1.2) * df;
+  const v = gameSpeed * df; // ← 統一。倍率ナシで違和感ゼロ。
 
-  // 砂（明るめの焦げ茶ドット）
+  // 砂
   for(const g of groundGrains){
     g.x -= v;
     if(g.x < -2){ g.x = gameWidth + Math.random()*40; g.y = groundY + 8 + Math.random()*38; }
@@ -248,17 +244,17 @@ function drawGroundDetails(df){
     ctx.beginPath(); ctx.arc(g.x, g.y, g.r, 0, Math.PI*2); ctx.fill();
   }
 
-  // 小石（濃い焦げ茶の小さな矩形）
+  // 小石
   for(const p of groundPebbles){
-    p.x -= v * 1.15;
+    p.x -= v; // ← 1.15 倍を廃止
     if(p.x < -3){ p.x = gameWidth + Math.random()*60; p.y = groundY + 10 + Math.random()*36; }
     ctx.fillStyle = `rgb(${p.shade}, ${p.shade-10}, ${p.shade-15})`;
     ctx.fillRect(p.x, p.y, p.w, p.h);
   }
 
-  // ストリーク（横線も焦げ茶、やや薄く）
+  // ストリーク
   for(const s of groundStreaks){
-    s.x -= v * 1.4;
+    s.x -= v; // ← 1.4 倍を廃止
     if(s.x < -s.len){ s.x = gameWidth + Math.random()*80; s.y = groundY + 6 + Math.random()*10; }
     ctx.strokeStyle = `rgba(${s.shade}, ${s.shade-15}, ${s.shade-25}, 0.65)`;
     ctx.lineWidth = 1;
@@ -277,21 +273,20 @@ const minSpawnIntervalBase=105, maxSpawnIntervalBase=155, spawnIntervalReduction
 const EARLY_EASE_MS=15000, EARLY_EASE_START_MULT=1.15;
   
 function currentOnscreenLimit(ms){
-  if(ms < 45000)  return 2; // 〜45s
-  if(ms < 120000) return 3; // 45s〜2分
-  return 4;                 // 2分〜
+  if(ms < 45000)  return 2;
+  if(ms < 120000) return 3;
+  return 4;
 }
-
 
 let isGameOver=false, isPaused=false, gameStarted=false, lastTime=0;
 let isDebug=false, debugTapCount=0; const DEBUG_TAPS_TO_ENABLE=5;
 let nextSpawnInterval=90;
 
-/* === どんぐり（SVG/頻度高め/速度固定） === */
+/* === どんぐり（SVG/頻度アップ/2倍サイズ/速度固定） === */
 class Acorn{
   constructor(type,x,y,size){ this.type=type; this.x=x; this.y=y; this.size=size; this.t=Math.random()*Math.PI*2; }
   update(d){
-    const fixedSpeed=0.5*baseGameSpeed; // 常にベースの半分（加速しない）
+    const fixedSpeed=0.5*baseGameSpeed; // ベースの半分で一定
     this.x -= fixedSpeed * d;
     if(this.type==='air'){ this.t+=0.05*d; this.y += Math.sin(this.t)*0.2*d; }
   }
@@ -306,16 +301,20 @@ class Acorn{
       height: this.size * 1.02
       };
   }
-
 }
-let acorns = [], acornSpawnTimer = 0, nextAcornInterval = 600 + Math.random()*500; // ★ 0.6〜1.1s
+let acorns = [], acornSpawnTimer = 0;
+/* ★ フレーム基準：0.5〜0.9秒（60fps換算で約30〜54F） */
+let nextAcornInterval = 30 + Math.random()*24;
 
 function spawnAcorn(delta){
-  acornSpawnTimer+=delta;
-  if(acornSpawnTimer<nextAcornInterval) return;
-  acornSpawnTimer = 0; nextAcornInterval = 600 + Math.random()*500; // ★ 0.6〜1.1s
+  acornSpawnTimer += delta;
+  if(acornSpawnTimer < nextAcornInterval) return;
 
-  const size = 56 + Math.floor(Math.random()*12); // ★ 2倍（元:28±）
+  acornSpawnTimer = 0;
+  nextAcornInterval = 30 + Math.random()*24;
+
+  const x = gameWidth + 20; // ★ 右端外から
+  const size = 56 + Math.floor(Math.random()*12); // ★ 2倍サイズ
 
   if(Math.random()<0.5){
     const y=groundY-6; acorns.push(new Acorn('ground',x,y,size));
@@ -374,9 +373,9 @@ function spawnObstacle(delta){
   const easeMul = getEarlyEaseMultiplier(timeElapsed); minSpawnInterval*=easeMul; maxSpawnInterval*=easeMul;
   
   function lateDensityMul(ms){
-  if(ms < 60000) return 1.0;   // 〜60s はそのまま
-  if(ms < 120000) return 0.85; // 1〜2分で15%詰める
-  return 0.72;                 // 2分以降 28%詰める
+    if(ms < 60000) return 1.0;
+    if(ms < 120000) return 0.85;
+    return 0.72;
   }
   const ld = lateDensityMul(timeElapsed);
   minSpawnInterval *= ld;
@@ -388,6 +387,7 @@ function spawnObstacle(delta){
   const last = obstacles.length ? obstacles[obstacles.length-1] : null;
   const minGapPx = getMinPixelGap(timeElapsed);
   if(last){ const gapPx = gameWidth - (last.x + last.width); if(gapPx < minGapPx) return; }
+
   const rand = Math.random();
   if(rand < 0.4){
     const size = (40 + Math.random()*20) * SCALE;
@@ -431,7 +431,7 @@ function gameOver(){
 function restartGame(){
   startAudio(); try{ if(bgmAudio){ bgmAudio.currentTime=0; bgmAudio.play(); } }catch(_){}
   score=0; scoreEl.textContent=score; timeElapsed=0; gameSpeed=baseGameSpeed;
-  obstacles=[]; acorns=[]; frame=0; spawnTimer=0; acornSpawnTimer = 0; nextAcornInterval = 600 + Math.random()*500; // ★ 0.6〜1.1s
+  obstacles=[]; acorns=[]; frame=0; spawnTimer=0; acornSpawnTimer = 0; nextAcornInterval = 30 + Math.random()*24;
 
   isGameOver=false; isPaused=false; gameStarted=true;
   player.y=groundY-player.height; player.dy=0; player.isGrounded=true; player.jumpsRemaining=2;
@@ -458,10 +458,10 @@ function gameLoop(ts){
   ctx.clearRect(0,0,gameWidth,gameHeight);
   drawSky(df); drawClouds(df);
 
-  // 地面＋流れる砂利
+  // 地面＋流れる砂利（障害物と同速で流す）
   drawGround(); drawGroundDetails(df);
 
-  // プレイ／障害物／どんぐり
+  // プレイヤー／障害物／どんぐり
   updatePlayer(df); drawPlayer();
   spawnObstacle(df); updateObstacles(df);
   spawnAcorn(df); updateAcorns(df);
