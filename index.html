@@ -282,47 +282,71 @@ let isGameOver=false, isPaused=false, gameStarted=false, lastTime=0;
 let isDebug=false, debugTapCount=0; const DEBUG_TAPS_TO_ENABLE=5;
 let nextSpawnInterval=90;
 
-/* === どんぐり（SVG/頻度アップ/2倍サイズ/速度固定） === */
-class Acorn{
-  constructor(type,x,y,size){ this.type=type; this.x=x; this.y=y; this.size=size; this.t=Math.random()*Math.PI*2; }
-  update(d){
-    const fixedSpeed=0.5*baseGameSpeed; // ベースの半分で一定
-    this.x -= fixedSpeed * d;
-    if(this.type==='air'){ this.t+=0.05*d; this.y += Math.sin(this.t)*0.2*d; }
+/* === どんぐり（SVG/2倍サイズ/5秒に1回） === */
+class Acorn {
+  constructor(type, x, y, size) {
+    this.type = type;
+    this.x = x;
+    this.y = y;
+    this.size = size;
+    this.t = Math.random() * Math.PI * 2;
   }
-  draw(){
-    const img=SPRITES.donguri; if(img && img.complete){ const w=this.size,h=this.size; ctx.drawImage(img,this.x,this.y-h,w,h); }
+  update(delta) {
+    const fixedSpeed = 0.5 * baseGameSpeed; // 一定スピードで流れる
+    this.x -= fixedSpeed * delta;
+    if (this.type === 'air') {
+      this.t += 0.05 * delta;
+      this.y += Math.sin(this.t) * 0.2 * delta;
+    }
   }
-  getHitbox(){
-      return {
+  draw() {
+    const img = SPRITES.donguri;
+    if (img && img.complete) {
+      const w = this.size,
+        h = this.size;
+      ctx.drawImage(img, this.x, this.y - h, w, h);
+    }
+  }
+  getHitbox() {
+    return {
       x: this.x - this.size * 0.05,
       y: this.y - this.size * 1.02,
-      width:  this.size * 0.9,
-      height: this.size * 1.02
-      };
+      width: this.size * 0.9,
+      height: this.size * 1.02,
+    };
   }
 }
-let acorns = [], acornSpawnTimer = 0;
-/* ★ フレーム基準：0.5〜0.9秒（60fps換算で約30〜54F） */
-let nextAcornInterval = 30 + Math.random()*24;
 
-function spawnAcorn(delta){
-  acornSpawnTimer += delta;
-  if(acornSpawnTimer < nextAcornInterval) return;
+// ★ 秒基準（端末差なし）
+let acorns = [],
+  acornSpawnTimer = 0;
+// 5秒 ±1秒ランダム
+let nextAcornInterval = 5000 + Math.random() * 2000;
+
+function spawnAcorn(deltaMs) {
+  acornSpawnTimer += deltaMs; // ← deltaMs は「ミリ秒」で加算
+
+  if (acornSpawnTimer < nextAcornInterval) return;
 
   acornSpawnTimer = 0;
-  nextAcornInterval = 30 + Math.random()*24;
+  nextAcornInterval = 5000 + Math.random() * 2000; // 5〜7秒
 
-  const x = gameWidth + 20; // ★ 右端外から
-  const size = 56 + Math.floor(Math.random()*12); // ★ 2倍サイズ
+  const x = gameWidth + 20;
+  const size = 56 + Math.floor(Math.random() * 12);
 
-  if(Math.random()<0.5){
-    const y=groundY-6; acorns.push(new Acorn('ground',x,y,size));
-  }else{
-    const minY=groundY-160, maxY=groundY-60; const y=Math.floor(minY+Math.random()*(maxY-minY));
-    acorns.push(new Acorn('air',x,y,size));
+  if (Math.random() < 0.5) {
+    const y = groundY - 6;
+    acorns.push(new Acorn('ground', x, y, size));
+  } else {
+    const minY = groundY - 160,
+      maxY = groundY - 60;
+    const y = Math.floor(minY + Math.random() * (maxY - minY));
+    acorns.push(new Acorn('air', x, y, size));
   }
 }
+
+// updateAcorns, tryCollectAcorns はそのままでOK
+
 function updateAcorns(d){
   for(let i=acorns.length-1;i>=0;i--){ acorns[i].update(d); acorns[i].draw(); if(acorns[i].x<-50) acorns.splice(i,1); }
 }
@@ -464,7 +488,7 @@ function gameLoop(ts){
   // プレイヤー／障害物／どんぐり
   updatePlayer(df); drawPlayer();
   spawnObstacle(df); updateObstacles(df);
-  spawnAcorn(df); updateAcorns(df);
+  spawnAcorn(dt); updateAcorns(df);
 
   checkCollision(); updateScore();
 
