@@ -24,10 +24,27 @@
   .icon-inline { display:inline-block; width:1.15em; height:1.15em; vertical-align:-0.18em; margin-left:.25em; }
   .no-select { user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
   .no-highlight { -webkit-tap-highlight-color:transparent; }
+
+    /* 全面選択不可（子孫ごと）＆iOS長押しメニュー無効 */
+  .no-select, .no-select * {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+  /* キャンバスや画像、ボタン、リンクも個別にケア */
+  canvas, img, button, a {
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
 </style>
 </head>
-<body class="bg-gray-800 flex flex-col items-center justify-start min-h-screen pt-3 sm:pt-4 pb-28">
 
+<body class="bg-gray-800 flex flex-col items-center justify-start min-h-screen pt-3 sm:pt-4 pb-28 no-select no-highlight">
+
+  
 <!-- 注記 -->
 <div class="w-full text-center bg-gray-900 text-gray-300 text-[11px] py-1 shadow-md">
   ※本作品は <a href="https://kuronekotsuki.booth.pm/items/4672957" target="_blank" rel="noopener noreferrer" class="underline hover:text-white transition">｢ムルル｣</a> をモチーフにした非公式ファン作品です。<br class="sm:hidden">
@@ -108,6 +125,10 @@
 </div>
 
 <script>
+  // iOSの長押し選択・コンテキストメニュー抑止（ボタン操作はそのまま）
+document.addEventListener('selectstart', e => e.preventDefault());
+document.addEventListener('contextmenu', e => e.preventDefault(), { passive: false });
+
 /* ===== 基本セットアップ ===== */
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
