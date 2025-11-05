@@ -462,7 +462,7 @@ function currentOnscreenLimit(ms){
 
 
 let isGameOver=false, isPaused=false, gameStarted=false, lastTime=0;
-let isDebug=false, debugTapCount=0; const DEBUG_TAPS_TO_ENABLE=5;
+let isDebug=false, debugTapCount=0; const DEBUG_TAPS_TO_ENABLE=20;
 let nextSpawnInterval=90;
 
 /* === どんぐり（SVG/速度固定/5秒±1秒ごとに抽選30%） === */
@@ -541,7 +541,7 @@ player.image.onload=()=>{ player.imageLoaded=true; player.width=(player.image.wi
 
 function drawPlayer(){ if(player.imageLoaded) ctx.drawImage(player.image,player.x,player.y,player.width,player.height); else{ ctx.fillStyle='green'; ctx.fillRect(player.x,player.y,player.width,player.height);} }
 function updatePlayer(d){ if(!player.isGrounded){ player.dy+=player.gravity*d; player.y+=player.dy*d; } if(player.y+player.height>=groundY){ player.y=groundY-player.height; player.dy=0; player.isGrounded=true; player.jumpsRemaining=2; } }
-function playerJump(){ startAudio(); if(isGameOver||isPaused||!gameStarted) return; if(player.jumpsRemaining>0){ player.dy=-player.jumpForce; player.isGrounded=false; player.isJumping=true; player.jumpsRemaining--; } }
+function playerJump(){  if(isGameOver||isPaused||!gameStarted) return; startAudio(); if(player.jumpsRemaining>0){ player.dy=-player.jumpForce; player.isGrounded=false; player.isJumping=true; player.jumpsRemaining--; } }
 function stopJump(){ if(player.isJumping && player.dy<0){ player.dy=Math.max(player.dy,-5); } player.isJumping=false; }
 
 /* ===== 障害物（元のロジック維持） ===== */
@@ -676,7 +676,7 @@ window.addEventListener('keydown', e=>{
   if(e.code==='KeyP') togglePause();
 });
 window.addEventListener('keyup', e=>{ if(e.code==='Space'||e.code==='ArrowUp') stopJump(); });
-jumpButton.addEventListener('pointerdown', e=>{ e.preventDefault(); if(isPaused){ debugTapCount++; if(debugTapCount>=DEBUG_TAPS_TO_ENABLE){ enableDebugMode(); resetDebugTapCounter(); } return; } playerJump(); });
+jumpButton.addEventListener('pointerdown', e=>{ e.preventDefault(); if (!gameStarted) return; if(isPaused){ debugTapCount++; if(debugTapCount>=DEBUG_TAPS_TO_ENABLE){ enableDebugMode(); resetDebugTapCounter(); } return; } playerJump(); });
 jumpButton.addEventListener('pointerup',   e=>{ e.preventDefault(); stopJump(); });
 pauseButton.addEventListener('click', e=>{ e.preventDefault(); togglePause(); });
 pauseButton.addEventListener('touchstart', e=>{ e.preventDefault(); togglePause(); });
