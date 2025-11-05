@@ -88,7 +88,7 @@
 </div>
 
 <!-- ルール（中央揃え） -->
-<div class="w-full max-w-[768px] text-gray-200 text-sm mt-3 mb-20 px-1 leading-relaxed text-center">
+<div class="w-full max-w-[768px] text-gray-200 text-sm mt-3 mb-20 px-1 leading-relaxed text-center no-select no-highlight">
   <p class="mb-1">
     ひまわり<img src="./assets/sunflower.svg" alt="sunflower" class="icon-inline">
     やブルーベリー<img src="./assets/blueberry.svg" alt="blueberry" class="icon-inline">
@@ -131,16 +131,52 @@ const SPRITES={
 };
 
 /* ===== オーディオ ===== */
-let audioStarted=false, bgmAudio, endAudio, pickupSound;
+let audioStarted=false, bgmAudio, endAudio;
+let pickupPool = [];
+let pickupIndex = 0;
+  
 async function startAudio(){
   if(audioStarted) return;
   try{
-    bgmAudio = new Audio('./assets/BGM.mp3'); bgmAudio.volume = 0.5; bgmAudio.loop = true; await bgmAudio.play();
-    endAudio = new Audio('./assets/END.mp3'); endAudio.volume=0.5;
-    pickupSound = new Audio('./assets/pick.mp3'); pickupSound.volume = 1.0; pickupSound.preload='auto';
+    bgmAudio = new Audio('./assets/BGM.mp3');
+    bgmAudio.volume = 0.5;
+    bgmAudio.loop = true;
+    await bgmAudio.play();
+
+    endAudio = new Audio('./assets/END.mp3');
+    endAudio.volume = 0.5;
+
+    // ▼ 効果音はプールで用意（複数同時再生に強い）
+    const PICK_POOL_SIZE = 6; // 4でもOK。取りこぼし減らしたいなら6〜8
+    for(let i=0;i<PICK_POOL_SIZE;i++){
+      const a = new Audio('./assets/pick.mp3');
+      a.preload = 'auto';
+      a.volume = 1.0;
+      // iOS対策
+      a.setAttribute('playsinline','');
+      pickupPool.push(a);
+    }
+
     audioStarted = true;
-  }catch(e){ console.error(e); }
+  }catch(e){
+    console.error(e);
+  }
 }
+
+  function playPickup(){
+  if(!pickupPool.length) return;
+  const a = pickupPool[pickupIndex];
+  pickupIndex = (pickupIndex + 1) % pickupPool.length;
+
+  try{
+    // iOSで稀にcurrentTimeが無視される対策：一旦停止→巻き戻し
+    a.pause();
+    a.currentTime = 0;
+    const p = a.play();
+    if(p && typeof p.catch === 'function'){ p.catch(()=>{}); }
+  }catch(_){}
+}
+
 
 /* ===== 画面サイズ（従来レイアウト） ===== */
 const parentWidth = canvas.parentElement.clientWidth;
@@ -189,7 +225,7 @@ function drawClouds(df){
   // 昼・夕・夜それぞれで雲の透明度を変える
   let alpha;
   if (phaseName === 'night') {
-    alpha = 0.08; // ← 夜はめっちゃ薄く（ほぼ透ける）
+    alpha = 0.03; // ← 夜はめっちゃ薄く（ほぼ透ける）
   } else if (phaseName === 'evening') {
     alpha = 0.25; // ← 夕方は少しオレンジ空気感
   } else {
@@ -464,7 +500,8 @@ function tryCollectAcorns(){
     const a=acorns[i], h=a.getHitbox();
     if(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y){
       score+=10; acorns.splice(i,1);
-      if(pickupSound){ try{ pickupSound.currentTime=0; pickupSound.play(); }catch(_){ } }
+      playPickup();
+
     }
   }
 }
@@ -563,6 +600,11 @@ function restartGame(){
   startAudio(); try{ if(bgmAudio){ bgmAudio.currentTime=0; bgmAudio.play(); } }catch(_){}
   score=0; scoreEl.textContent=score; timeElapsed=0; gameSpeed=baseGameSpeed;
   obstacles=[]; acorns=[]; frame=0; spawnTimer=0;
+  // 星まわりをリセット（位置・フェード・流れ星）
+  initStars();
+  starAlpha = 0;
+  shooting = null;
+
   // ★ どんぐり抽選タイマ初期化（端末差なし）
   acornSpawnTimerMs = 0; acornNextIntervalMs = nextAcornIntervalMs();
 
