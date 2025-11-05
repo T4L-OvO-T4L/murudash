@@ -183,19 +183,40 @@ let clouds = Array.from({length:6},()=>({
   base: 0.35 + Math.random()*0.35,
   size: 70 + Math.random()*70
 }));
+
+  
 function drawClouds(df){
-  const isNight=(phaseName==='night');
-  const alpha=isNight?0.30:0.42;
-  ctx.fillStyle=`rgba(255,255,255,${alpha})`;
+  // 昼・夕・夜それぞれで雲の透明度を変える
+  let alpha;
+  if (phaseName === 'night') {
+    alpha = 0.08; // ← 夜はめっちゃ薄く（ほぼ透ける）
+  } else if (phaseName === 'evening') {
+    alpha = 0.25; // ← 夕方は少しオレンジ空気感
+  } else {
+    alpha = 0.42; // ← 昼間は通常
+  }
+
+  ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+
   const speedBoost = 1 + (gameSpeed / 10);
-  for(const c of clouds){
+  for (const c of clouds) {
     const v = c.base * speedBoost;
     c.x -= v * df;
-    if(c.x < -220){ c.x = gameWidth + 120; c.y = 30 + Math.random()*100; }
-    ctx.beginPath(); ctx.ellipse(c.x, c.y, c.size, c.size*0.55, 0, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(c.x + c.size*0.6, c.y + 10, c.size*0.9, c.size*0.48, 0, 0, Math.PI*2); ctx.fill();
+    if (c.x < -220) {
+      c.x = gameWidth + 120;
+      c.y = 30 + Math.random() * 100;
+    }
+
+    ctx.beginPath();
+    ctx.ellipse(c.x, c.y, c.size, c.size * 0.55, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.ellipse(c.x + c.size * 0.6, c.y + 10, c.size * 0.9, c.size * 0.48, 0, 0, Math.PI * 2);
+    ctx.fill();
   }
 }
+
 
 
   
