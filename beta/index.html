@@ -712,12 +712,16 @@ function tryCollectAcorns(){
   for(let i=acorns.length-1;i>=0;i--){
     const a=acorns[i], h=a.getHitbox();
     if(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y){
-      score+=10; acorns.splice(i,1);
-      playPickup();
 
+      // ★ 通常：+10 / デバッグ中：+200
+      score += isDebug ? 200 : 10;
+
+      acorns.splice(i,1);
+      playPickup();
     }
   }
 }
+
 
 /* ===== ユーティリティ ===== */
 function clamp01(v){ return Math.max(0,Math.min(1,v)); }
@@ -754,14 +758,14 @@ class SpecialSunflower extends Obstacle{
     super(type,img,y,size);
     this.baseY = y;
     this.phase = Math.random()*Math.PI*2;
-    this.hopAmp = size * 0.25;   // ぴょんぴょんの高さ
+    this.hopAmp = size * 0.5;   // ぴょんぴょんの高さ
     this.hopSpeed = 0.18;        // ぴょんぴょんの速さ
   }
 
   update(d){
     if(this.type === 'sun2_run'){
       // こっちに向かって走ってくる感じ：普通よりちょい速い
-      this.x -= gameSpeed * 1.6 * d;
+      this.x -= gameSpeed * 1.4 * d;
     }else if(this.type === 'sun2_hop'){
       // その場で流れてくる＋小さくジャンプ
       this.x -= gameSpeed * d;
@@ -775,18 +779,24 @@ class SpecialSunflower extends Obstacle{
   }
 }
 
-  
-const SCALE=0.7;
 
+const SCALE = 0.7;
 
 function spawnObstacle(delta){
   spawnTimer += delta;
 
-  let minSpawnInterval = Math.max(minSpawnIntervalBase - (timeElapsed/1000)*spawnIntervalReductionPerSec, 40);
-  let maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed/1000)*spawnIntervalReductionPerSec, 70);
+  let minSpawnInterval = Math.max(
+    minSpawnIntervalBase - (timeElapsed/1000)*spawnIntervalReductionPerSec,
+    40
+  );
+  let maxSpawnInterval = Math.max(
+    maxSpawnIntervalBase - (timeElapsed/1000)*spawnIntervalReductionPerSec,
+    70
+  );
 
   const easeMul = getEarlyEaseMultiplier(timeElapsed);
-  minSpawnInterval*=easeMul; maxSpawnInterval*=easeMul;
+  minSpawnInterval *= easeMul;
+  maxSpawnInterval *= easeMul;
 
   function lateDensityMul(ms){
     if(ms < 60000)  return 1.0;  // 〜60s
@@ -797,49 +807,59 @@ function spawnObstacle(delta){
   minSpawnInterval *= ld;
   maxSpawnInterval *= ld;
 
-  if(spawnTimer < nextSpawnInterval) return;
+  if (spawnTimer < nextSpawnInterval) return;
 
   const onscreen = obstacles.filter(o => (o.x + o.width > 0) && (o.x < gameWidth)).length;
   const limit = currentOnscreenLimit(timeElapsed);
-  if(onscreen >= limit) return;
+  if (onscreen >= limit) return;
 
   const last = obstacles.length ? obstacles[obstacles.length-1] : null;
   const minGapPx = getMinPixelGap(timeElapsed);
-  if(last){
+  if (last){
     const gapPx = gameWidth - (last.x + last.width);
-    if(gapPx < minGapPx) return;
+    if (gapPx < minGapPx) return;
   }
 
   const rand = Math.random();
 
-  if(rand < 0.4){
+  if (rand < 0.4){
     // ブルーベリー（空中）
     const size = (40 + Math.random()*20) * SCALE;
-    const yPos = Math.random() < 0.3 ? groundY - 30 : groundY - 70 - Math.random()*50;
+    const yPos = Math.random() < 0.3
+      ? groundY - 30
+      : groundY - 70 - Math.random()*50;
     obstacles.push(new Obstacle('air', SPRITES.blueberry, yPos, size));
-  }else{
-    // ★ ここで「普通のひまわり vs 動くひまわり」を決める
+  } else {
+    // ★ 普通のひまわり vs 動くひまわり
     const canUseSpecial = (score >= 500) && SPRITES.sunflower2;
     const useSpecial = canUseSpecial && (Math.random() < 0.2); // 5回に1回くらい
 
-    if(useSpecial){
+    if (useSpecial){
       // どっち出すか 50:50
       const isRunner = Math.random() < 0.5;
       const type = isRunner ? 'sun2_run' : 'sun2_hop';
-      const size = (70 + Math.random()*20) * SCALE;
+
+      const baseSize = (70 + Math.random()*20) * SCALE;
+      // 走るやつ＝1.5倍、ぴょんぴょん＝2倍
+      const size = isRunner ? baseSize * 1.5 : baseSize * 2.0;
+
       obstacles.push(new SpecialSunflower(type, SPRITES.sunflower2, groundY, size));
-    }else{
-      // いつものひまわりたち
-      if(score > 10 && Math.random() < 0.3){
-        obstacles.push(new Obstacle('ground_large', SPRITES.sunflower, groundY, 120*SCALE*1.25));
-      }else{
-        obstacles.push(new Obstacle('ground', SPRITES.sunflower, groundY, (60 + Math.random()*20) * SCALE));
+    } else {
+      // ★ 従来どおりのひまわり
+      if (score > 10 && Math.random() < 0.3){
+        obstacles.push(
+          new Obstacle('ground_large', SPRITES.sunflower, groundY, 120 * SCALE * 1.25)
+        );
+      } else {
+        obstacles.push(
+          new Obstacle('ground', SPRITES.sunflower, groundY, (60 + Math.random()*20) * SCALE)
+        );
       }
     }
   }
 
   nextSpawnInterval = minSpawnInterval + Math.random()*(maxSpawnInterval - minSpawnInterval);
-  spawnTimer=0;
+  spawnTimer = 0;
 }
 
 
