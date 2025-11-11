@@ -11,7 +11,36 @@
 <link rel="preload" as="audio" href="./assets/pick.mp3">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+
+  
 <title>むるだっしゅ！</title>
+
+<!-- 🌻 ファビコン（ひまわりSVG）※本番は ./assets でOK -->
+<link rel="icon" type="image/svg+xml" href="./assets/sunflower.svg">
+
+<!-- 🪪 OGP / Twitterカード（本番用） -->
+<meta property="og:title" content="むるだっしゅ！">
+<meta property="og:description" content="迫りくるひまわりやブルーベリーをよけまくるブラウザランゲーム。">
+<meta property="og:type" content="website">
+
+<!-- 本番URL -->
+<meta property="og:url" content="https://t4l-ovo-t4l.github.io/murudash/">
+
+<!-- OGP画像（assets/OGP.png に置く前提） -->
+<meta property="og:image" content="https://t4l-ovo-t4l.github.io/murudash/assets/OGP.png">
+
+<meta property="og:site_name" content="むるだっしゅ！">
+<meta name="twitter:card" content="summary_large_image">
+
+
+
+
+
+
+
+
+
+  
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
@@ -115,6 +144,14 @@
     たまに落ちてるどんぐり<img src="./assets/Donguri.svg" alt="donguri" class="icon-inline">
     は拾いたいむるね
   </p>
+  
+    <!-- ▼ バージョン表示（右下にちょこっと） -->
+  <p class="mt-2 text-[10px] text-gray-400 text-right pr-2 sm:text-xs">
+    version <span id="versionLabel"></span>
+  </p>
+  
+</div>
+
 </div>
 
 <!-- ジャンプボタン -->
@@ -128,6 +165,10 @@
   // iOSの長押し選択・コンテキストメニュー抑止（ボタン操作はそのまま）
 document.addEventListener('selectstart', e => e.preventDefault());
 document.addEventListener('contextmenu', e => e.preventDefault(), { passive: false });
+
+// ★★★★★★★★★★★★★★★★★★★★★★ ゲームのバージョン（ここだけ変えたらOK）★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+const GAME_VERSION = '1.0';
+
 
 /* ===== 基本セットアップ ===== */
 const canvas = document.getElementById('gameCanvas');
@@ -143,6 +184,12 @@ const pauseButton = document.getElementById('pauseButton');
 const pauseOverlay = document.getElementById('pauseOverlay');
 const startScreen = document.getElementById('startScreen');
 const startButton = document.getElementById('startButton');
+
+  const versionLabel = document.getElementById('versionLabel');
+if (versionLabel) {
+  versionLabel.textContent = `v${GAME_VERSION}`;
+}
+
 
 function loadImg(src){ const img=new Image(); img.src=src; return img; }
 const SPRITES={
