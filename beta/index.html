@@ -242,6 +242,13 @@
     たまに落ちてるどんぐり<img src="../assets/Donguri.svg" alt="donguri" class="icon-inline">
     は拾いたいむるね
   </p>
+
+    <!-- ▼ バージョン表示（右下にちょこっと） -->
+  <p class="mt-2 text-[10px] text-gray-400 text-right pr-2 sm:text-xs">
+    version <span id="versionLabel"></span>
+  </p>
+
+
 </div>
 
 <!-- ジャンプボタン -->
@@ -256,6 +263,11 @@
 document.addEventListener('selectstart', e => e.preventDefault());
 document.addEventListener('contextmenu', e => e.preventDefault(), { passive: false });
 
+
+// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ ゲームのバージョン（ここだけ変えたらOK）★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+const GAME_VERSION = '1.1';
+
+  
 /* ===== 基本セットアップ ===== */
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -275,6 +287,13 @@ const creditsButton = document.getElementById('creditsButton');
 const closeCreditsButton = document.getElementById('closeCreditsButton');
 const creditsScroll = document.getElementById('creditsScroll');
 
+const versionLabel = document.getElementById('versionLabel');
+if (versionLabel) {
+  versionLabel.textContent = `v${GAME_VERSION}`;
+}
+
+
+  
 
 function loadImg(src){ const img=new Image(); img.src=src; return img; }
 const SPRITES={
