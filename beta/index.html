@@ -9,9 +9,11 @@
 <link rel="preload" as="audio" href="../assets/BGM.mp3">
 <link rel="preload" as="audio" href="../assets/END.mp3">
 <link rel="preload" as="audio" href="../assets/pick.mp3">
+<link rel="preload" as="audio" href="../assets/CREDIT.mp3">
+
 
 <!-- 🌻🌻🌻 追加ひまわり 🌻🌻🌻 -->
-<link rel="preload" as="audio" href="../assets/sunflower2.png">
+<link rel="preload" as="image" href="../assets/sunflower2.png">
   
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
@@ -231,6 +233,7 @@
   </div><!-- /.relative -->
 </div><!-- /#creditsOverlay -->
 
+</div><!-- ★ これ：キャンバスの outer relative を閉じる -->
 
 
   
@@ -359,11 +362,10 @@ async function startAudio(){
   }catch(_){}
 }
 
-// ▼ クレジット専用BGM（今は一旦 BGM.mp3 を使う）
+// ▼ クレジット専用BGM
 function playCreditsBgm(){
   try{
     if(!creditsAudio){
-      // 将来ここを ../assets/CREDITS_BGM.mp3 とかに変えればOK
       creditsAudio = new Audio('../assets/CREDIT.mp3');
       creditsAudio.loop = true;
       creditsAudio.volume = 0.5;
@@ -841,6 +843,15 @@ function spawnObstacle(delta){
 }
 
 
+function updateObstacles(d){
+  for(let i = obstacles.length - 1; i >= 0; i--){
+    obstacles[i].update(d);
+    obstacles[i].draw();
+    if(obstacles[i].x + obstacles[i].width < 0){
+      obstacles.splice(i, 1);
+    }
+  }
+}
 
 
 
