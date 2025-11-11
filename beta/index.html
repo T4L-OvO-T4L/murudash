@@ -840,8 +840,8 @@ function spawnObstacle(delta){
       const type = isRunner ? 'sun2_run' : 'sun2_hop';
 
       const baseSize = (70 + Math.random()*20) * SCALE;
-      // 走るやつ＝1.5倍、ぴょんぴょん＝2倍
-      const size = isRunner ? baseSize * 1.5 : baseSize * 2.0;
+      // 走るやつ＝1.5倍、ぴょんぴょん＝1.65倍
+      const size = isRunner ? baseSize * 1.5 : baseSize * 1.65;
 
       obstacles.push(new SpecialSunflower(type, SPRITES.sunflower2, groundY, size));
     } else {
