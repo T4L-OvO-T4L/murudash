@@ -39,6 +39,16 @@
     -webkit-touch-callout: none;
   }
 
+    @keyframes credits-scroll {
+    0% { transform: translateY(100%); }
+    100% { transform: translateY(-100%); }
+  }
+
+  .credits-scroll {
+    animation: credits-scroll 30s linear;
+  }
+
+
 </style>
 </head>
 
@@ -81,6 +91,11 @@
     <button id="startButton" class="px-8 py-4 bg-green-600 text-white font-bold rounded-lg shadow-lg text-2xl hover:bg-green-700 transition-colors">
       ゲームスタート
     </button>
+
+        <button id="creditsButton" class="mt-4 px-5 py-2 border border-gray-300 text-sm rounded-lg bg-black/40 hover:bg-black/60 transition-colors">
+      クレジット
+    </button>
+
   </div>
 
   <!-- ポーズ -->
@@ -102,6 +117,52 @@
       </a>
     </div>
   </div>
+
+  <!-- クレジット（スタッフロール） -->
+  <div id="creditsOverlay" class="absolute inset-0 bg-black bg-opacity-90 flex-col justify-center items-center rounded-b-lg text-white px-6 py-6 text-center hidden">
+    <div class="w-full max-w-[640px] h-full flex flex-col">
+      <h2 class="text-3xl font-bold mb-4">クレジット</h2>
+
+      <div class="relative flex-1 overflow-hidden border border-gray-500 rounded-lg bg-black/60">
+        <!-- この中身が上にスクロールしていく -->
+        <div id="creditsScroll" class="absolute w-full px-4 py-6 space-y-3 text-sm sm:text-base leading-relaxed credits-scroll">
+          <p class="text-lg font-bold mb-2">むるだっしゅ！</p>
+          <p>企画・制作：たる（X:@T4L_OvO_）</p>
+
+          <p class="mt-4 font-semibold">キャラクター / グラフィック</p>
+          <p>Muru.png（ムルルをモチーフにしたオリジナル描き下ろし）</p>
+
+          <p class="mt-4 font-semibold">サウンド</p>
+          <p>BGM：自作オリジナルBGM</p>
+          <p>効果音（ゲームオーバー）：効果音ラボ</p>
+          <p>効果音（どんぐり拾得）：効果音ラボ</p>
+
+          <p class="mt-4 font-semibold">画像素材</p>
+          <p>ブルーベリー：Twemoji（CC BY 4.0）</p>
+          <p>ひまわり：イラストAC（AI → SVG 変換）</p>
+          <p>どんぐり：イラストAC（AI → SVG 変換）</p>
+
+          <p class="mt-4 font-semibold">技術</p>
+          <p>HTML5 / JavaScript（Vanilla）</p>
+          <p>Tailwind CSS</p>
+          <p>GitHub Pages</p>
+
+          <p class="mt-4 font-semibold">Special Thanks</p>
+          <p>ムルル Mururu【オリジナル3Dモデル】</p>
+
+          <p class="mt-8 text-xs text-gray-300">
+            ※本作品は「ムルル」をモチーフにした非公式ファン作品です。権利者様とは一切関係ありません。
+          </p>
+        </div>
+      </div>
+
+      <button id="closeCreditsButton" class="mt-4 mx-auto px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-bold">
+        とじる
+      </button>
+    </div>
+  </div>
+
+  
 </div>
 
 <!-- ルール（中央揃え） -->
@@ -143,6 +204,11 @@ const pauseButton = document.getElementById('pauseButton');
 const pauseOverlay = document.getElementById('pauseOverlay');
 const startScreen = document.getElementById('startScreen');
 const startButton = document.getElementById('startButton');
+  const creditsOverlay = document.getElementById('creditsOverlay');
+const creditsButton = document.getElementById('creditsButton');
+const closeCreditsButton = document.getElementById('closeCreditsButton');
+const creditsScroll = document.getElementById('creditsScroll');
+
 
 function loadImg(src){ const img=new Image(); img.src=src; return img; }
 const SPRITES={
@@ -153,8 +219,12 @@ const SPRITES={
 
 /* ===== オーディオ ===== */
 let audioStarted=false, bgmAudio, endAudio;
+// クレジット専用BGM
+let creditsAudio = null;
+
 let pickupPool = [];
 let pickupIndex = 0;
+
   
 async function startAudio(){
   if(audioStarted) return;
@@ -198,6 +268,35 @@ async function startAudio(){
   }catch(_){}
 }
 
+// ▼ クレジット専用BGM（今は一旦 BGM.mp3 を使う）
+function playCreditsBgm(){
+  try{
+    if(!creditsAudio){
+      // 将来ここを ./assets/CREDITS_BGM.mp3 とかに変えればOK
+      creditsAudio = new Audio('./assets/BGM.mp3');
+      creditsAudio.loop = true;
+      creditsAudio.volume = 0.5;
+      creditsAudio.setAttribute('playsinline','');
+    }
+    creditsAudio.currentTime = 0;
+    const p = creditsAudio.play();
+    if(p && typeof p.catch === 'function'){
+      p.catch(()=>{});
+    }
+  }catch(e){
+    console.error(e);
+  }
+}
+
+function stopCreditsBgm(){
+  if(!creditsAudio) return;
+  try{
+    creditsAudio.pause();
+    creditsAudio.currentTime = 0;
+  }catch(_){}
+}
+
+  
 
 /* ===== 画面サイズ（従来レイアウト） ===== */
 const parentWidth = canvas.parentElement.clientWidth;
@@ -643,6 +742,55 @@ function togglePause(){
   else{ try{ if(bgmAudio)bgmAudio.play(); }catch(_){}; pauseOverlay.classList.add('hidden'); pauseOverlay.classList.remove('flex'); lastTime=performance.now(); requestAnimationFrame(gameLoop); resetDebugTapCounter(); }
 }
 
+function openCredits(e){
+  if (e) e.preventDefault();
+
+  // オーバーレイ表示
+  creditsOverlay.classList.remove('hidden');
+  creditsOverlay.classList.add('flex');
+
+  // スタッフロールのスクロールを頭から再生し直す
+  creditsScroll.classList.remove('credits-scroll');
+  void creditsScroll.offsetWidth; // reflow
+  creditsScroll.classList.add('credits-scroll');
+
+  // ゲームBGMはいったん止めて、クレジット専用BGM再生
+  try{
+    if (bgmAudio) bgmAudio.pause();
+  }catch(_){}
+  playCreditsBgm();
+}
+
+function closeCredits(e){
+  if (e) e.preventDefault();
+
+  creditsOverlay.classList.add('hidden');
+  creditsOverlay.classList.remove('flex');
+
+  // クレジットBGM停止
+  stopCreditsBgm();
+
+  // もし既にゲームが始まっていて、ポーズでもゲームオーバーでもないならBGM再開
+  if (gameStarted && !isGameOver && !isPaused){
+    try{
+      if (bgmAudio) bgmAudio.play();
+    }catch(_){}
+  }
+}
+
+  
+
+// タイトル画面のボタン
+creditsButton.addEventListener('click', openCredits);
+creditsButton.addEventListener('touchstart', openCredits, { passive: false });
+
+// クレジット画面の「とじる」ボタン
+closeCreditsButton.addEventListener('click', closeCredits);
+closeCreditsButton.addEventListener('touchstart', closeCredits, { passive: false });
+
+
+
+  
 /* ===== ループ ===== */
 function gameLoop(ts){
   if(isGameOver||isPaused||!gameStarted) return;
