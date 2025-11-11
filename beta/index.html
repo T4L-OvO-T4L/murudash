@@ -118,57 +118,79 @@
     </div>
   </div>
 
-   <!-- クレジット（スタッフロール／ゲーム画面フル） -->
-  <div id="creditsOverlay" class="absolute inset-0 bg-black bg-opacity-90 flex justify-center items-center rounded-b-lg text-white hidden">
-    <div class="relative w-full h-full overflow-hidden">
+<!-- クレジット（スタッフロール／ゲーム画面フル） -->
+<div id="creditsOverlay" class="absolute inset-0 bg-black bg-opacity-90 flex justify-center items-center rounded-b-lg text-white hidden">
+  <div class="relative w-full h-full overflow-hidden">
 
-      <!-- ここが全画面を縦に流れるテキスト本体 -->
-      <div
-        id="creditsScroll"
-        class="absolute left-1/2 -translate-x-1/2 credits-scroll text-center space-y-3 text-sm sm:text-base leading-relaxed"
-      >
-        <p class="text-3xl font-bold mb-6">むるだっしゅ！ クレジット</p>
+    <!-- ここが全画面を縦に流れるテキスト本体 -->
+    <div
+      id="creditsScroll"
+      class="absolute left-1/2 -translate-x-1/2 credits-scroll w-full max-w-[720px] text-white"
+    >
+      <div class="flex justify-center gap-8 items-start px-4">
 
-        <p class="text-lg font-semibold mt-2">企画・制作</p>
-        <p>たる（X: @T4L_OvO_）</p>
+        <!-- 📝 真ん中：テキスト列（今までのクレジット） -->
+        <div class="flex-1 text-center space-y-3 text-sm sm:text-base leading-relaxed">
+          <p class="text-3xl font-bold mb-6">むるだっしゅ！ クレジット</p>
 
-        <p class="text-lg font-semibold mt-6">キャラクター / グラフィック</p>
-        <p>Muru.png（ムルルをモチーフにしたオリジナル描き下ろし）</p>
+          <p class="text-lg font-semibold mt-2">企画・制作</p>
+          <p>たる（X: @T4L_OvO_）</p>
 
-        <p class="text-lg font-semibold mt-6">サウンド</p>
-        <p>BGM：自作オリジナルBGM</p>
-        <p>効果音（ゲームオーバー）：効果音ラボ</p>
-        <p>効果音（どんぐり拾得）：効果音ラボ</p>
+          <p class="text-lg font-semibold mt-6">キャラクター / グラフィック</p>
+          <p>Muru.png（ムルルをモチーフにしたオリジナル描き下ろし）</p>
 
-        <p class="text-lg font-semibold mt-6">画像素材</p>
-        <p>ブルーベリー：Twemoji（CC BY 4.0）</p>
-        <p>ひまわり：イラストAC（AI → SVG 変換）</p>
-        <p>どんぐり：イラストAC（AI → SVG 変換）</p>
+          <p class="text-lg font-semibold mt-6">サウンド</p>
+          <p>BGM：自作オリジナルBGM</p>
+          <p>効果音（ゲームオーバー）：効果音ラボ</p>
+          <p>効果音（どんぐり拾得）：効果音ラボ</p>
 
-        <p class="text-lg font-semibold mt-6">技術</p>
-        <p>HTML5 / JavaScript（Vanilla）</p>
-        <p>Tailwind CSS</p>
-        <p>GitHub Pages</p>
+          <p class="text-lg font-semibold mt-6">画像素材</p>
+          <p>ブルーベリー：Twemoji（CC BY 4.0）</p>
+          <p>ひまわり：イラストAC（AI → SVG 変換）</p>
+          <p>どんぐり：イラストAC（AI → SVG 変換）</p>
 
-        <p class="text-lg font-semibold mt-6">Special Thanks</p>
-        <p>ムルル Mururu【オリジナル3Dモデル】</p>
+          <p class="text-lg font-semibold mt-6">技術</p>
+          <p>HTML5 / JavaScript（Vanilla）</p>
+          <p>Tailwind CSS</p>
+          <p>GitHub Pages</p>
 
-        <p class="mt-10 text-xs text-gray-300">
-          ※本作品は「ムルル」をモチーフにした非公式ファン作品です。権利者様とは一切関係ありません。
-        </p>
-      </div>
+          <p class="text-lg font-semibold mt-6">Special Thanks</p>
+          <p>ムルル Mururu【オリジナル3Dモデル】</p>
 
-      <!-- 閉じるボタンだけは画面下に固定 -->
-      <button
-        id="closeCreditsButton"
-        class="absolute bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-bold"
-      >
-        とじる
-      </button>
-    </div>
-  </div>
- 
-</div>
+          <p class="mt-10 text-xs text-gray-300">
+            ※本作品は「ムルル」をモチーフにした非公式ファン作品です。権利者様とは一切関係ありません。
+          </p>
+        </div>
+
+        <!-- 🌻 右側：ひまわり・ブルーベリー・どんぐり列（PCだけ表示） -->
+        <div class="hidden sm:flex flex-col gap-6 items-center opacity-80">
+          <img src="../assets/sunflower.svg" alt="sunflower" class="w-16 h-16">
+          <img src="../assets/blueberry.svg" alt="blueberry" class="w-14 h-14">
+          <img src="../assets/Donguri.svg"  alt="donguri"  class="w-14 h-14">
+          <img src="../assets/sunflower.svg" alt="sunflower" class="w-16 h-16">
+        </div>
+
+        <!-- 🧚 左側：自機ムルル＋飾り（PCだけ表示） -->
+        <div class="hidden sm:flex flex-col gap-6 items-center opacity-80">
+          <img src="../assets/Muru.png"      alt="Muru"      class="w-24">
+          <img src="../assets/blueberry.svg" alt="blueberry" class="w-14 h-14">
+          <img src="../assets/sunflower.svg" alt="sunflower" class="w-16 h-16">
+        </div>
+
+      </div> <!-- /.flex -->
+    </div>   <!-- /#creditsScroll -->
+
+    <!-- 閉じるボタンだけは画面下に固定 -->
+    <button
+      id="closeCreditsButton"
+      class="absolute bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-bold"
+    >
+      とじる
+    </button>
+
+  </div> <!-- /.relative -->
+</div>   <!-- /#creditsOverlay -->
+
 
 
   
