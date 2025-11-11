@@ -118,52 +118,60 @@
     </div>
   </div>
 
-  <!-- クレジット（スタッフロール） -->
-  <div id="creditsOverlay" class="absolute inset-0 bg-black bg-opacity-90 flex-col justify-center items-center rounded-b-lg text-white px-6 py-6 text-center hidden">
-    <div class="w-full max-w-[640px] h-full flex flex-col">
-      <h2 class="text-3xl font-bold mb-4">クレジット</h2>
+   <!-- クレジット（スタッフロール／ゲーム画面フル） -->
+  <div id="creditsOverlay" class="absolute inset-0 bg-black bg-opacity-90 flex justify-center items-center rounded-b-lg text-white hidden">
+    <div class="relative w-full h-full overflow-hidden">
 
-      <div class="relative flex-1 overflow-hidden border border-gray-500 rounded-lg bg-black/60">
-        <!-- この中身が上にスクロールしていく -->
-        <div id="creditsScroll" class="absolute w-full px-4 py-6 space-y-3 text-sm sm:text-base leading-relaxed credits-scroll">
-          <p class="text-lg font-bold mb-2">むるだっしゅ！</p>
-          <p>企画・制作：たる（X:@T4L_OvO_）</p>
+      <!-- ここが全画面を縦に流れるテキスト本体 -->
+      <div
+        id="creditsScroll"
+        class="absolute left-1/2 -translate-x-1/2 credits-scroll text-center space-y-3 text-sm sm:text-base leading-relaxed"
+      >
+        <p class="text-3xl font-bold mb-6">むるだっしゅ！ クレジット</p>
 
-          <p class="mt-4 font-semibold">キャラクター / グラフィック</p>
-          <p>Muru.png（ムルルをモチーフにしたオリジナル描き下ろし）</p>
+        <p class="text-lg font-semibold mt-2">企画・制作</p>
+        <p>たる（X: @T4L_OvO_）</p>
 
-          <p class="mt-4 font-semibold">サウンド</p>
-          <p>BGM：自作オリジナルBGM</p>
-          <p>効果音（ゲームオーバー）：効果音ラボ</p>
-          <p>効果音（どんぐり拾得）：効果音ラボ</p>
+        <p class="text-lg font-semibold mt-6">キャラクター / グラフィック</p>
+        <p>Muru.png（ムルルをモチーフにしたオリジナル描き下ろし）</p>
 
-          <p class="mt-4 font-semibold">画像素材</p>
-          <p>ブルーベリー：Twemoji（CC BY 4.0）</p>
-          <p>ひまわり：イラストAC（AI → SVG 変換）</p>
-          <p>どんぐり：イラストAC（AI → SVG 変換）</p>
+        <p class="text-lg font-semibold mt-6">サウンド</p>
+        <p>BGM：自作オリジナルBGM</p>
+        <p>効果音（ゲームオーバー）：効果音ラボ</p>
+        <p>効果音（どんぐり拾得）：効果音ラボ</p>
 
-          <p class="mt-4 font-semibold">技術</p>
-          <p>HTML5 / JavaScript（Vanilla）</p>
-          <p>Tailwind CSS</p>
-          <p>GitHub Pages</p>
+        <p class="text-lg font-semibold mt-6">画像素材</p>
+        <p>ブルーベリー：Twemoji（CC BY 4.0）</p>
+        <p>ひまわり：イラストAC（AI → SVG 変換）</p>
+        <p>どんぐり：イラストAC（AI → SVG 変換）</p>
 
-          <p class="mt-4 font-semibold">Special Thanks</p>
-          <p>ムルル Mururu【オリジナル3Dモデル】</p>
+        <p class="text-lg font-semibold mt-6">技術</p>
+        <p>HTML5 / JavaScript（Vanilla）</p>
+        <p>Tailwind CSS</p>
+        <p>GitHub Pages</p>
 
-          <p class="mt-8 text-xs text-gray-300">
-            ※本作品は「ムルル」をモチーフにした非公式ファン作品です。権利者様とは一切関係ありません。
-          </p>
-        </div>
+        <p class="text-lg font-semibold mt-6">Special Thanks</p>
+        <p>ムルル Mururu【オリジナル3Dモデル】</p>
+
+        <p class="mt-10 text-xs text-gray-300">
+          ※本作品は「ムルル」をモチーフにした非公式ファン作品です。権利者様とは一切関係ありません。
+        </p>
       </div>
 
-      <button id="closeCreditsButton" class="mt-4 mx-auto px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-bold">
+      <!-- 閉じるボタンだけは画面下に固定 -->
+      <button
+        id="closeCreditsButton"
+        class="absolute bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-bold"
+      >
         とじる
       </button>
     </div>
   </div>
+ 
+</div>
+
 
   
-</div>
 
 <!-- ルール（中央揃え） -->
 <div class="w-full max-w-[768px] text-gray-200 text-sm mt-3 mb-20 px-1 leading-relaxed text-center no-select no-highlight">
