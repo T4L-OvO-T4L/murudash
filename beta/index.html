@@ -3,12 +3,12 @@
 <head>
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; media-src 'self';">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<link rel="preload" as="image" href="./assets/blueberry.svg">
-<link rel="preload" as="image" href="./assets/sunflower.svg">
-<link rel="preload" as="image" href="./assets/Donguri.svg">
-<link rel="preload" as="audio" href="./assets/BGM.mp3">
-<link rel="preload" as="audio" href="./assets/END.mp3">
-<link rel="preload" as="audio" href="./assets/pick.mp3">
+<link rel="preload" as="image" href="../assets/blueberry.svg">
+<link rel="preload" as="image" href="../assets/sunflower.svg">
+<link rel="preload" as="image" href="../assets/Donguri.svg">
+<link rel="preload" as="audio" href="../assets/BGM.mp3">
+<link rel="preload" as="audio" href="../assets/END.mp3">
+<link rel="preload" as="audio" href="../assets/pick.mp3">
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <title>むるだっしゅ！</title>
@@ -168,12 +168,12 @@
 <!-- ルール（中央揃え） -->
 <div class="w-full max-w-[768px] text-gray-200 text-sm mt-3 mb-20 px-1 leading-relaxed text-center no-select no-highlight">
   <p class="mb-1">
-    ひまわり<img src="./assets/sunflower.svg" alt="sunflower" class="icon-inline">
-    やブルーベリー<img src="./assets/blueberry.svg" alt="blueberry" class="icon-inline">
+    ひまわり<img src="../assets/sunflower.svg" alt="sunflower" class="icon-inline">
+    やブルーベリー<img src="../assets/blueberry.svg" alt="blueberry" class="icon-inline">
     を<br class="sm:hidden"/>避けながらハイスコアを目指そう！
   </p>
   <p>
-    たまに落ちてるどんぐり<img src="./assets/Donguri.svg" alt="donguri" class="icon-inline">
+    たまに落ちてるどんぐり<img src="../assets/Donguri.svg" alt="donguri" class="icon-inline">
     は拾いたいむるね
   </p>
 </div>
@@ -212,9 +212,9 @@ const creditsScroll = document.getElementById('creditsScroll');
 
 function loadImg(src){ const img=new Image(); img.src=src; return img; }
 const SPRITES={
-  blueberry: loadImg('./assets/blueberry.svg'),
-  sunflower: loadImg('./assets/sunflower.svg'),
-  donguri:  loadImg('./assets/Donguri.svg')
+  blueberry: loadImg('../assets/blueberry.svg'),
+  sunflower: loadImg('../assets/sunflower.svg'),
+  donguri:  loadImg('../assets/Donguri.svg')
 };
 
 /* ===== オーディオ ===== */
@@ -229,18 +229,18 @@ let pickupIndex = 0;
 async function startAudio(){
   if(audioStarted) return;
   try{
-    bgmAudio = new Audio('./assets/BGM.mp3');
+    bgmAudio = new Audio('../assets/BGM.mp3');
     bgmAudio.volume = 0.5;
     bgmAudio.loop = true;
     await bgmAudio.play();
 
-    endAudio = new Audio('./assets/END.mp3');
+    endAudio = new Audio('../assets/END.mp3');
     endAudio.volume = 0.5;
 
     // ▼ 効果音はプールで用意（複数同時再生に強い）
     const PICK_POOL_SIZE = 6; // 4でもOK。取りこぼし減らしたいなら6〜8
     for(let i=0;i<PICK_POOL_SIZE;i++){
-      const a = new Audio('./assets/pick.mp3');
+      const a = new Audio('../assets/pick.mp3');
       a.preload = 'auto';
       a.volume = 1.0;
       // iOS対策
@@ -272,8 +272,8 @@ async function startAudio(){
 function playCreditsBgm(){
   try{
     if(!creditsAudio){
-      // 将来ここを ./assets/CREDITS_BGM.mp3 とかに変えればOK
-      creditsAudio = new Audio('./assets/BGM.mp3');
+      // 将来ここを ../assets/CREDITS_BGM.mp3 とかに変えればOK
+      creditsAudio = new Audio('../assets/BGM.mp3');
       creditsAudio.loop = true;
       creditsAudio.volume = 0.5;
       creditsAudio.setAttribute('playsinline','');
@@ -635,7 +635,7 @@ function resetDebugTapCounter(){ debugTapCount=0; }
 
 /* ===== プレイヤー ===== */
 const player={x:50,y:groundY-50,width:50,height:50,dy:0,gravity:0.8,jumpForce:15,isGrounded:true,jumpsRemaining:2,isJumping:false,image:new Image(),imageLoaded:false};
-player.image.src='./assets/Muru.png';
+player.image.src='../assets/Muru.png';
 player.image.onload=()=>{ player.imageLoaded=true; player.width=(player.image.width/player.image.height)*player.height; };
 
 function drawPlayer(){ if(player.imageLoaded) ctx.drawImage(player.image,player.x,player.y,player.width,player.height); else{ ctx.fillStyle='green'; ctx.fillRect(player.x,player.y,player.width,player.height);} }
