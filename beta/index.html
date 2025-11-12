@@ -47,7 +47,13 @@
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
   body { font-family:'Inter',sans-serif; touch-action:manipulation; overflow:hidden; overscroll-behavior:none; background:#1a202c; }
-  canvas { display:block; }
+  
+  canvas {
+    display: block;
+    width: 100%;   /* 親要素にフィットさせる */
+    height: auto;  /* 縦横比は 768x300 のまま維持 */
+  }
+
   .control-button { transition: background-color .1s, transform .1s; }
   .control-button:active { transform: scale(.95); background:#2c5282; }
   .pause-button { transition: background-color .1s, transform .1s; }
@@ -563,11 +569,14 @@ function stopCreditsBgm(){
 
   
 
-/* ===== 画面サイズ（従来レイアウト） ===== */
-const parentWidth = canvas.parentElement.clientWidth;
-const gameWidth  = Math.min(parentWidth, 768);
+/* ===== 画面サイズ（固定レイアウト） ===== */
+// ゲーム内の論理サイズを常に 768x300 に固定
+const gameWidth  = 768;
 const gameHeight = 300;
-canvas.width = gameWidth; canvas.height = gameHeight;
+
+canvas.width  = gameWidth;
+canvas.height = gameHeight;
+
 
 /* ===== 空のテーマ（曲タイミング連動 / フェード） ===== */
 const THEMES={ morning:{top:[160,210,235],bottom:[247,250,252]}, evening:{top:[246,173,85],bottom:[253,230,138]}, night:{top:[45,55,90],bottom:[20,25,50]} };
