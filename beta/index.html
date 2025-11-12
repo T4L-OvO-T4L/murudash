@@ -81,31 +81,34 @@
 
 
  .rainbow-text {
-  /* ド原色レインボー（彩度かなり高め） */
+  /* ド原色レインボー */
   background: linear-gradient(
     90deg,
-    #ff0000, /* 赤 */
-    #ff7a00, /* オレンジ */
-    #fff500, /* 黄色 */
-    #00ff00, /* 緑 */
-    #00f5ff, /* 水色 */
-    #0040ff, /* 青 */
-    #c300ff, /* 紫 */
-    #ff0000  /* 赤に戻る */
+    #ff0000,
+    #ff7a00,
+    #fff500,
+    #00ff00,
+    #00f5ff,
+    #0040ff,
+    #c300ff,
+    #ff0000
   );
   background-size: 320% 320%;
+  background-position: 0% 50%;
+
   -webkit-background-clip: text;
   background-clip: text;
+
+  /* 塗りは完全透明にして、背景グラデだけ見せる */
   color: transparent;
+  -webkit-text-fill-color: transparent;
 
-  /* 縁なしなので、にじまない程度の締めだけ */
-  text-shadow:
-    0 0 1px rgba(0, 0, 0, 0.9),
-    0 0 3px rgba(0, 0, 0, 0.7);
+  /* いったん影なしで様子を見る */
+  text-shadow: none;
 
-  /* パチンコ感ある速さで流す */
   animation: rainbow-slide 1s linear infinite;
 }
+
 
 
 
