@@ -837,33 +837,29 @@ function startHighScoreRun(){
         highScoreBanner.classList.remove('hidden');
       }
     
-      // BGM1 をフェードアウト → BGM2 をフェードイン
-      if(bgmAudio){
-        fadeOutAudio(bgmAudio, 1200, () => {
-          try{
-            bgmAudio.pause();
-            bgmAudio.currentTime = 0;
-          }catch(_){}
-    
-          if(bgm2Audio){
-            try{
-              bgm2Audio.currentTime = 0;
-              const p = bgm2Audio.play();
-              if(p && typeof p.catch === 'function') p.catch(()=>{});
-              fadeInAudio(bgm2Audio, 1200, 0.5);
-            }catch(_){}
-          }
-        });
-      }
-    
-      // ハイスコア達成SE
-      try{
-        if(highScoreSeAudio){
-          highScoreSeAudio.currentTime = 0;
-          highScoreSeAudio.play();
-        }
-      }catch(_){}
+  // ★ BGM1 は止めずに、音だけ消す（タイミング用に再生は続ける）
+  if (bgmAudio){
+    fadeOutAudio(bgmAudio, 1200);   // callback で pause しない！
+  }
+
+  // ★ BGM2 を普通にフェードインして鳴らす
+  if (bgm2Audio){
+    try{
+      bgm2Audio.currentTime = 0;
+      const p = bgm2Audio.play();
+      if (p && typeof p.catch === 'function') p.catch(()=>{});
+      fadeInAudio(bgm2Audio, 1200, 0.5);
+    }catch(_){}
+  }
+
+  // ハイスコア達成SE
+  try{
+    if (highScoreSeAudio){
+      highScoreSeAudio.currentTime = 0;
+      highScoreSeAudio.play();
     }
+  }catch(_){}
+}
 
 
 /* ===== プレイヤー ===== */
@@ -1104,7 +1100,7 @@ function gameOver(){
 
   
 function restartGame(){
-  startAudio(); try{ if(bgmAudio){ bgmAudio.currentTime=0; bgmAudio.play(); } }catch(_){}
+  startAudio(); try{ if(bgmAudio){ bgmAudio.currentTime=0; bgmAudio.volume = 0.5; bgmAudio.play(); } }catch(_){}
   score=0; scoreEl.textContent=score; timeElapsed=0; gameSpeed=baseGameSpeed;
   obstacles=[]; acorns=[]; frame=0; spawnTimer=0;
   // 星まわりをリセット（位置・フェード・流れ星）
@@ -1143,24 +1139,25 @@ function restartGame(){
 
   
 function togglePause(){
-  if(isGameOver || !gameStarted) return;
+  if (isGameOver || !gameStarted) return;
   isPaused = !isPaused;
 
-  if(isPaused){
+  if (isPaused){
     try{
-      if(bgmAudio)  bgmAudio.pause();
-      if(bgm2Audio) bgm2Audio.pause();
+      if (bgmAudio) bgmAudio.pause();
+      if (bgm2Audio) bgm2Audio.pause();
     }catch(_){}
     pauseOverlay.classList.remove('hidden');
     pauseOverlay.classList.add('flex');
     resetDebugTapCounter();
   } else {
     try{
-      // ★ ハイスコア更新中なら BGM2 を再開、それ以外は BGM1
-      if(isHighScoreRun && bgm2Audio){
+      // ★ BGM1 は必ず再開（音量0のままでもOK）
+      if (bgmAudio) bgmAudio.play();
+
+      // ★ ハイスコア中なら BGM2 も再開
+      if (isHighScoreRun && bgm2Audio){
         bgm2Audio.play();
-      } else if(bgmAudio){
-        bgmAudio.play();
       }
     }catch(_){}
     pauseOverlay.classList.add('hidden');
@@ -1170,6 +1167,8 @@ function togglePause(){
     resetDebugTapCounter();
   }
 }
+
+
 
 
 function openCredits(e){
@@ -1204,14 +1203,16 @@ function closeCredits(e){
 
   // もし既にゲームが始まっていて、ポーズでもゲームオーバーでもないならBGM再開
   if (gameStarted && !isGameOver && !isPaused){
-    try{
-      if(isHighScoreRun && bgm2Audio){
-        bgm2Audio.play();
-      } else if(bgmAudio){
-        bgmAudio.play();
-      }
-    }catch(_){}
-  }
+  try{
+    // ★ タイミング用BGM1は常に再開
+    if (bgmAudio) bgmAudio.play();
+
+    // ★ ハイスコア中ならBGM2も再開
+    if (isHighScoreRun && bgm2Audio){
+      bgm2Audio.play();
+    }
+  }catch(_){}
+}
 }
 
 
