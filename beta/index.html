@@ -538,6 +538,32 @@ async function startAudio(){
       pickupPool.push(a);
     }
 
+    // 🔥 ここから追加：iOS向けウォームアップ再生
+    const warmupList = [
+      endAudio,
+      highScoreSeAudio,
+      ...pickupPool,
+    ];
+
+    for (const a of warmupList) {
+      if (!a) continue;
+      try {
+        const originalVolume = a.volume;
+        a.volume = 0;          // 無音にして
+        const p = a.play();    // ちょっとだけ再生
+        if (p && typeof p.then === 'function') {
+          p.then(() => {
+            a.pause();
+            a.currentTime = 0; // 頭に戻して
+            a.volume = originalVolume; // 元の音量に戻す
+          }).catch(() => {
+            a.volume = originalVolume;
+          });
+        }
+      } catch(_){}
+    }
+    // 🔥 追加ここまで
+    
     audioStarted = true;
 
  // 🔇 ここで現在のミュート状態を適用
