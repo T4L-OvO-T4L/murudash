@@ -1143,11 +1143,34 @@ function restartGame(){
 
   
 function togglePause(){
-  if(isGameOver||!gameStarted) return;
-  isPaused=!isPaused;
-  if(isPaused){ try{ if(bgmAudio)bgmAudio.pause(); }catch(_){}; pauseOverlay.classList.remove('hidden'); pauseOverlay.classList.add('flex'); resetDebugTapCounter(); }
-  else{ try{ if(bgmAudio)bgmAudio.play(); }catch(_){}; pauseOverlay.classList.add('hidden'); pauseOverlay.classList.remove('flex'); lastTime=performance.now(); requestAnimationFrame(gameLoop); resetDebugTapCounter(); }
+  if(isGameOver || !gameStarted) return;
+  isPaused = !isPaused;
+
+  if(isPaused){
+    try{
+      if(bgmAudio)  bgmAudio.pause();
+      if(bgm2Audio) bgm2Audio.pause();
+    }catch(_){}
+    pauseOverlay.classList.remove('hidden');
+    pauseOverlay.classList.add('flex');
+    resetDebugTapCounter();
+  } else {
+    try{
+      // ★ ハイスコア更新中なら BGM2 を再開、それ以外は BGM1
+      if(isHighScoreRun && bgm2Audio){
+        bgm2Audio.play();
+      } else if(bgmAudio){
+        bgmAudio.play();
+      }
+    }catch(_){}
+    pauseOverlay.classList.add('hidden');
+    pauseOverlay.classList.remove('flex');
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
+    resetDebugTapCounter();
+  }
 }
+
 
 function openCredits(e){
   if (e) e.preventDefault();
@@ -1163,10 +1186,12 @@ function openCredits(e){
 
   // ゲームBGMはいったん止めて、クレジット専用BGM再生
   try{
-    if (bgmAudio) bgmAudio.pause();
+    if (bgmAudio)  bgmAudio.pause();
+    if (bgm2Audio) bgm2Audio.pause();
   }catch(_){}
   playCreditsBgm();
 }
+
 
 function closeCredits(e){
   if (e) e.preventDefault();
@@ -1180,10 +1205,15 @@ function closeCredits(e){
   // もし既にゲームが始まっていて、ポーズでもゲームオーバーでもないならBGM再開
   if (gameStarted && !isGameOver && !isPaused){
     try{
-      if (bgmAudio) bgmAudio.play();
+      if(isHighScoreRun && bgm2Audio){
+        bgm2Audio.play();
+      } else if(bgmAudio){
+        bgmAudio.play();
+      }
     }catch(_){}
   }
 }
+
 
   
 
