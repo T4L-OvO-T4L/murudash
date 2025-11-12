@@ -80,23 +80,31 @@
   }
 
 
-  .rainbow-text {
+    .rainbow-text {
       background: linear-gradient(
         90deg,
-        #ff6b6b,
-        #feca57,
-        #1dd1a1,
-        #54a0ff,
-        #5f27cd,
-        #ff6b6b
+        #ff0000,
+        #ffe600,
+        #00ff66,
+        #00c3ff,
+        #7f00ff,
+        #ff0000
       );
-      background-size: 300% 300%;
+      background-size: 400% 400%;
       -webkit-background-clip: text;
       background-clip: text;
       color: transparent;
-      animation: rainbow-slide 2.5s linear infinite;
-      text-shadow: 0 0 8px rgba(0,0,0,0.45);
+    
+      /* 動き速めでパチンコ感 */
+      animation: rainbow-slide 1.2s linear infinite;
+    
+      /* 光ってる感を強める */
+      text-shadow:
+        0 0 4px rgba(0, 0, 0, 0.7),       /* 文字の輪郭をくっきり */
+        0 0 10px rgba(255, 255, 255, 0.9), /* 白っぽい光 */
+        0 0 18px rgba(255, 255, 255, 0.9);
     }
+
     
     @keyframes rainbow-slide {
       0%   { background-position: 0% 50%; }
@@ -176,7 +184,14 @@
 
   <!-- ゲームオーバー -->
   <div id="gameOverScreen" class="absolute inset-0 bg-black bg-opacity-50 flex-col justify-center items-center rounded-lg text-white p-8 text-center hidden">
-    <h2 class="text-4xl font-bold mb-4">がめおべら</h2>
+    <h2 class="text-4xl font-bold mb-2">がめおべら</h2>
+
+  <!-- ★ ハイスコア更新表示 -->
+    <p id="gameOverHighScoreLabel"
+       class="text-lg mb-2 text-yellow-300 font-bold hidden">
+      ハイスコア更新！
+    </p>
+    
     <p class="text-xl mb-6">スコア: <span id="finalScore">0</span></p>
     <div class="flex flex-wrap justify-center gap-3">
       <button id="restartButton" class="px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-xl hover:bg-blue-700 transition-colors">
@@ -334,6 +349,9 @@ const shareButton = document.getElementById('shareButton');
 const jumpButton = document.getElementById('jumpButton');
 const pauseButton = document.getElementById('pauseButton');
 const pauseOverlay = document.getElementById('pauseOverlay');
+
+const gameOverHighScoreLabel = document.getElementById('gameOverHighScoreLabel');
+  
 const startScreen = document.getElementById('startScreen');
 const startButton = document.getElementById('startButton');
   const creditsOverlay = document.getElementById('creditsOverlay');
@@ -419,7 +437,7 @@ async function startAudio(){
 
     // ★ 追加：ハイスコア達成SE
     highScoreSeAudio = new Audio('../assets/SE.mp3');
-    highScoreSeAudio.volume = 1.0;
+    highScoreSeAudio.volume = 0.5;
     highScoreSeAudio.setAttribute('playsinline','');
 
     // ▼ 効果音はプールで用意（複数同時再生に強い）
@@ -749,6 +767,11 @@ let isDebug=false, debugTapCount=0; const DEBUG_TAPS_TO_ENABLE=20;
 let nextSpawnInterval=90;
 let isHighScoreRun = false;
 
+// ★ ハイスコア突入フラッシュ用
+let flashTimer = 0;
+const FLASH_DURATION = 18; // だいたい 18フレーム ≒ 0.3秒
+
+
 /* === どんぐり（SVG/速度固定/5秒±1秒ごとに抽選30%） === */
 class Acorn{
   constructor(type,x,y,size){ this.type=type; this.x=x; this.y=y; this.size=size; this.t=Math.random()*Math.PI*2; }
@@ -823,43 +846,50 @@ function enableDebugMode(){ if(isDebug) return; isDebug=true; const b=document.c
 function resetDebugTapCounter(){ debugTapCount=0; }
 
 function startHighScoreRun(){
-      if(isHighScoreRun) return;
-      isHighScoreRun = true;
-    
-      // スコアラベルをオレンジに
-      if(scoreLabel){
-        scoreLabel.classList.remove('text-blue-600');
-        scoreLabel.classList.add('text-orange-400');
-      }
-    
-      // 虹色バナー表示
-      if(highScoreBanner){
-        highScoreBanner.classList.remove('hidden');
-      }
-    
+  if(isHighScoreRun) return;
+  isHighScoreRun = true;
+
+  // ★ ここでフラッシュ開始
+  flashTimer = FLASH_DURATION;
+  
+  // スコアラベルをオレンジに
+  if(scoreLabel){
+    scoreLabel.classList.remove('text-blue-600');
+    scoreLabel.classList.add('text-orange-400');
+  }
+
+  // 虹色バナー表示
+  if(highScoreBanner){
+    highScoreBanner.classList.remove('hidden');
+  }
+
   // ★ BGM1 は止めずに、音だけ消す（タイミング用に再生は続ける）
   if (bgmAudio){
-    fadeOutAudio(bgmAudio, 1200);   // callback で pause しない！
+    fadeOutAudio(bgmAudio, 1200);   // ← これは今までどおり
   }
 
-  // ★ BGM2 を普通にフェードインして鳴らす
-  if (bgm2Audio){
-    try{
-      bgm2Audio.currentTime = 0;
-      const p = bgm2Audio.play();
-      if (p && typeof p.catch === 'function') p.catch(()=>{});
-      fadeInAudio(bgm2Audio, 1200, 0.5);
-    }catch(_){}
-  }
-
-  // ハイスコア達成SE
+  // ハイスコア達成SE（先に鳴らす）
   try{
     if (highScoreSeAudio){
       highScoreSeAudio.currentTime = 0;
       highScoreSeAudio.play();
     }
   }catch(_){}
+
+  // ★ 1秒待ってから BGM2 をそのまま再生（フェードインなし）
+  if (bgm2Audio){
+    setTimeout(() => {
+      try{
+        bgm2Audio.pause();          // 念のため一旦止めて
+        bgm2Audio.currentTime = 0;  // 頭から
+        bgm2Audio.volume = 0.5;     // いきなり0.5で鳴らす
+        const p = bgm2Audio.play();
+        if (p && typeof p.catch === 'function') p.catch(()=>{});
+      }catch(_){}
+    }, 1000); // ← ここが「1秒置く」とこ
+  }
 }
+
 
 
 /* ===== プレイヤー ===== */
@@ -1019,6 +1049,9 @@ function checkCollision(){
 }
 
 
+
+
+  
 function updateScore(){
   for(const o of obstacles){
     if(!o.passed && o.x+o.width < player.x){
@@ -1090,6 +1123,16 @@ function gameOver(){
 
   finalScoreEl.textContent=score;
   shareButton.href=buildXIntentUrl(score);
+
+  // ★ このプレイでハイスコア更新していたら表示
+  if (gameOverHighScoreLabel){
+    if (isHighScoreRun){
+      gameOverHighScoreLabel.classList.remove('hidden');
+    } else {
+      gameOverHighScoreLabel.classList.add('hidden');
+    }
+  }
+  
   gameOverScreen.classList.remove('hidden');
   gameOverScreen.classList.add('flex');
 }
@@ -1124,6 +1167,12 @@ function restartGame(){
   if(highScoreBanner){
     highScoreBanner.classList.add('hidden');
   }
+
+  // ★ ゲームオーバー画面の「ハイスコア更新！」も隠す
+  if (gameOverHighScoreLabel){
+    gameOverHighScoreLabel.classList.add('hidden');
+  }
+  
   if(bgm2Audio){
     try{
       bgm2Audio.pause();
@@ -1248,6 +1297,17 @@ function gameLoop(ts){
   spawnObstacle(df); updateObstacles(df);
   spawnAcornMs(dt); updateAcorns(df);
 
+  // ★ ハイスコア突入フラッシュ
+  if (flashTimer > 0) {
+    const alpha = (flashTimer / FLASH_DURATION) * 0.85; // 最大0.85くらいまで光る
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.fillRect(0, 0, gameWidth, gameHeight);
+
+    flashTimer -= df;          // 時間経過で減らす（dfはだいたい1/フレーム）
+    if (flashTimer < 0) flashTimer = 0;
+  }
+
+  
   checkCollision(); updateScore();
 
   frame++; requestAnimationFrame(gameLoop);
