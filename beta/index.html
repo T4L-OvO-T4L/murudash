@@ -399,29 +399,51 @@ if (versionLabel) {
 let isMuted = false;
 
 function applyMuteVolumes() {
-  // ★ 通常時だけ 0.5、ハイスコア中は必ず 0
+  const globalMute = isMuted;
+
+  // ★ BGM1（通常BGM）
   if (bgmAudio) {
-    const baseBgmVol = isHighScoreRun ? 0 : 0.5;
-    bgmAudio.volume = isMuted ? 0 : baseBgmVol;
+    // ハイスコア中は強制的に出力ミュート
+    bgmAudio.muted = globalMute || isHighScoreRun;
+    bgmAudio.volume = 0.5; // 基準値だけ入れておく（実際のミュートは muted でやる）
   }
 
-  // ハイスコア用BGM2 は普通に 0.5 / ミュート時 0
+  // ★ BGM2（ハイスコア用）
   if (bgm2Audio) {
-    bgm2Audio.volume = isMuted ? 0 : 0.5;
+    bgm2Audio.muted = globalMute;
+    bgm2Audio.volume = 0.5;
   }
 
-  if (endAudio)         endAudio.volume         = isMuted ? 0 : 0.5;
-  if (highScoreSeAudio) highScoreSeAudio.volume = isMuted ? 0 : 0.3;
-  if (creditsAudio)     creditsAudio.volume     = isMuted ? 0 : 0.5;
+  // ★ ゲームオーバーSE
+  if (endAudio) {
+    endAudio.muted = globalMute;
+    endAudio.volume = 0.5;
+  }
 
+  // ★ ハイスコア達成SE
+  if (highScoreSeAudio) {
+    highScoreSeAudio.muted = globalMute;
+    highScoreSeAudio.volume = 0.3;
+  }
+
+  // ★ クレジットBGM
+  if (creditsAudio) {
+    creditsAudio.muted = globalMute;
+    creditsAudio.volume = 0.5;
+  }
+
+  // ★ どんぐり拾ったときのSE
   pickupPool.forEach(a => {
-    a.volume = isMuted ? 0 : 1.0;
+    a.muted = globalMute;
+    a.volume = 1.0;
   });
 
+  // ボタン表示の切り替え
   if (muteButton) {
-    muteButton.textContent = isMuted ? '🔇' : '🔊';
+    muteButton.textContent = globalMute ? '🔇' : '🔊';
   }
 }
+
 
 
   
@@ -964,7 +986,7 @@ function startHighScoreRun(){
   if(isHighScoreRun) return;
   isHighScoreRun = true;
 
-  // ハイスコア状態の音量ルールを即反映
+  // ハイスコアルールのミュート状態を即反映
   applyMuteVolumes();
 
   // ★ ここでフラッシュ開始
@@ -981,10 +1003,11 @@ function startHighScoreRun(){
     highScoreBanner.classList.remove('hidden');
   }
 
-  // ★ BGM1 は止めずに、音だけ消す（タイミング用に再生は続ける）
+  // ★ BGM1 は止めずに、音だけ完全ミュート（タイミング用に再生は続ける）
   if (bgmAudio){
-    fadeOutAudio(bgmAudio, 1200);   // ← これは今までどおり
+    bgmAudio.muted = true;
   }
+
 
   // ハイスコア達成SE（先に鳴らす）
   try{
