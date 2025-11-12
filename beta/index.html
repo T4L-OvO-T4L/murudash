@@ -220,9 +220,12 @@ text-shadow:
     
     <p class="text-xl mb-6">スコア: <span id="finalScore">0</span></p>
     <div class="flex flex-wrap justify-center gap-3">
+      <!--
       <button id="restartButton" class="px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-xl hover:bg-blue-700 transition-colors">
         リスタート
       </button>
+      -->
+
       <a id="shareButton" href="#" target="_blank" rel="noopener noreferrer" class="px-8 py-4 bg-black text-white font-bold rounded-lg shadow-lg text-xl hover:bg-gray-900 transition-colors">
         Xでスコアをシェア
       </a>
@@ -370,7 +373,9 @@ const scoreLabel = document.getElementById('scoreLabel');
 const highScoreBanner = document.getElementById('highScoreBanner');
 
 const finalScoreEl = document.getElementById('finalScore');
-const restartButton = document.getElementById('restartButton');
+  
+// const restartButton = document.getElementById('restartButton');
+  
 const shareButton = document.getElementById('shareButton');
 const jumpButton = document.getElementById('jumpButton');
   jumpButton.textContent = 'ゲームスタート';
@@ -457,6 +462,45 @@ const SPRITES={
   sunflower2: loadImg('../assets/sunflower2.png')
 };
 
+// iOS向け：完全ミュートで一度だけ鳴らしてウォームアップ
+function warmupSilently(audio) {
+  if (!audio) return;
+
+  const originalMuted  = audio.muted;
+  const originalVolume = audio.volume;
+
+  // 🔇 ここで完全ミュートにしてから再生
+  audio.muted = true;
+
+  try {
+    const p = audio.play();
+    if (p && typeof p.then === "function") {
+      p.then(() => {
+        audio.pause();
+        audio.currentTime = 0;
+
+        // 元の状態に戻す（最終的には applyMuteVolumes() が上書きしてくれる）
+        audio.muted  = originalMuted;
+        audio.volume = originalVolume;
+      }).catch(() => {
+        audio.muted  = originalMuted;
+        audio.volume = originalVolume;
+      });
+    }
+  } catch (_) {
+    audio.muted  = originalMuted;
+    audio.volume = originalVolume;
+  }
+}
+
+
+
+
+
+
+
+
+  
 /* ===== オーディオ ===== */
 let audioStarted = false;
 let bgmAudio, bgm2Audio, endAudio, highScoreSeAudio;
@@ -467,40 +511,37 @@ let pickupPool = [];
 let pickupIndex = 0;
 
 
-  function fadeAudio(audio, targetVolume, durationMs, onEnd){
-      if (!audio) {
-        if (onEnd) onEnd();
-        return;
-      }
-    
-      const startVolume = audio.volume;
-      const startTime = performance.now();
-    
-      function step(now){
-        const t = Math.min(1, (now - startTime) / durationMs);
-        audio.volume = startVolume + (targetVolume - startVolume) * t;
-    
-        if (t < 1) {
-          requestAnimationFrame(step);
-        } else {
-          audio.volume = targetVolume;
-          if (onEnd) onEnd();
-        }
-      }
-    
-      requestAnimationFrame(step);
-    }
+// ★ 超原始的フェードアウト：setIntervalで段階的に下げるだけ
+function fadeOutAudio(audio, durationMs, onEnd) {
+  if (!audio) {
+    if (onEnd) onEnd();
+    return;
+  }
 
-    
-    function fadeOutAudio(audio, durationMs, onEnd){
-      fadeAudio(audio, 0, durationMs, onEnd);
-    }
-    
-    function fadeInAudio(audio, durationMs, targetVolume, onEnd){
-      if(!audio){ if(onEnd) onEnd(); return; }
+  const startVol = audio.volume;       // 今の音量（たぶん 0.5）
+  const steps = 10;                    // 10段階フェード
+  const stepTime = durationMs / steps; // 例えば durationMs=1000 → 0.1秒ごと
+  let currentStep = 0;
+
+  const timerId = setInterval(() => {
+    currentStep++;
+
+    // t: 0→1
+    const t = currentStep / steps;
+    const v = startVol * (1 - t);      // 線形で 0 に近づける
+
+    audio.volume = (v <= 0 ? 0 : v);
+
+    if (currentStep >= steps) {
+      clearInterval(timerId);
       audio.volume = 0;
-      fadeAudio(audio, targetVolume, durationMs, onEnd);
+
+      // 完全に消えたらコールバック
+      if (onEnd) onEnd();
     }
+  }, stepTime);
+}
+
 
 
   
@@ -538,31 +579,17 @@ async function startAudio(){
       pickupPool.push(a);
     }
 
-    // 🔥 ここから追加：iOS向けウォームアップ再生
+    // 🔥 ここから追加：iOS向けサイレントウォームアップ
     const warmupList = [
       endAudio,
       highScoreSeAudio,
       ...pickupPool,
     ];
 
-    for (const a of warmupList) {
-      if (!a) continue;
-      try {
-        const originalVolume = a.volume;
-        a.volume = 0;          // 無音にして
-        const p = a.play();    // ちょっとだけ再生
-        if (p && typeof p.then === 'function') {
-          p.then(() => {
-            a.pause();
-            a.currentTime = 0; // 頭に戻して
-            a.volume = originalVolume; // 元の音量に戻す
-          }).catch(() => {
-            a.volume = originalVolume;
-          });
-        }
-      } catch(_){}
-    }
+    warmupList.forEach(a => warmupSilently(a));
     // 🔥 追加ここまで
+
+
     
     audioStarted = true;
 
@@ -1543,6 +1570,12 @@ window.addEventListener('keyup', e=>{ if(e.code==='Space'||e.code==='ArrowUp') s
 jumpButton.addEventListener('pointerdown', e=>{
   e.preventDefault();
 
+  // ★ ゲームオーバー中ならリスタート
+  if (isGameOver) {
+    restartGame();
+    return;
+  }
+
   // まだゲームが始まっていない＝タイトル画面中なら「スタートボタン」として動く
   if (!gameStarted) {
     handleGameStart();  // e なしで呼んでOKなようにしてある
@@ -1550,9 +1583,9 @@ jumpButton.addEventListener('pointerdown', e=>{
   }
 
   // ポーズ中はデバッグタップカウントだけ
-  if(isPaused){
+  if (isPaused){
     debugTapCount++;
-    if(debugTapCount>=DEBUG_TAPS_TO_ENABLE){
+    if (debugTapCount >= DEBUG_TAPS_TO_ENABLE){
       enableDebugMode();
       resetDebugTapCounter();
     }
@@ -1563,12 +1596,11 @@ jumpButton.addEventListener('pointerdown', e=>{
   playerJump();
 });
 
+
 jumpButton.addEventListener('pointerup',   e=>{ e.preventDefault(); stopJump(); });
 pauseButton.addEventListener('click', e=>{ e.preventDefault(); togglePause(); });
 pauseButton.addEventListener('touchstart', e=>{ e.preventDefault(); togglePause(); });
 
-restartButton.addEventListener('click', e=>{ e.preventDefault(); restartGame(); });
-restartButton.addEventListener('touchstart', e=>{ e.preventDefault(); restartGame(); });
 
 function handleGameStart(e){
   if (e) e.preventDefault();   // ← e がないときも落ちないように
