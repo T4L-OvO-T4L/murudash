@@ -399,13 +399,21 @@ if (versionLabel) {
 let isMuted = false;
 
 function applyMuteVolumes() {
-  if (bgmAudio)        bgmAudio.volume        = isMuted ? 0 : 0.5;
-  if (bgm2Audio)       bgm2Audio.volume       = isMuted ? 0 : 0.5;
-  if (endAudio)        endAudio.volume        = isMuted ? 0 : 0.5;
-  if (highScoreSeAudio)highScoreSeAudio.volume= isMuted ? 0 : 0.3;
-  if (creditsAudio)    creditsAudio.volume    = isMuted ? 0 : 0.5;
+  // ★ 通常時だけ 0.5、ハイスコア中は必ず 0
+  if (bgmAudio) {
+    const baseBgmVol = isHighScoreRun ? 0 : 0.5;
+    bgmAudio.volume = isMuted ? 0 : baseBgmVol;
+  }
 
-  // ピック音
+  // ハイスコア用BGM2 は普通に 0.5 / ミュート時 0
+  if (bgm2Audio) {
+    bgm2Audio.volume = isMuted ? 0 : 0.5;
+  }
+
+  if (endAudio)         endAudio.volume         = isMuted ? 0 : 0.5;
+  if (highScoreSeAudio) highScoreSeAudio.volume = isMuted ? 0 : 0.3;
+  if (creditsAudio)     creditsAudio.volume     = isMuted ? 0 : 0.5;
+
   pickupPool.forEach(a => {
     a.volume = isMuted ? 0 : 1.0;
   });
@@ -955,6 +963,9 @@ function resetDebugTapCounter(){ debugTapCount=0; }
 function startHighScoreRun(){
   if(isHighScoreRun) return;
   isHighScoreRun = true;
+
+  // ハイスコア状態の音量ルールを即反映
+  applyMuteVolumes();
 
   // ★ ここでフラッシュ開始
   flashTimer = FLASH_DURATION;
