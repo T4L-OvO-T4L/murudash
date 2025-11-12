@@ -468,7 +468,11 @@ let pickupIndex = 0;
 
 
   function fadeAudio(audio, targetVolume, durationMs, onEnd){
-      if(!audio) { if(onEnd) onEnd(); return; }
+      if (!audio) {
+        if (onEnd) onEnd();
+        return;
+      }
+    
       const startVolume = audio.volume;
       const startTime = performance.now();
     
@@ -476,15 +480,17 @@ let pickupIndex = 0;
         const t = Math.min(1, (now - startTime) / durationMs);
         audio.volume = startVolume + (targetVolume - startVolume) * t;
     
-        if(t < 1 && !audio.paused){
+        if (t < 1) {
           requestAnimationFrame(step);
-        }else{
+        } else {
           audio.volume = targetVolume;
-          if(onEnd) onEnd();
+          if (onEnd) onEnd();
         }
       }
+    
       requestAnimationFrame(step);
     }
+
     
     function fadeOutAudio(audio, durationMs, onEnd){
       fadeAudio(audio, 0, durationMs, onEnd);
