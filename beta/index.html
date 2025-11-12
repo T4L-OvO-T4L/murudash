@@ -114,13 +114,6 @@
 
 
 
-    
-    @keyframes rainbow-slide {
-      0%   { background-position: 0% 50%; }
-      100% { background-position: 100% 50%; }
-    }
-
-
 </style>
 </head>
 
@@ -393,7 +386,7 @@ function applyMuteVolumes() {
   if (bgmAudio)        bgmAudio.volume        = isMuted ? 0 : 0.5;
   if (bgm2Audio)       bgm2Audio.volume       = isMuted ? 0 : 0.5;
   if (endAudio)        endAudio.volume        = isMuted ? 0 : 0.5;
-  if (highScoreSeAudio)highScoreSeAudio.volume= isMuted ? 0 : 0.5;
+  if (highScoreSeAudio)highScoreSeAudio.volume= isMuted ? 0 : 0.3;
   if (creditsAudio)    creditsAudio.volume    = isMuted ? 0 : 0.5;
 
   // ピック音
