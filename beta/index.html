@@ -531,12 +531,16 @@ async function startAudio(){
 if (muteButton){
   const toggleMute = (e) => {
     e.preventDefault();
+    e.stopPropagation(); // 念のためバブリングも止めとく
     isMuted = !isMuted;
     applyMuteVolumes();
   };
+
+  // スマホもPCも click だけでOK
   muteButton.addEventListener('click', toggleMute);
-  muteButton.addEventListener('touchstart', toggleMute, { passive: false });
+  // ← touchstart は削除！
 }
+
 
 
   
