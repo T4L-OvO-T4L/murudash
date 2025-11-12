@@ -103,12 +103,13 @@
   -webkit-text-fill-color: transparent;
 
 
-  text-shadow:
-    0 0 2px rgba(255, 255, 255, 0.45),
-    0 0 6px rgba(255, 255, 255, 0.35);
+text-shadow:
+  0 0 2px rgba(255, 255, 255, 0.20),
+  0 0 6px rgba(255, 255, 255, 0.12);
+
 
   /* 往復アニメでガクっとしないように */
-  animation: rainbow-slide 1s linear infinite alternate;
+  animation: rainbow-slide 3s linear infinite alternate;
 }
 
 @keyframes rainbow-slide {
@@ -1124,10 +1125,11 @@ function updateScore(){
   tryCollectAcorns();
   scoreEl.textContent = score;
 
-  // ★ ここで「ハイスコア更新中」を検知
-  if(!isHighScoreRun && score > highScore){
+  // ★ ここで「ハイスコア更新中」を検知（初回 highScore=0 のときはスルー）
+  if (!isHighScoreRun && highScore > 0 && score > highScore) {
     startHighScoreRun();
   }
+
 
   const tSec=timeElapsed/1000;
   gameSpeed=Math.min(baseGameSpeed + tSec*gameSpeedAcceleration, GAME_SPEED_MAX);
