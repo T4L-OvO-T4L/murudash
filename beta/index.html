@@ -189,10 +189,13 @@ text-shadow:
     <h2 class="text-5xl font-bold mb-6">むるだっしゅ！</h2>
     <p class="text-lg mb-4">ボタンでジャンプ！<br class="sm:hidden">空中でもう一回で2段ジャンプ！</p>
     <p class="text-lg mb-8">障害物をよけまくろう！</p>
+    
+  <!-- 旧スタートボタン ジャンプボタンと統合のためコメントアウト 
     <button id="startButton" class="px-8 py-4 bg-green-600 text-white font-bold rounded-lg shadow-lg text-2xl hover:bg-green-700 transition-colors">
       ゲームスタート
     </button>
-
+  -->
+    
         <button id="creditsButton" class="mt-4 px-5 py-2 border border-gray-300 text-sm rounded-lg bg-black/40 hover:bg-black/60 transition-colors">
       クレジット
     </button>
@@ -342,7 +345,7 @@ text-shadow:
 <!-- ジャンプボタン -->
 <div class="w-full max-w-[768px] flex justify-center p-4 fixed bottom-0 left-1/2 -translate-x-1/2 no-select no-highlight">
   <button id="jumpButton" class="control-button w-full py-12 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-2xl no-select" draggable="false">
-    ジャンプ
+    ゲームスタート
   </button>
 </div>
 
@@ -370,13 +373,14 @@ const finalScoreEl = document.getElementById('finalScore');
 const restartButton = document.getElementById('restartButton');
 const shareButton = document.getElementById('shareButton');
 const jumpButton = document.getElementById('jumpButton');
+  jumpButton.textContent = 'ゲームスタート';
 const pauseButton = document.getElementById('pauseButton');
 const pauseOverlay = document.getElementById('pauseOverlay');
 
 const gameOverHighScoreLabel = document.getElementById('gameOverHighScoreLabel');
   
 const startScreen = document.getElementById('startScreen');
-const startButton = document.getElementById('startButton');
+// const startButton = document.getElementById('startButton'); ←削除
 
 const muteButton = document.getElementById('muteButton');
   
@@ -1465,7 +1469,30 @@ window.addEventListener('keydown', e=>{
   if(e.code==='KeyP') togglePause();
 });
 window.addEventListener('keyup', e=>{ if(e.code==='Space'||e.code==='ArrowUp') stopJump(); });
-jumpButton.addEventListener('pointerdown', e=>{ e.preventDefault(); if (!gameStarted) return; if(isPaused){ debugTapCount++; if(debugTapCount>=DEBUG_TAPS_TO_ENABLE){ enableDebugMode(); resetDebugTapCounter(); } return; } playerJump(); });
+  
+jumpButton.addEventListener('pointerdown', e=>{
+  e.preventDefault();
+
+  // まだゲームが始まっていない＝タイトル画面中なら「スタートボタン」として動く
+  if (!gameStarted) {
+    handleGameStart();  // e なしで呼んでOKなようにしてある
+    return;
+  }
+
+  // ポーズ中はデバッグタップカウントだけ
+  if(isPaused){
+    debugTapCount++;
+    if(debugTapCount>=DEBUG_TAPS_TO_ENABLE){
+      enableDebugMode();
+      resetDebugTapCounter();
+    }
+    return;
+  }
+
+  // 通常プレイ中はジャンプ
+  playerJump();
+});
+
 jumpButton.addEventListener('pointerup',   e=>{ e.preventDefault(); stopJump(); });
 pauseButton.addEventListener('click', e=>{ e.preventDefault(); togglePause(); });
 pauseButton.addEventListener('touchstart', e=>{ e.preventDefault(); togglePause(); });
@@ -1474,16 +1501,30 @@ restartButton.addEventListener('click', e=>{ e.preventDefault(); restartGame(); 
 restartButton.addEventListener('touchstart', e=>{ e.preventDefault(); restartGame(); });
 
 function handleGameStart(e){
-  e.preventDefault();
+  if (e) e.preventDefault();   // ← e がないときも落ちないように
+
   if(gameStarted) return;
-  gameStarted=true; startAudio(); startScreen.classList.add('hidden');
-  resetAudioSyncState(); isDebug=false; resetDebugTapCounter(); const dbg=document.getElementById('debugBadge'); if(dbg) dbg.remove();
-  lastTime=performance.now(); requestAnimationFrame(gameLoop);
+  gameStarted = true;
+
+  // ボタン表示を「ジャンプ」に切り替え
+  jumpButton.textContent = 'ジャンプ';
+
+  startAudio();
+  startScreen.classList.add('hidden');
+  resetAudioSyncState();
+  isDebug = false;
+  resetDebugTapCounter();
+  const dbg = document.getElementById('debugBadge');
+  if(dbg) dbg.remove();
+
+  lastTime = performance.now();
+  requestAnimationFrame(gameLoop);
   nextSpawnInterval = minSpawnIntervalBase + Math.random()*(maxSpawnIntervalBase - minSpawnIntervalBase);
-  spawnTimer=0;
+  spawnTimer = 0;
 }
-startButton.addEventListener('click', handleGameStart);
-startButton.addEventListener('touchstart', handleGameStart);
+
+  
+
 </script>
 </body>
 </html>
