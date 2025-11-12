@@ -137,6 +137,15 @@
     </div>
     <div class="flex items-center gap-3 shrink-0">
       <span id="highScore" class="text-xs text-gray-500 block">ハイスコア: 0</span>
+
+        <!-- 🔇 ミュートボタン追加 -->
+      <button
+        id="muteButton"
+        class="px-2 py-2 bg-gray-700 text-white rounded-lg text-xs sm:text-sm shadow-md"
+      >
+        🔊
+      </button>
+
       <button id="pauseButton" class="pause-button px-3 py-2 sm:px-4 sm:py-2 bg-yellow-500 text-white font-bold rounded-lg shadow-md text-sm">
         ちょっち休憩
       </button>
@@ -354,6 +363,9 @@ const gameOverHighScoreLabel = document.getElementById('gameOverHighScoreLabel')
   
 const startScreen = document.getElementById('startScreen');
 const startButton = document.getElementById('startButton');
+
+const muteButton = document.getElementById('muteButton');
+  
   const creditsOverlay = document.getElementById('creditsOverlay');
 const creditsButton = document.getElementById('creditsButton');
 const closeCreditsButton = document.getElementById('closeCreditsButton');
@@ -362,6 +374,27 @@ const creditsScroll = document.getElementById('creditsScroll');
 const versionLabel = document.getElementById('versionLabel');
 if (versionLabel) {
   versionLabel.textContent = `v${GAME_VERSION}`;
+}
+
+
+  // 🔇 ミュート関連
+let isMuted = false;
+
+function applyMuteVolumes() {
+  if (bgmAudio)        bgmAudio.volume        = isMuted ? 0 : 0.5;
+  if (bgm2Audio)       bgm2Audio.volume       = isMuted ? 0 : 0.5;
+  if (endAudio)        endAudio.volume        = isMuted ? 0 : 0.5;
+  if (highScoreSeAudio)highScoreSeAudio.volume= isMuted ? 0 : 0.5;
+  if (creditsAudio)    creditsAudio.volume    = isMuted ? 0 : 0.5;
+
+  // ピック音
+  pickupPool.forEach(a => {
+    a.volume = isMuted ? 0 : 1.0;
+  });
+
+  if (muteButton) {
+    muteButton.textContent = isMuted ? '🔇' : '🔊';
+  }
 }
 
 
@@ -452,6 +485,10 @@ async function startAudio(){
     }
 
     audioStarted = true;
+
+ // 🔇 ここで現在のミュート状態を適用
+    applyMuteVolumes();
+    
   }catch(e){
     console.error(e);
   }
@@ -471,6 +508,20 @@ async function startAudio(){
   }catch(_){}
 }
 
+
+// ミュートボタン
+if (muteButton){
+  const toggleMute = (e) => {
+    e.preventDefault();
+    isMuted = !isMuted;
+    applyMuteVolumes();
+  };
+  muteButton.addEventListener('click', toggleMute);
+  muteButton.addEventListener('touchstart', toggleMute, { passive: false });
+}
+
+
+  
 // ▼ クレジット専用BGM
 function playCreditsBgm(){
   try{
@@ -481,6 +532,10 @@ function playCreditsBgm(){
       creditsAudio.setAttribute('playsinline','');
     }
     creditsAudio.currentTime = 0;
+
+ // 🔇 ミュート状態反映
+    applyMuteVolumes();
+    
     const p = creditsAudio.play();
     if(p && typeof p.catch === 'function'){
       p.catch(()=>{});
@@ -1095,7 +1150,8 @@ function gameOver(){
             try{
               targetBgm.pause();
               targetBgm.currentTime = 0;
-              targetBgm.volume = 0.5;
+              targetBgm.volume = isMuted ? 0 : 0.5;
+
             }catch(_){}
           });
         }
@@ -1104,7 +1160,7 @@ function gameOver(){
         if(bgmAudio){
           bgmAudio.pause();
           bgmAudio.currentTime = 0;
-          bgmAudio.volume = 0.5;
+          bgmAudio.volume = isMuted ? 0 : 0.5;
         }
       }
 
@@ -1143,22 +1199,25 @@ function gameOver(){
 
   
 function restartGame(){
-  startAudio(); try{ if(bgmAudio){ bgmAudio.currentTime=0; bgmAudio.volume = 0.5; bgmAudio.play(); } }catch(_){}
+  startAudio();
+  try{
+    if(bgmAudio){
+      bgmAudio.currentTime = 0;
+      bgmAudio.play();
+    }
+  }catch(_){}
+
   score=0; scoreEl.textContent=score; timeElapsed=0; gameSpeed=baseGameSpeed;
   obstacles=[]; acorns=[]; frame=0; spawnTimer=0;
-  // 星まわりをリセット（位置・フェード・流れ星）
   initStars();
   starAlpha = 0;
   shooting = null;
-
-  // ★ どんぐり抽選タイマ初期化（端末差なし）
   acornSpawnTimerMs = 0; acornNextIntervalMs = nextAcornIntervalMs();
 
   isGameOver=false; isPaused=false; gameStarted=true;
   player.y=groundY-player.height; player.dy=0; player.isGrounded=true; player.jumpsRemaining=2;
   gameOverScreen.classList.add('hidden'); gameOverScreen.classList.remove('flex'); pauseOverlay.classList.add('hidden');
 
-  // ★ ハイスコア演出リセット
   isHighScoreRun = false;
   if(scoreLabel){
     scoreLabel.classList.remove('text-orange-400');
@@ -1167,24 +1226,25 @@ function restartGame(){
   if(highScoreBanner){
     highScoreBanner.classList.add('hidden');
   }
-
-  // ★ ゲームオーバー画面の「ハイスコア更新！」も隠す
   if (gameOverHighScoreLabel){
     gameOverHighScoreLabel.classList.add('hidden');
   }
-  
+
   if(bgm2Audio){
     try{
       bgm2Audio.pause();
       bgm2Audio.currentTime = 0;
-      bgm2Audio.volume = 0.5;
     }catch(_){}
   }
+
+  // 🔇 ← ここ！最後にミュート状態を反映
+  applyMuteVolumes();
 
   resetAudioSyncState(); isDebug=false; resetDebugTapCounter(); const dbg=document.getElementById('debugBadge'); if(dbg) dbg.remove();
   nextSpawnInterval = minSpawnIntervalBase + Math.random()*(maxSpawnIntervalBase - minSpawnIntervalBase);
   lastTime=performance.now(); requestAnimationFrame(gameLoop);
 }
+
 
   
 function togglePause(){
