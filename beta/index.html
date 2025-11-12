@@ -858,6 +858,20 @@ class Acorn{
 }
 let acorns = [];
 
+ // ★ どんぐり取ったときに出す「+10」みたいなフキダシ用
+class FloatText {
+  constructor(text, x, y) {
+    this.text = text;
+    this.x = x;
+    this.y = y;
+    this.vy = -0.6;   // 上にふわっと上がる速さ
+    this.life = 30;   // 寿命（大きいほど長く残る）
+  }
+}
+
+let floatTexts = [];
+ 
+
 // ★ ミリ秒基準タイマ（端末差なし）
 let acornSpawnTimerMs = 0;
 function nextAcornIntervalMs(){ return 5000 + Math.random()*2000; } // 5〜7秒に一度 抽選
@@ -885,6 +899,8 @@ function spawnAcornMs(deltaMs){
 function updateAcorns(d){
   for(let i=acorns.length-1;i>=0;i--){ acorns[i].update(d); acorns[i].draw(); if(acorns[i].x<-50) acorns.splice(i,1); }
 }
+
+  
 function tryCollectAcorns(){
   const p={x:player.x,y:player.y,width:player.width*0.6,height:player.height*0.7};
   for(let i=acorns.length-1;i>=0;i--){
@@ -892,13 +908,24 @@ function tryCollectAcorns(){
     if(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y){
 
       // ★ 通常：+10 / デバッグ中：+200
-      score += isDebug ? 200 : 10;
+      const gained = isDebug ? 200 : 10;
+      score += gained;
+
+      // ★ ここで「+10」(or +200) フキダシ追加
+      floatTexts.push(
+        new FloatText(
+          `+${gained}`,
+          a.x + a.size * 0.5,     // どんぐりの真ん中あたり
+          a.y - a.size * 0.4      // 少し上
+        )
+      );
 
       acorns.splice(i,1);
       playPickup();
     }
   }
 }
+
 
 
 /* ===== ユーティリティ ===== */
@@ -945,12 +972,16 @@ function startHighScoreRun(){
       try{
         bgm2Audio.pause();          // 念のため一旦止めて
         bgm2Audio.currentTime = 0;  // 頭から
-        bgm2Audio.volume = 0.5;     // いきなり0.5で鳴らす
+
+        // 🔇 ミュート中なら0、そうじゃなければ0.5
+        bgm2Audio.volume = isMuted ? 0 : 0.5;
+
         const p = bgm2Audio.play();
         if (p && typeof p.catch === 'function') p.catch(()=>{});
       }catch(_){}
-    }, 1000); // ← ここが「1秒置く」とこ
+    }, 1000);
   }
+
 }
 
 
@@ -1217,7 +1248,8 @@ function restartGame(){
   }catch(_){}
 
   score=0; scoreEl.textContent=score; timeElapsed=0; gameSpeed=baseGameSpeed;
-  obstacles=[]; acorns=[]; frame=0; spawnTimer=0;
+  obstacles=[]; acorns=[]; floatTexts=[]; frame=0; spawnTimer=0;
+
   initStars();
   starAlpha = 0;
   shooting = null;
@@ -1366,6 +1398,39 @@ function gameLoop(ts){
   spawnObstacle(df); updateObstacles(df);
   spawnAcornMs(dt); updateAcorns(df);
 
+  // ★ どんぐりの「+10」みたいなフキダシ描画
+  for (let i = floatTexts.length - 1; i >= 0; i--) {
+    const ft = floatTexts[i];
+
+    // ふわっと上に移動
+    ft.y += ft.vy * df;
+    ft.life -= df;
+
+    // 残り寿命に応じてだんだん透明に
+    const alpha = Math.max(0, Math.min(1, ft.life / 30));
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = 'bold 20px "Inter", system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+
+    // ちょっとクリーム色＋黒フチ
+    ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+    ctx.lineWidth = 3;
+    ctx.fillStyle = '#fff7aa';
+
+    ctx.strokeText(ft.text, ft.x, ft.y);
+    ctx.fillText(ft.text, ft.x, ft.y);
+    ctx.restore();
+
+    // 寿命が尽きたら消す
+    if (ft.life <= 0) {
+      floatTexts.splice(i, 1);
+    }
+  }
+
+  
   // ★ ハイスコア突入フラッシュ
   if (flashTimer > 0) {
     const alpha = (flashTimer / FLASH_DURATION) * 0.85; // 最大0.85くらいまで光る
