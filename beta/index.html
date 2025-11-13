@@ -400,53 +400,112 @@ if (versionLabel) {
 }
 
 
+// ===== Web Audio（iOS/PC両対応のミキサー） =====
+const AudioBus = {
+  ctx: null,
+  master: null,
+  music: null,
+  se: null,
+  unlocked: false
+};
+const TR = { // ここに各トラックを保持
+  bgm1: null,
+  bgm2: null,
+  end: null,
+  hi: null,
+  credits: null,
+  pickups: [] // どんぐりSEのプール
+};
+
+function ensureAudioCtx() {
+  if (AudioBus.ctx) return;
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  AudioBus.ctx = new Ctx();
+
+  // バス構成: music/se -> master -> destination
+  AudioBus.master = AudioBus.ctx.createGain();
+  AudioBus.music  = AudioBus.ctx.createGain();
+  AudioBus.se     = AudioBus.ctx.createGain();
+  AudioBus.music.connect(AudioBus.master);
+  AudioBus.se.connect(AudioBus.master);
+  AudioBus.master.connect(AudioBus.ctx.destination);
+
+  // 既定はミュート無し
+  AudioBus.master.gain.setValueAtTime(1, AudioBus.ctx.currentTime);
+}
+
+// 無音0.1秒でiOSの出音経路を“起こす”
+function warmupSilence() {
+  if (!AudioBus.ctx || AudioBus.unlocked) return;
+  const sr = AudioBus.ctx.sampleRate;
+  const buf = AudioBus.ctx.createBuffer(1, Math.floor(sr * 0.1), sr); // 完全無音
+  const src = AudioBus.ctx.createBufferSource();
+  src.buffer = buf;
+  src.connect(AudioBus.master);
+  src.start();
+  AudioBus.unlocked = true;
+}
+
+// HTMLAudioElementをバスに接続し、個別のゲインを返す
+function connectTrack(el, bus, base = 1) {
+  const src = AudioBus.ctx.createMediaElementSource(el);
+  const g = AudioBus.ctx.createGain();
+  src.connect(g);
+  g.connect(bus);
+  g.gain.setValueAtTime(base, AudioBus.ctx.currentTime);
+  return { el, src, gain: g, base };
+}
+
+// フェードアウト（GainNodeで確実に効く）
+function fadeOutTrack(track, durationMs, onEnd) {
+  if (!track || !AudioBus.ctx) { onEnd && onEnd(); return; }
+  const now = AudioBus.ctx.currentTime;
+  track.gain.cancelScheduledValues(now);
+  // 今の値からdurationMsで0へ
+  const current = track.gain.value ?? track.base ?? 1;
+  track.gain.setValueAtTime(Math.max(current, 0.0001), now);
+  track.gain.linearRampToValueAtTime(0.0001, now + durationMs / 1000);
+
+  // 実オーディオも止めとく（時間経過後）
+  setTimeout(() => {
+    try {
+      track.el.pause();
+      track.el.currentTime = 0;
+      // 次回に備えて基準値へ戻し
+      track.gain.setValueAtTime(track.base ?? 1, AudioBus.ctx.currentTime);
+    } catch (_) {}
+    onEnd && onEnd();
+  }, durationMs + 30);
+}
+
+
+
+
+
+
+  
+
   // 🔇 ミュート関連
 let isMuted = false;
 
 function applyMuteVolumes() {
-  const globalMute = isMuted;
+  if (!AudioBus.ctx) return;
 
-  // ★ BGM1（通常BGM）
-  if (bgmAudio) {
-    // ハイスコア中は強制的に出力ミュート
-    bgmAudio.muted = globalMute || isHighScoreRun;
-    bgmAudio.volume = 0.5; // 基準値だけ入れておく（実際のミュートは muted でやる）
+  // 🔇 グローバルミュートは master で一発
+  const masterTarget = isMuted ? 0.0001 : 1;
+  AudioBus.master.gain.setValueAtTime(masterTarget, AudioBus.ctx.currentTime);
+
+  // 🔁 ハイスコア中のミュート切替：bgm1↔bgm2のゲインをスワップ
+  const t = AudioBus.ctx.currentTime;
+  if (TR.bgm1) {
+    TR.bgm1.gain.setValueAtTime(isHighScoreRun ? 0.0001 : (TR.bgm1.base ?? 0.5), t);
+  }
+  if (TR.bgm2) {
+    TR.bgm2.gain.setValueAtTime(isHighScoreRun ? (TR.bgm2.base ?? 0.5) : 0.0001, t);
   }
 
-  // ★ BGM2（ハイスコア用）
-  if (bgm2Audio) {
-    bgm2Audio.muted = globalMute;
-    bgm2Audio.volume = 0.5;
-  }
-
-  // ★ ゲームオーバーSE
-  if (endAudio) {
-    endAudio.muted = globalMute;
-    endAudio.volume = 0.5;
-  }
-
-  // ★ ハイスコア達成SE
-  if (highScoreSeAudio) {
-    highScoreSeAudio.muted = globalMute;
-    highScoreSeAudio.volume = 0.3;
-  }
-
-  // ★ クレジットBGM
-  if (creditsAudio) {
-    creditsAudio.muted = globalMute;
-    creditsAudio.volume = 0.5;
-  }
-
-  // ★ どんぐり拾ったときのSE
-  pickupPool.forEach(a => {
-    a.muted = globalMute;
-    a.volume = 1.0;
-  });
-
-  // ボタン表示の切り替え
-  if (muteButton) {
-    muteButton.textContent = globalMute ? '🔇' : '🔊';
-  }
+  // その他（SE系・クレジットBGM）は基準値のまま（必要ならここで調整）
+  // 例: TR.end.gain.setValueAtTime(isMuted ? 0.0001 : (TR.end.base ?? 0.5), t);
 }
 
 
@@ -545,61 +604,71 @@ function fadeOutAudio(audio, durationMs, onEnd) {
 
 
   
-async function startAudio(){
-  if(audioStarted) return;
-  try{
-    bgmAudio = new Audio('../assets/BGM.mp3');
-    bgmAudio.volume = 0.5;
-    bgmAudio.loop = true;
-    await bgmAudio.play();
+async function startAudio() {
+  if (audioStarted) {
+    // iOSで一時停止後の復帰用にresume
+    try { await AudioBus.ctx.resume(); } catch(_) {}
+    applyMuteVolumes();
+    return;
+  }
 
-    // ★ 追加：ハイスコア用BGM2
+  // AudioContext作成＆解禁（ユーザー操作のタイミングで呼ばれる想定）
+  ensureAudioCtx();
+  try { await AudioBus.ctx.resume(); } catch(_) {}
+  warmupSilence();
+
+  try {
+    // --- BGM1 ---
+    bgmAudio = new Audio('../assets/BGM.mp3');
+    bgmAudio.loop = true;
+    bgmAudio.setAttribute('playsinline','');
+    TR.bgm1 = connectTrack(bgmAudio, AudioBus.music, 0.5);
+
+    // --- BGM2（ハイスコア用）---
     bgm2Audio = new Audio('../assets/BGM2.mp3');
-    bgm2Audio.volume = 0.5;
     bgm2Audio.loop = true;
     bgm2Audio.setAttribute('playsinline','');
+    TR.bgm2 = connectTrack(bgm2Audio, AudioBus.music, 0.5);
+    // ふだんは聞こえないよう0に
+    TR.bgm2.gain.setValueAtTime(0.0001, AudioBus.ctx.currentTime);
 
+    // --- ゲームオーバーSE ---
     endAudio = new Audio('../assets/END.mp3');
-    endAudio.volume = 0.5;
     endAudio.setAttribute('playsinline','');
+    TR.end = connectTrack(endAudio, AudioBus.se, 0.5);
 
-    // ★ 追加：ハイスコア達成SE
+    // --- ハイスコア達成SE ---
     highScoreSeAudio = new Audio('../assets/SE.mp3');
-    highScoreSeAudio.volume = 0.3;
     highScoreSeAudio.setAttribute('playsinline','');
+    TR.hi = connectTrack(highScoreSeAudio, AudioBus.se, 0.3);
 
-    // ▼ 効果音はプールで用意（複数同時再生に強い）
-    const PICK_POOL_SIZE = 6; // 4でもOK。取りこぼし減らしたいなら6〜8
-    for(let i=0;i<PICK_POOL_SIZE;i++){
+    // --- どんぐりSEプール ---
+    const PICK_POOL_SIZE = 6;
+    pickupPool = [];
+    TR.pickups = [];
+    for (let i = 0; i < PICK_POOL_SIZE; i++) {
       const a = new Audio('../assets/pick.mp3');
       a.preload = 'auto';
-      a.volume = 1.0;
-      // iOS対策
       a.setAttribute('playsinline','');
       pickupPool.push(a);
+      TR.pickups.push(connectTrack(a, AudioBus.se, 1.0));
     }
 
-    // 🔥 ここから追加：iOS向けサイレントウォームアップ
-    const warmupList = [
-      endAudio,
-      highScoreSeAudio,
-      ...pickupPool,
-    ];
+    // 旧サイレントウォームアップは不要（無音バッファで済ます）
 
-    warmupList.forEach(a => warmupSilently(a));
-    // 🔥 追加ここまで
-
-
-    
     audioStarted = true;
 
- // 🔇 ここで現在のミュート状態を適用
+    // 最初のBGMスタート
+    await bgmAudio.play();
     applyMuteVolumes();
-    
-  }catch(e){
+
+  } catch(e) {
     console.error(e);
   }
 }
+
+
+  
 
   function playPickup(){
   if(!pickupPool.length) return;
@@ -620,49 +689,48 @@ async function startAudio(){
 if (muteButton){
   const toggleMute = (e) => {
     e.preventDefault();
-    e.stopPropagation(); // 念のためバブリングも止めとく
+    e.stopPropagation();
     isMuted = !isMuted;
     applyMuteVolumes();
+    muteButton.textContent = isMuted ? '🔇' : '🔊';
   };
-
-  // スマホもPCも click だけでOK
   muteButton.addEventListener('click', toggleMute);
-  // ← touchstart は削除！
 }
+
 
 
 
   
 // ▼ クレジット専用BGM
-function playCreditsBgm(){
-  try{
-    if(!creditsAudio){
+function playCreditsBgm() {
+  try {
+    ensureAudioCtx();
+    AudioBus.ctx.resume().catch(()=>{});
+
+    if (!creditsAudio) {
       creditsAudio = new Audio('../assets/CREDIT.mp3');
       creditsAudio.loop = true;
-      creditsAudio.volume = 0.5;
       creditsAudio.setAttribute('playsinline','');
+      TR.credits = connectTrack(creditsAudio, AudioBus.music, 0.5);
     }
     creditsAudio.currentTime = 0;
-
- // 🔇 ミュート状態反映
-    applyMuteVolumes();
-    
+    applyMuteVolumes(); // masterミュート状態を反映
     const p = creditsAudio.play();
-    if(p && typeof p.catch === 'function'){
-      p.catch(()=>{});
-    }
-  }catch(e){
+    if (p && typeof p.catch === 'function') p.catch(()=>{});
+  } catch(e) {
     console.error(e);
   }
 }
 
-function stopCreditsBgm(){
-  if(!creditsAudio) return;
-  try{
+function stopCreditsBgm() {
+  if (!creditsAudio) return;
+  try {
     creditsAudio.pause();
     creditsAudio.currentTime = 0;
-  }catch(_){}
+    // ゲインは基準値のままでOK
+  } catch(_) {}
 }
+
 
   
 
@@ -1280,68 +1348,46 @@ function updateScore(){
 /* ===== 終了処理など ===== */
 function buildXIntentUrl(score){ const text=`むるだっしゅ！スコアは「${score}」でした🌻\nhttps://t4l-ovo-t4l.github.io/murudash/`; return `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`; }
 
+
   
 function gameOver(){
-  if(isGameOver) return;
+  if (isGameOver) return;
   isGameOver = true;
   gameStarted = false;
 
-  if(audioStarted){
-    try{
-      if(isHighScoreRun){
-        // ★ ハイスコア更新してた場合：5秒かけてフェードアウト
-        const targetBgm =
-          (bgm2Audio && !bgm2Audio.paused) ? bgm2Audio :
-          (bgmAudio && !bgmAudio.paused) ? bgmAudio :
-          null;
+  // 音処理：BGMはフェード、ENDは鳴らす
+  if (audioStarted) {
+    try {
+      const targetTrack =
+        (isHighScoreRun && TR.bgm2 && !bgm2Audio.paused) ? TR.bgm2 : TR.bgm1;
+      const dur = isHighScoreRun ? 5000 : 400; // HS中は長めフェード
+      fadeOutTrack(targetTrack, dur);
 
-        if(targetBgm){
-          fadeOutAudio(targetBgm, 5000, () => {
-            try{
-              targetBgm.pause();
-              targetBgm.currentTime = 0;
-              targetBgm.volume = isMuted ? 0 : 0.5;
-
-            }catch(_){}
-          });
-        }
-      }else{
-        // ★ 通常時：従来どおり即停止
-        if(bgmAudio){
-          bgmAudio.pause();
-          bgmAudio.currentTime = 0;
-          bgmAudio.volume = isMuted ? 0 : 0.5;
-        }
-      }
-
-      // ゲームオーバーSE は従来どおり鳴らす
       endAudio.currentTime = 0;
       endAudio.play();
-
-    }catch(_){}
+    } catch (_) {}
   }
 
-  if(score>highScore){
-    highScore=score;
-    localStorage.setItem('muruHighScore',highScore);
-    highScoreEl.textContent=`ハイスコア: ${highScore}`;
+  // スコア処理
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem('muruHighScore', highScore);
+    highScoreEl.textContent = `ハイスコア: ${highScore}`;
   }
 
-  finalScoreEl.textContent=score;
-  shareButton.href=buildXIntentUrl(score);
+  finalScoreEl.textContent = score;
+  shareButton.href = buildXIntentUrl(score);
 
-  // ★ このプレイでハイスコア更新していたら表示
+  // ハイスコア更新ラベル
   if (gameOverHighScoreLabel){
-    if (isHighScoreRun){
-      gameOverHighScoreLabel.classList.remove('hidden');
-    } else {
-      gameOverHighScoreLabel.classList.add('hidden');
-    }
+    if (isHighScoreRun) gameOverHighScoreLabel.classList.remove('hidden');
+    else gameOverHighScoreLabel.classList.add('hidden');
   }
-  
+
   gameOverScreen.classList.remove('hidden');
   gameOverScreen.classList.add('flex');
 }
+
 
 
 
@@ -1603,6 +1649,12 @@ pauseButton.addEventListener('touchstart', e=>{ e.preventDefault(); togglePause(
 
 
 function handleGameStart(e){
+
+ensureAudioCtx();
+AudioBus.ctx.resume().catch(()=>{});
+warmupSilence();
+
+  
   if (e) e.preventDefault();   // ← e がないときも落ちないように
 
   if(gameStarted) return;
