@@ -8,6 +8,7 @@
 <link rel="preload" as="image" href="../assets/Donguri.svg">
 <link rel="preload" as="audio" href="../assets/BGM.mp3">
 <link rel="preload" as="audio" href="../assets/END.mp3">
+<link rel="preload" as="audio" href="../assets/HIGHEND.mp3"><!-- ★追加 -->
 <link rel="preload" as="audio" href="../assets/pick.mp3">
 <link rel="preload" as="audio" href="../assets/CREDIT.mp3">
 <link rel="preload" as="audio" href="../assets/BGM2.mp3">
@@ -462,7 +463,9 @@ updateJumpButton(JUMP_MODE.START);
 
 /* ===== Audio（BGM/SE。フェード一切なし版） ===== */
 let audioBooted = false;
-let bgmAudio, bgm2Audio, endAudio, highScoreSeAudio, creditsAudio, pickupPool = [];
+let bgmAudio, bgm2Audio, endAudio, highEndAudio, highScoreSeAudio, creditsAudio, pickupPool = [];
+let highScoreBgmTimeoutId = null;  // ★ ハイスコアBGMへの切替タイマー
+
 let pickupIndex = 0; 
   
 async function bootAudioOnce(){
@@ -497,6 +500,11 @@ async function bootAudioOnce(){
   endAudio.preload    = 'auto';
   endAudio.playsInline= true;
 
+    // ★追加：ハイスコア用ゲームオーバーSE
+  highEndAudio = new Audio('../assets/HIGHEND.mp3');
+  highEndAudio.preload    = 'auto';
+  highEndAudio.playsInline= true;
+
   highScoreSeAudio = new Audio('../assets/SE.mp3');
   highScoreSeAudio.preload    = 'auto';
   highScoreSeAudio.playsInline= true;
@@ -521,12 +529,16 @@ async function bootAudioOnce(){
 document.addEventListener('touchstart', () => bootAudioOnce(), { once:true, passive:true });
 
 let muted = false;
+
+  
 function applyMute(){
-  const arr = [bgmAudio, bgm2Audio, endAudio, highScoreSeAudio, creditsAudio, ...pickupPool];
+  const arr = [bgmAudio, bgm2Audio, endAudio, highEndAudio, highScoreSeAudio, creditsAudio, ...pickupPool];
   for (const a of arr){
     if (a) a.muted = muted;
   }
 }
+
+
 
 // ▼ 通常BGM（止まってたらだけ再生）
 function playMainBgm(){
@@ -1038,7 +1050,7 @@ function startHighScoreRun(){
   if (isHighScoreRun) return;
   isHighScoreRun = true;
 
-  // 見た目変更とかはそのまま
+  // 見た目変更
   if (scoreLabel){
     scoreLabel.classList.remove('text-blue-600');
     scoreLabel.classList.add('text-orange-400');
@@ -1054,23 +1066,38 @@ function startHighScoreRun(){
     highScoreSeAudio.play();
   }catch(_){}
 
-  // 旧BGMは止めて頭出し
-  if (bgmAudio){
-    try{
+  // いったん BGM1/BGM2 を止める
+  try{
+    if (bgmAudio){
       bgmAudio.pause();
       bgmAudio.currentTime = 0;
       bgmAudio.volume = 0.5;
-    }catch(_){}
+    }
+    if (bgm2Audio){
+      bgm2Audio.pause();
+      bgm2Audio.currentTime = 0;
+      bgm2Audio.volume = 0.5;
+    }
+  }catch(_){}
+
+  // 既存のディレイタイマーがあればキャンセル
+  if (highScoreBgmTimeoutId !== null){
+    clearTimeout(highScoreBgmTimeoutId);
+    highScoreBgmTimeoutId = null;
   }
 
-  // ★ここから1秒ディレイでBGM2再生
-  setTimeout(() => {
-    // その間にゲームオーバーとかしてたら再生しないガード
-    if (!isHighScoreRun || isGameOver) return;
+  // ★ 1秒待ってから BGM2 再生（ただしゲームオーバーしてたら何もしない）
+  highScoreBgmTimeoutId = setTimeout(() => {
+    highScoreBgmTimeoutId = null;
+    if (isGameOver) return;   // ← ここ大事
+
     playHighScoreBgm();
     applyMute();
   }, 1000);
+
+  applyMute();
 }
+
 
 
   
@@ -1271,8 +1298,17 @@ function gameOver(){
   isGameOver = true;
   gameStarted = false;
 
+  // ★ ハイスコアBGM切り替えのディレイタイマーが残ってたらキャンセル
+  if (highScoreBgmTimeoutId !== null){
+    clearTimeout(highScoreBgmTimeoutId);
+    highScoreBgmTimeoutId = null;
+  }
+
+  // ここでハイスコア更新かどうか判定
+  const isNewHighScore = score > highScore;
+
   try {
-    // BGM系は全部きっちり止めて、次のプレイに変な状態を残さない
+    // BGM1 / BGM2 をきっちり止める（ハイスコア中でも例外なし）
     if (bgmAudio){
       bgmAudio.pause();
       bgmAudio.currentTime = 0;
@@ -1284,12 +1320,16 @@ function gameOver(){
       bgm2Audio.volume = 0.5;
     }
 
-    endAudio.currentTime = 0;
-    endAudio.play();
+    // ★ ハイスコアなら HIGHEND、それ以外は END
+    const se = (isNewHighScore && highEndAudio) ? highEndAudio : endAudio;
+    if (se){
+      se.currentTime = 0;
+      se.play();
+    }
   } catch(_) {}
 
-
-  if (score > highScore){
+  // ハイスコア保存はここで
+  if (isNewHighScore){
     highScore = score;
     localStorage.setItem('muruHighScore', highScore);
     highScoreEl.textContent = `ハイスコア: ${highScore}`;
@@ -1303,9 +1343,9 @@ function gameOver(){
     else gameOverHighScoreLabel.classList.add('hidden');
   }
 
-  // ★ ゲームオーバー時は「リスタート」（緑）
+  // アクションボタンを「リスタート」に
   updateJumpButton(JUMP_MODE.RESTART);
-  
+
   gameOverScreen.classList.remove('hidden');
   gameOverScreen.classList.add('flex');
 }
