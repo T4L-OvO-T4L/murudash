@@ -454,9 +454,7 @@ updateJumpButton(JUMP_MODE.START);
 
   
 
-
-
-/* ===== Audio（安定版：BGMはHTMLAudioのみ、フェードは力技） ===== */
+/* ===== Audio（BGM/SE。フェード一切なし版） ===== */
 let audioBooted = false;
 let bgmAudio, bgm2Audio, endAudio, highScoreSeAudio, creditsAudio, pickupPool = [];
 let pickupIndex = 0; 
@@ -464,104 +462,103 @@ let pickupIndex = 0;
 async function bootAudioOnce(){
   if (audioBooted) return;
 
-  // iOS解錠用：完全無音0.05秒（出音なし）
+  // iOSの「一回タップしないと鳴らへん」対策の無音ワンショットだけ残す
   try {
     const Ctx = window.AudioContext || window.webkitAudioContext;
     const ctx = new Ctx();
-    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate*0.05), ctx.sampleRate);
+    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.05), ctx.sampleRate);
     const src = ctx.createBufferSource();
-    src.buffer = buf; src.connect(ctx.destination); src.start(0);
-    setTimeout(()=>{ try{ ctx.close(); }catch(_){} }, 80);
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+    setTimeout(() => { try { ctx.close(); } catch(_){} }, 80);
   } catch(_) {}
 
-  // BGM/SE
-  bgmAudio = new Audio('../assets/BGM.mp3');  bgmAudio.loop = true;  bgmAudio.preload='auto'; bgmAudio.playsInline = true;
-  bgm2Audio= new Audio('../assets/BGM2.mp3'); bgm2Audio.loop = true;  bgm2Audio.preload='auto'; bgm2Audio.playsInline= true;
-  endAudio  = new Audio('../assets/END.mp3'); endAudio.preload='auto'; endAudio.playsInline = true;
-  highScoreSeAudio = new Audio('../assets/SE.mp3'); highScoreSeAudio.preload='auto'; highScoreSeAudio.playsInline = true;
-  creditsAudio = new Audio('../assets/CREDIT.mp3'); creditsAudio.loop = true; creditsAudio.preload='auto'; creditsAudio.playsInline = true;
+  // BGM / SE 本体
+  bgmAudio  = new Audio('../assets/BGM.mp3');
+  bgmAudio.loop       = true;
+  bgmAudio.preload    = 'auto';
+  bgmAudio.playsInline= true;
+  bgmAudio.volume     = 0.5;
 
-  // どんぐりSEプール
-  for (let i=0;i<6;i++){ const a=new Audio('../assets/pick.mp3'); a.preload='auto'; a.playsInline=true; pickupPool.push(a); }
+  bgm2Audio = new Audio('../assets/BGM2.mp3');
+  bgm2Audio.loop        = true;
+  bgm2Audio.preload     = 'auto';
+  bgm2Audio.playsInline = true;
+  bgm2Audio.volume      = 0.5;
+
+  endAudio  = new Audio('../assets/END.mp3');
+  endAudio.preload    = 'auto';
+  endAudio.playsInline= true;
+
+  highScoreSeAudio = new Audio('../assets/SE.mp3');
+  highScoreSeAudio.preload    = 'auto';
+  highScoreSeAudio.playsInline= true;
+
+  creditsAudio = new Audio('../assets/CREDIT.mp3');
+  creditsAudio.loop        = true;
+  creditsAudio.preload     = 'auto';
+  creditsAudio.playsInline = true;
+  creditsAudio.volume      = 0.5;
+
+  // どんぐり SE プール
+  for (let i = 0; i < 6; i++) {
+    const a = new Audio('../assets/pick.mp3');
+    a.preload    = 'auto';
+    a.playsInline= true;
+    pickupPool.push(a);
+  }
 
   audioBooted = true;
 }
 
 document.addEventListener('touchstart', () => bootAudioOnce(), { once:true, passive:true });
 
-
-
-
-  
-// 汎用フェード（力技：要件通り）
-function fadeTo(audio, target, ms){
-  if (!audio) return;
-  const start = audio.volume;
-  const steps = 12;
-  const dt = ms/steps;
-  let n = 0;
-  const id = setInterval(()=>{
-    n++;
-    const t = n/steps;
-    audio.volume = start + (target - start) * t;
-    if (n >= steps){ clearInterval(id); audio.volume = target; }
-  }, dt);
-}
-function fadeIn(audio, ms, to=0.5){
-  if (!audio) return;
-  audio.volume = 0;
-  audio.play().catch(()=>{});
-  fadeTo(audio, to, ms);
-}
-function fadeOut(audio, ms, onEnd){
-  if (!audio){ onEnd && onEnd(); return; }
-  fadeTo(audio, 0, ms);
-  setTimeout(()=>{ try{ audio.pause(); audio.currentTime = 0; }catch(_){} onEnd && onEnd(); }, ms+20);
-}
-
 let muted = false;
 function applyMute(){
-  const arr = [bgmAudio,bgm2Audio,endAudio,highScoreSeAudio,creditsAudio, ...pickupPool];
-  for (const a of arr){ if(a) a.muted = muted; }
+  const arr = [bgmAudio, bgm2Audio, endAudio, highScoreSeAudio, creditsAudio, ...pickupPool];
+  for (const a of arr){
+    if (a) a.muted = muted;
+  }
 }
 
-
-// ▼ 通常BGM再生
+// ▼ 通常BGM（止まってたらだけ再生）
 function playMainBgm(){
   if (!bgmAudio) return;
-  try { bgm2Audio && bgm2Audio.pause(); } catch(_) {}
-  fadeIn(bgmAudio, 400, 0.5);
+  try { if (bgm2Audio) bgm2Audio.pause(); } catch(_) {}
+
+  try {
+    if (bgmAudio.paused) {
+      bgmAudio.play().catch(() => {});
+    }
+  } catch(_) {}
 }
 
-// ▼ ハイスコア中BGM再生
+// ▼ ハイスコア中BGM（止まってたらだけ再生）
 function playHighScoreBgm(){
   if (!bgm2Audio) return;
-  try { bgmAudio && bgmAudio.pause(); } catch(_) {}
-  fadeIn(bgm2Audio, 400, 0.5);
+  try { if (bgmAudio) bgmAudio.pause(); } catch(_) {}
+
+  try {
+    if (bgm2Audio.paused) {
+      bgm2Audio.play().catch(() => {});
+    }
+  } catch(_) {}
 }
 
-
-
-
-
-  
+// ▼ 共通スタート
 async function startAudio(){
   await bootAudioOnce();
 
   if (isHighScoreRun){
-    // ハイスコア中は BGM2 だけ触る
-    if (bgm2Audio && bgm2Audio.paused){
-      playHighScoreBgm();
-    }
+    playHighScoreBgm();
   } else {
-    // それ以外は通常BGMだけ
-    if (bgmAudio && bgmAudio.paused){
-      playMainBgm();
-    }
+    playMainBgm();
   }
 
   applyMute();
 }
+
 
 
 
@@ -637,17 +634,60 @@ function drawSky(df){
   ctx.fillStyle=g; ctx.fillRect(0,0,gameWidth,gameHeight);
 }
 
-/* ===== 曲タイミング ===== */
-const EVENING_MARK_S=96, EPS=0.25;
-let lastAudioTime=0, loopCount=0, eveningTriggered=false;
-function resetAudioSyncState(){ lastAudioTime=0; loopCount=0; eveningTriggered=false; setBackgroundTheme('morning'); }
-function updateSkyByMusic(){
-  if(!bgmAudio) return;
-  const t=bgmAudio.currentTime||0;
-  if(!eveningTriggered && t>=EVENING_MARK_S-EPS){ setBackgroundTheme('evening'); eveningTriggered=true; }
-  if(t+EPS<lastAudioTime){ loopCount++; eveningTriggered=false; setBackgroundTheme((loopCount%2===1)?'night':'morning'); }
-  lastAudioTime=t;
+
+
+/* ===== 曲タイミング（BGMの長さベースで時間管理） ===== */
+// BGM.mp3 の長さ：2:19.100 = 139.1 秒
+const TRACK_LENGTH_S = 139.1;
+
+// 1ループの中で「夕焼け」に入るタイミング（前と同じ 96秒）
+const EVENING_MARK_S = 96;
+
+// 現在 BGM が何周目まで進んだ想定か（0,1,2,...）
+let skyLoopIndex = 0;
+// そのループの中で「夕焼け」にもう切り替え済みかどうか
+let skyEveningTriggered = false;
+
+// ゲーム開始・リスタート時に呼ぶ
+function resetAudioSyncState(){
+  skyLoopIndex        = 0;
+  skyEveningTriggered = false;
+  setBackgroundTheme('morning');
 }
+
+// 経過時間（timeElapsed）から「BGM のどのあたりか」を逆算して空を決める
+function updateSkyByTimeline(){
+  if (!gameStarted || isPaused || isGameOver) return;
+
+  const tSec = timeElapsed / 1000;           // 全体の経過秒数
+  const loopIndex = Math.floor(tSec / TRACK_LENGTH_S); // 何周目か
+  const localSec  = tSec % TRACK_LENGTH_S;   // その周の何秒目か
+
+  // ★ ループが切り替わった瞬間
+  if (loopIndex !== skyLoopIndex){
+    skyLoopIndex        = loopIndex;
+    skyEveningTriggered = false;
+
+    // ループ毎に 朝 ↔ 夜 をトグル
+    // 0周目: 朝, 1周目: 夜, 2周目: 朝, 3周目: 夜, ...
+    setBackgroundTheme((skyLoopIndex % 2 === 1) ? 'night' : 'morning');
+  }
+
+  // ★ 各ループの 96秒地点で一度だけ「夕焼け」にする
+  if (!skyEveningTriggered && localSec >= EVENING_MARK_S){
+    setBackgroundTheme('evening');
+    skyEveningTriggered = true;
+  }
+}
+
+
+
+
+
+
+
+
+  
 
 /* ===== 雲（スピード増＋ゲーム速度連動） ===== */
 let clouds = Array.from({length:6},()=>({
@@ -993,18 +1033,32 @@ function startHighScoreRun(){
   isHighScoreRun = true;
 
   // 見た目
-  if (scoreLabel){ scoreLabel.classList.remove('text-blue-600'); scoreLabel.classList.add('text-orange-400'); }
-  if (highScoreBanner){ highScoreBanner.classList.remove('hidden'); }
+  if (scoreLabel){
+    scoreLabel.classList.remove('text-blue-600');
+    scoreLabel.classList.add('text-orange-400');
+  }
+  if (highScoreBanner){
+    highScoreBanner.classList.remove('hidden');
+  }
   flashTimer = FLASH_DURATION;
 
   // SE
-  try{ highScoreSeAudio.currentTime = 0; highScoreSeAudio.play(); }catch(_){}
+  try{
+    highScoreSeAudio.currentTime = 0;
+    highScoreSeAudio.play();
+  }catch(_){}
 
-  // BGM切替：通常BGMを軽くフェードアウト → BGM2へ
-  if (bgmAudio && !bgmAudio.paused){
-    fadeOut(bgmAudio, 400, ()=>{});
+  // 通常BGMは一旦止めて頭出し＆ボリュームリセット
+  if (bgmAudio){
+    try{
+      bgmAudio.pause();
+      bgmAudio.currentTime = 0;
+      bgmAudio.volume = 0.5;
+    }catch(_){}
   }
-  setTimeout(()=>{ playHighScoreBgm(); }, 200);
+
+  // ハイスコア用BGMを普通に再生
+  playHighScoreBgm();
 
   applyMute();
 }
@@ -1207,20 +1261,22 @@ function gameOver(){
   isGameOver = true;
   gameStarted = false;
 
-  try{
-    if (isHighScoreRun){
-      // ★ ハイスコアモード中は BGM2 を流しっぱなし
-      //    → END効果音だけ上から鳴らす
-      endAudio.currentTime = 0;
-      endAudio.play();
-    } else {
-      // 通常時は今まで通りフェードアウト
-      const playing = bgmAudio;
-      fadeOut(playing, 400);
-      endAudio.currentTime = 0;
-      endAudio.play();
+  try {
+    // BGM系は全部きっちり止めて、次のプレイに変な状態を残さない
+    if (bgmAudio){
+      bgmAudio.pause();
+      bgmAudio.currentTime = 0;
+      bgmAudio.volume = 0.5;
     }
-  }catch(_){}
+    if (bgm2Audio){
+      bgm2Audio.pause();
+      bgm2Audio.currentTime = 0;
+      bgm2Audio.volume = 0.5;
+    }
+
+    endAudio.currentTime = 0;
+    endAudio.play();
+  } catch(_) {}
 
 
   if (score > highScore){
@@ -1253,16 +1309,19 @@ function gameOver(){
   
 function restartGame(){
 
-  // まず両方リセット
+  // まず両方きっちり止めて頭出し & ボリュームリセット
   if (bgm2Audio){
     try {
       bgm2Audio.pause();
       bgm2Audio.currentTime = 0;
+      bgm2Audio.volume = 0.5;
     } catch(_) {}
   }
   if (bgmAudio){
     try {
+      bgmAudio.pause();
       bgmAudio.currentTime = 0;
+      bgmAudio.volume = 0.5;
     } catch(_) {}
   }
 
@@ -1388,11 +1447,14 @@ function gameLoop(ts){
   timeElapsed += dt;
 
   
-  updateSkyByMusic();
+  // BGM.currentTime じゃなくて、経過時間ベースで空を更新
+  updateSkyByTimeline();
 
   // 背景＆雲
   ctx.clearRect(0,0,gameWidth,gameHeight);
-  drawSky(df); drawStars(df); drawClouds(df);
+  drawSky(df); 
+  drawStars(df); 
+  drawClouds(df);
 
   // 地面＋流れる砂利（障害物と同速で流す）
   drawGround(); drawGroundDetails(df);
