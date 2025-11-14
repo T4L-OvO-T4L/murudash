@@ -237,6 +237,20 @@ text-shadow:
       <a id="shareButton" href="#" target="_blank" rel="noopener noreferrer" class="px-8 py-4 bg-black text-white font-bold rounded-lg shadow-lg text-xl hover:bg-gray-900 transition-colors">
         Xでスコアをシェア
       </a>
+
+<button
+  id="sendScoreButton"
+  class="px-8 py-4 bg-green-600 text-white font-bold rounded-lg shadow-lg text-xl hover:bg-green-700 transition-colors">
+  ランキングに送信
+</button>
+
+<button
+  id="viewRankingButton"
+  class="px-8 py-4 bg-gray-700 text-white font-bold rounded-lg shadow-lg text-xl hover:bg-gray-800 transition-colors">
+  ランキングを見る
+</button>
+
+      
     </div>
   </div>
 
@@ -355,6 +369,36 @@ text-shadow:
 
 <script>
 
+const SCORE_API_URL = 'https://script.google.com/a/macros/haps.co.jp/s/AKfycbxRJKJtUPz5mmlwXp3tA4CxuziTwnJ4iTLJv9uipGCL9heUdHbWzmuvg2OfV_nvbuOv/exec';
+
+async function sendScoreToServer(currentScore){
+  try {
+    // 1回名前入力したらローカルに保存
+    let name = localStorage.getItem('muruPlayerName') || '';
+    if (!name) {
+      name = prompt('ランキングに載せる名前を入れてね（空欄なら「名無し」）') || '名無し';
+      name = name.trim() || '名無し';
+      localStorage.setItem('muruPlayerName', name);
+    }
+
+    const params = new URLSearchParams({
+      mode: 'post',
+      name: name,
+      score: String(currentScore),
+    });
+
+    await fetch(`${SCORE_API_URL}?${params.toString()}`, {
+      method: 'GET',   // 簡単のためGETで
+    });
+
+    alert('スコア送信したむる！');
+  } catch (err) {
+    console.error(err);
+    alert('スコア送信に失敗したっぽい…時間を置いて試してみて。');
+  }
+}
+
+  
 // 画像ローダ
 function loadImg(src){ const img = new Image(); img.src = src; return img; }
 const SPRITES = {
@@ -407,6 +451,27 @@ const versionLabel = document.getElementById('versionLabel');
 if (versionLabel) {
   versionLabel.textContent = `v${GAME_VERSION}`;
 }
+
+
+const sendScoreButton   = document.getElementById('sendScoreButton');
+const viewRankingButton = document.getElementById('viewRankingButton');
+
+if (sendScoreButton){
+  sendScoreButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    sendScoreToServer(score);    // 今のスコアを送信
+  });
+}
+
+if (viewRankingButton){
+  viewRankingButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    window.open(SCORE_API_URL, '_blank');   // GAS側のHTMLランキングを表示
+  });
+}
+
+
+  
 
 
 /* ▼ ボトムのジャンプボタンのモード管理 */
@@ -1298,17 +1363,18 @@ function gameOver(){
   isGameOver = true;
   gameStarted = false;
 
-  // ★ ハイスコアBGM切り替えのディレイタイマーが残ってたらキャンセル
+  // ★ハイスコア関係の判定を先にやる
+  const isNewHighScore        = score > highScore;
+  const hadPreviousHighScore  = highScore > 0;  // ← ここポイント
+
+  // タイマー停止とか
   if (highScoreBgmTimeoutId !== null){
     clearTimeout(highScoreBgmTimeoutId);
     highScoreBgmTimeoutId = null;
   }
 
-  // ここでハイスコア更新かどうか判定
-  const isNewHighScore = score > highScore;
-
   try {
-    // BGM1 / BGM2 をきっちり止める（ハイスコア中でも例外なし）
+    // BGM1 / BGM2 をきっちり止める
     if (bgmAudio){
       bgmAudio.pause();
       bgmAudio.currentTime = 0;
@@ -1320,21 +1386,24 @@ function gameOver(){
       bgm2Audio.volume = 0.5;
     }
 
-    // ★ ハイスコアなら HIGHEND、それ以外は END
-    const se = (isNewHighScore && highEndAudio) ? highEndAudio : endAudio;
+    // ★ 初回（highScore=0）のハイスコアでは HIGHEND を鳴らさない
+    const useHighEnd = isNewHighScore && hadPreviousHighScore && highEndAudio;
+    const se = useHighEnd ? highEndAudio : endAudio;
+
     if (se){
       se.currentTime = 0;
       se.play();
     }
   } catch(_) {}
 
-  // ハイスコア保存はここで
+  // ★ハイスコア保存は今まで通りでOK（初回もちゃんと保存する）
   if (isNewHighScore){
     highScore = score;
     localStorage.setItem('muruHighScore', highScore);
     highScoreEl.textContent = `ハイスコア: ${highScore}`;
   }
 
+  // あとの finalScore 表示とか画面表示はそのままでOK
   finalScoreEl.textContent = score;
   shareButton.href = buildXIntentUrl(score);
 
@@ -1343,9 +1412,7 @@ function gameOver(){
     else gameOverHighScoreLabel.classList.add('hidden');
   }
 
-  // アクションボタンを「リスタート」に
   updateJumpButton(JUMP_MODE.RESTART);
-
   gameOverScreen.classList.remove('hidden');
   gameOverScreen.classList.add('flex');
 }
