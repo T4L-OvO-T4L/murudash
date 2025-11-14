@@ -393,11 +393,10 @@ const SCORE_API_URL = 'https://script.google.com/macros/s/AKfycby2GHfn2Lq9iRqH45
 
 async function sendScoreToServer(currentScore){
   try {
-    // 1回名前入力したらローカルに保存
     let name = localStorage.getItem('muruPlayerName') || '';
     if (!name) {
-      name = prompt('ランキングに載せる名前を入れてね（空欄なら「名無し」）') || '名無し';
-      name = name.trim() || '名無し';
+      name = prompt('ランキングに載せる名前を入れてね（空欄なら「ムルル」）') || 'ムルル';
+      name = name.trim() || 'ムルル';
       localStorage.setItem('muruPlayerName', name);
     }
 
@@ -407,17 +406,27 @@ async function sendScoreToServer(currentScore){
       score: String(currentScore),
     });
 
-    await fetch(`${SCORE_API_URL}?${params.toString()}`, {
-      method: 'GET',   // 簡単のためGETで
-        mode: 'no-cors',
+    const res = await fetch(`${SCORE_API_URL}?${params.toString()}`, {
+      method: 'GET',   // GETのままでOK
     });
 
-    alert('スコア送信したむる！');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    // 返ってきた JSON が {status:"ok"} かどうか一応見る
+    let data = {};
+    try { data = await res.json(); } catch(_) {}
+
+    if (data.status === 'ok') {
+      alert('スコア送信したむる！');
+    } else {
+      alert('サーバーからの返事がおかしいっぽい…時間をおいてためしてみて！');
+    }
   } catch (err) {
     console.error(err);
     alert('スコア送信に失敗したっぽい…時間を置いて試してみて。');
   }
 }
+
 
   
 // 画像ローダ
