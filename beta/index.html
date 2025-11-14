@@ -1700,8 +1700,10 @@ jumpButton.addEventListener('pointerdown', e=>{
 
 
 jumpButton.addEventListener('pointerup',   e=>{ e.preventDefault(); stopJump(); });
-pauseButton.addEventListener('click', e=>{ e.preventDefault(); togglePause(); });
-pauseButton.addEventListener('touchstart', e=>{ e.preventDefault(); togglePause(); });
+pauseButton.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  togglePause();
+});
 
 
 function handleGameStart(e){
