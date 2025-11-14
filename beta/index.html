@@ -369,7 +369,7 @@ text-shadow:
 
 <script>
 
-const SCORE_API_URL = 'https://script.google.com/a/macros/haps.co.jp/s/AKfycbxRJKJtUPz5mmlwXp3tA4CxuziTwnJ4iTLJv9uipGCL9heUdHbWzmuvg2OfV_nvbuOv/exec';
+const SCORE_API_URL = 'https://script.google.com/macros/s/AKfycby2GHfn2Lq9iRqH45iOH8t1f9rM8e7Wm5AeUO92g8g35u7F7muzXokQoagjKaQrpg9ALw/exec';
 
 async function sendScoreToServer(currentScore){
   try {
@@ -389,6 +389,7 @@ async function sendScoreToServer(currentScore){
 
     await fetch(`${SCORE_API_URL}?${params.toString()}`, {
       method: 'GET',   // 簡単のためGETで
+        mode: 'no-cors',
     });
 
     alert('スコア送信したむる！');
