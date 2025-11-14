@@ -347,9 +347,10 @@ text-shadow:
 
 <!-- ジャンプボタン -->
 <div class="w-full max-w-[768px] flex justify-center p-4 fixed bottom-0 left-1/2 -translate-x-1/2 no-select no-highlight">
-  <button id="jumpButton" class="control-button w-full py-12 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-2xl no-select" draggable="false">
-    ゲームスタート
-  </button>
+<button id="jumpButton" class="control-button w-full py-12 text-white font-bold rounded-lg shadow-lg text-2xl no-select" draggable="false">
+  ゲームスタート
+</button>
+
 </div>
 
 <script>
@@ -384,23 +385,21 @@ const scoreLabel = document.getElementById('scoreLabel');
 const highScoreBanner = document.getElementById('highScoreBanner');
 
 const finalScoreEl = document.getElementById('finalScore');
-  
+
 // const restartButton = document.getElementById('restartButton');
-  
+
 const shareButton = document.getElementById('shareButton');
 const jumpButton = document.getElementById('jumpButton');
-  jumpButton.textContent = 'ゲームスタート';
 const pauseButton = document.getElementById('pauseButton');
-const pauseOverlay = document.getElementById('pauseOverlay');
+const pauseOverlay = document.getElementById('pauseOverlay');  // ★ここ追加
 
 const gameOverHighScoreLabel = document.getElementById('gameOverHighScoreLabel');
-  
+
 const startScreen = document.getElementById('startScreen');
 // const startButton = document.getElementById('startButton'); ←削除
 
 const muteButton = document.getElementById('muteButton');
-  
-  const creditsOverlay = document.getElementById('creditsOverlay');
+const creditsOverlay = document.getElementById('creditsOverlay');
 const creditsButton = document.getElementById('creditsButton');
 const closeCreditsButton = document.getElementById('closeCreditsButton');
 const creditsScroll = document.getElementById('creditsScroll');
@@ -409,6 +408,52 @@ const versionLabel = document.getElementById('versionLabel');
 if (versionLabel) {
   versionLabel.textContent = `v${GAME_VERSION}`;
 }
+
+
+/* ▼ ボトムのジャンプボタンのモード管理 */
+const JUMP_MODE = {
+  START: 'start',    // タイトル中
+  PLAY: 'play',      // プレイ中
+  RESTART: 'restart' // ゲームオーバー後
+};
+
+let jumpButtonMode = JUMP_MODE.START;
+
+function updateJumpButton(mode){
+  jumpButtonMode = mode;
+  if (!jumpButton) return;
+
+  // 色系クラスいったん全部外す
+  jumpButton.classList.remove(
+    'bg-blue-600',
+    'bg-green-600',
+    'hover:bg-blue-700',
+    'hover:bg-green-700'
+  );
+
+  switch(mode){
+    case JUMP_MODE.START:
+      jumpButton.textContent = 'ゲームスタート';
+      jumpButton.classList.add('bg-green-600','hover:bg-green-700');
+      break;
+    case JUMP_MODE.PLAY:
+      jumpButton.textContent = 'ジャンプ';
+      jumpButton.classList.add('bg-blue-600','hover:bg-blue-700');
+      break;
+    case JUMP_MODE.RESTART:
+      jumpButton.textContent = 'リスタート';
+      jumpButton.classList.add('bg-green-600','hover:bg-green-700');
+      break;
+  }
+}
+
+// 初期状態は「ゲームスタート」（緑）
+updateJumpButton(JUMP_MODE.START);
+
+
+
+  
+
 
 
 /* ===== Audio（安定版：BGMはHTMLAudioのみ、フェードは力技） ===== */
@@ -480,15 +525,44 @@ function applyMute(){
   for (const a of arr){ if(a) a.muted = muted; }
 }
 
+
+// ▼ 通常BGM再生
+function playMainBgm(){
+  if (!bgmAudio) return;
+  try { bgm2Audio && bgm2Audio.pause(); } catch(_) {}
+  fadeIn(bgmAudio, 400, 0.5);
+}
+
+// ▼ ハイスコア中BGM再生
+function playHighScoreBgm(){
+  if (!bgm2Audio) return;
+  try { bgmAudio && bgmAudio.pause(); } catch(_) {}
+  fadeIn(bgm2Audio, 400, 0.5);
+}
+
+
+
+
+
+  
 async function startAudio(){
   await bootAudioOnce();
-  // 通常BGMを自然に開始（既に鳴ってたら何もしない）
-  if (bgmAudio.paused){
-    bgm2Audio.pause();
-    fadeIn(bgmAudio, 400, 0.5);
+
+  if (isHighScoreRun){
+    // ハイスコア中は BGM2 だけ触る
+    if (bgm2Audio && bgm2Audio.paused){
+      playHighScoreBgm();
+    }
+  } else {
+    // それ以外は通常BGMだけ
+    if (bgmAudio && bgmAudio.paused){
+      playMainBgm();
+    }
   }
+
   applyMute();
 }
+
 
 
 
@@ -926,9 +1000,11 @@ function startHighScoreRun(){
   // SE
   try{ highScoreSeAudio.currentTime = 0; highScoreSeAudio.play(); }catch(_){}
 
-  // BGM切替：二重再生は短時間だけ
-  fadeOut(bgmAudio, 400, ()=>{});
-  setTimeout(()=>{ fadeIn(bgm2Audio, 500, 0.5); }, 200);
+  // BGM切替：通常BGMを軽くフェードアウト → BGM2へ
+  if (bgmAudio && !bgmAudio.paused){
+    fadeOut(bgmAudio, 400, ()=>{});
+  }
+  setTimeout(()=>{ playHighScoreBgm(); }, 200);
 
   applyMute();
 }
@@ -1132,11 +1208,20 @@ function gameOver(){
   gameStarted = false;
 
   try{
-    const playing = (isHighScoreRun && !bgm2Audio.paused) ? bgm2Audio : bgmAudio;
-    fadeOut(playing, isHighScoreRun ? 5000 : 400);
-    endAudio.currentTime = 0;
-    endAudio.play();
+    if (isHighScoreRun){
+      // ★ ハイスコアモード中は BGM2 を流しっぱなし
+      //    → END効果音だけ上から鳴らす
+      endAudio.currentTime = 0;
+      endAudio.play();
+    } else {
+      // 通常時は今まで通りフェードアウト
+      const playing = bgmAudio;
+      fadeOut(playing, 400);
+      endAudio.currentTime = 0;
+      endAudio.play();
+    }
   }catch(_){}
+
 
   if (score > highScore){
     highScore = score;
@@ -1152,6 +1237,9 @@ function gameOver(){
     else gameOverHighScoreLabel.classList.add('hidden');
   }
 
+  // ★ ゲームオーバー時は「リスタート」（緑）
+  updateJumpButton(JUMP_MODE.RESTART);
+  
   gameOverScreen.classList.remove('hidden');
   gameOverScreen.classList.add('flex');
 }
@@ -1164,10 +1252,25 @@ function gameOver(){
 
   
 function restartGame(){
-    if (bgmAudio) try { bgmAudio.currentTime = 0; } catch(_) {}
 
+  // まず両方リセット
+  if (bgm2Audio){
+    try {
+      bgm2Audio.pause();
+      bgm2Audio.currentTime = 0;
+    } catch(_) {}
+  }
+  if (bgmAudio){
+    try {
+      bgmAudio.currentTime = 0;
+    } catch(_) {}
+  }
+
+  // ★ ここでハイスコアフラグを先に折る
+  isHighScoreRun = false;
+
+  // そのうえで通常BGMスタート
   startAudio();
-
 
   score=0; scoreEl.textContent=score; timeElapsed=0; gameSpeed=baseGameSpeed;
   obstacles=[]; acorns=[]; floatTexts=[]; frame=0; spawnTimer=0;
@@ -1181,7 +1284,15 @@ function restartGame(){
   player.y=groundY-player.height; player.dy=0; player.isGrounded=true; player.jumpsRemaining=2;
   gameOverScreen.classList.add('hidden'); gameOverScreen.classList.remove('flex'); pauseOverlay.classList.add('hidden');
 
-  isHighScoreRun = false;
+  // プレイ再開なので「ジャンプ」（青）に戻す
+  updateJumpButton(JUMP_MODE.PLAY);
+
+
+  
+  // ↓ ここ以降の isHighScoreRun やバナー関連のリセットはそのままでOKやけど
+  //   もう isHighScoreRun は false になってるので現状のままでも矛盾しない
+  // isHighScoreRun = false; ← ここはもう不要なので消してよし
+
   if(scoreLabel){
     scoreLabel.classList.remove('text-orange-400');
     scoreLabel.classList.add('text-blue-600');
@@ -1193,14 +1304,7 @@ function restartGame(){
     gameOverHighScoreLabel.classList.add('hidden');
   }
 
-  if(bgm2Audio){
-    try{
-      bgm2Audio.pause();
-      bgm2Audio.currentTime = 0;
-    }catch(_){}
-  }
 
-  // 🔇 ← ここ！最後にミュート状態を反映
   applyMute();
 
   resetAudioSyncState(); isDebug=false; resetDebugTapCounter(); const dbg=document.getElementById('debugBadge'); if(dbg) dbg.remove();
@@ -1400,8 +1504,9 @@ function handleGameStart(e){
   if(gameStarted) return;
   gameStarted = true;
 
-  // ボタン表示を「ジャンプ」に切り替え
-  jumpButton.textContent = 'ジャンプ';
+  // プレイ中モード（青 & ジャンプ）
+  updateJumpButton(JUMP_MODE.PLAY);
+
 
   startAudio();
   startScreen.classList.add('hidden');
