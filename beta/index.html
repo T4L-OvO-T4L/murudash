@@ -184,7 +184,7 @@ text-shadow:
 
   <!-- ランキングオーバーレイ -->
 <div id="rankingOverlay"
-     class="absolute inset-0 bg-black bg-opacity-80 rounded-lg text-white hidden z-40">
+     class="absolute inset-0 bg-black bg-opacity-80 rounded-lg text-white hidden z-50">
   <div class="w-full h-full flex flex-col items-center justify-center px-4">
     <div class="w-full max-w-[600px] max-h-[80%] bg-gray-900/80 rounded-lg p-4 overflow-y-auto">
       <h2 class="text-2xl font-bold mb-3 text-center">ランキング</h2>
@@ -241,10 +241,10 @@ text-shadow:
   id="gameOverScreen"
   class="absolute inset-0 bg-black bg-opacity-50 rounded-lg text-white hidden z-40"
 >
-  <div class="w-full h-full flex flex-col justify-center items-center px-4">
+  <div class="w-full h-full flex flex-col justify-center items-center px-4 gap-8">
 
-    <!-- 上側：タイトル ＋ スコア -->
-    <div class="text-center mb-6">
+    <!-- 上側：タイトル ＋ スコア（中央固定） -->
+    <div class="text-center">
       <h2 class="text-4xl font-bold mb-2">がめおべら</h2>
 
       <p
@@ -254,13 +254,13 @@ text-shadow:
         ハイスコア更新！
       </p>
 
-      <p class="text-xl mb-4">
+      <p class="text-xl">
         スコア: <span id="finalScore">0</span>
       </p>
     </div>
 
-    <!-- 下側：ボタン一式（スマホで崩れない） -->
-    <div class="w-full max-w-[480px] space-y-3">
+    <!-- 下側：ボタン群（スマホでも潰れない） -->
+    <div class="w-full max-w-[480px] space-y-4">
 
       <a
         id="shareButton"
@@ -274,7 +274,7 @@ text-shadow:
 
       <button
         id="sendScoreButton"
-        class="block w-full px-6 py-3 bg-green-600 text-white font-bold rounded-lg shadow-lg text-lg hover:bg-green-700 transition-colors"
+        class="block w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-lg hover:bg-green-700 transition-colors"
       >
         ランキングに送信
       </button>
@@ -286,7 +286,7 @@ text-shadow:
         ランキングを見る
       </button>
 
-      <!-- 送信待ちメッセージ -->
+      <!-- 送信中・完了メッセージ -->
       <p
         id="sendStatusMessage"
         class="text-center text-sm text-gray-200"
@@ -296,6 +296,7 @@ text-shadow:
 
   </div>
 </div>
+
 
 
 
@@ -417,22 +418,29 @@ const SCORE_API_URL = 'https://script.google.com/macros/s/AKfycby2GHfn2Lq9iRqH45
 
 async function sendScoreToServer(currentScore){
   try {
-    sendStatusMessage.textContent = 'ちょっと待ってむる…';
-    let name = localStorage.getItem('muruPlayerName') || '';
-    if (!name) {
-      name = prompt('ランキングに載せる名前を入れてね（空欄なら「ムルル」）') || 'ムルル';
-      name = name.trim() || 'ムルル';
-      localStorage.setItem('muruPlayerName', name);
+    // ★前回の名前をデフォルトにする（なければムルル）
+    const prevName = localStorage.getItem('muruPlayerName') || 'ムルル';
+
+    // ★毎回聞く。第二引数で初期値セット
+    const input = prompt(
+      'ランキングに載せる名前を入れてね（空欄なら「ムルル」）',
+      prevName
+    );
+
+    // キャンセルされたら何もしない
+    if (input === null) {
+      return;
     }
 
-    // ★ ここから「ちょっと待ってむる」演出
-    if (sendStatusMessage) {
-      sendStatusMessage.textContent = 'ちょっと待ってむる…スコア送信中…';
-      sendStatusMessage.classList.remove('text-red-300');
-    }
-    if (sendScoreButton) {
+    const name = (input.trim() || 'ムルル');
+    localStorage.setItem('muruPlayerName', name);
+
+    // ★送信中の見た目
+    if (sendScoreButton){
       sendScoreButton.disabled = true;
-      sendScoreButton.classList.add('opacity-60', 'cursor-not-allowed');
+      sendScoreButton.textContent = '送信中むる…';
+      sendScoreButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+      sendScoreButton.classList.add('bg-blue-900', 'cursor-wait');
     }
 
     const params = new URLSearchParams({
@@ -450,31 +458,31 @@ async function sendScoreToServer(currentScore){
       throw new Error(data && data.message ? data.message : 'API status!=ok');
     }
 
-    // ★ 成功時メッセージ
-    if (sendStatusMessage) {
-      sendStatusMessage.textContent = 'スコア送信したむる！';
+    alert('スコア送信したむる！');
+
+    // ★送信完了 → グレーアウト＋二重送信不可
+    if (sendScoreButton){
+      sendScoreButton.textContent = 'スコア送信済み';
+      sendScoreButton.classList.remove('bg-blue-900', 'cursor-wait', 'hover:bg-blue-700');
+      sendScoreButton.classList.add('bg-gray-500', 'cursor-not-allowed');
+      // disabled は true のまま
     }
 
-    alert('スコア送信したむる！');
   } catch (err) {
     console.error(err);
+    alert('スコア送信に失敗したっぽい…時間を置いて試してみて。');
 
-    // ★ 失敗時メッセージ
-    if (sendStatusMessage) {
-      sendStatusMessage.textContent =
-        'スコア送信に失敗したむりゅ……時間を置いて試してほしいむる。';
-      sendStatusMessage.classList.add('text-red-300');
-    }
-
-    alert('スコア送信に失敗したむりゅ……時間を置いて試してほしいむる。');
-  } finally {
-    // ★ ボタンを元に戻す
-    if (sendScoreButton) {
+    // ★失敗したらボタン復活させる
+    if (sendScoreButton){
       sendScoreButton.disabled = false;
-      sendScoreButton.classList.remove('opacity-60', 'cursor-not-allowed');
+      sendScoreButton.textContent = 'ランキングに送信';
+      sendScoreButton.classList.remove('bg-blue-900', 'cursor-wait', 'bg-gray-500', 'cursor-not-allowed');
+      sendScoreButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
     }
   }
 }
+
+
 
 
 
