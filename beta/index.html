@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; media-src 'self';">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://script.google.com; script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; media-src 'self';">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="preload" as="image" href="../assets/blueberry.svg">
 <link rel="preload" as="image" href="../assets/sunflower.svg">
@@ -180,6 +180,26 @@ text-shadow:
   >
     ハイスコア更新中むる～！
   </div>
+
+
+  <!-- ランキングオーバーレイ -->
+<div id="rankingOverlay"
+     class="absolute inset-0 bg-black bg-opacity-80 rounded-lg text-white hidden z-40">
+  <div class="w-full h-full flex flex-col items-center justify-center px-4">
+    <div class="w-full max-w-[600px] max-h-[80%] bg-gray-900/80 rounded-lg p-4 overflow-y-auto">
+      <h2 class="text-2xl font-bold mb-3 text-center">ランキング</h2>
+      <div id="rankingContent" class="text-sm sm:text-base space-y-1">
+        <!-- JSで中身を埋める -->
+      </div>
+      <div class="mt-4 text-center">
+        <button id="closeRankingButton"
+                class="px-6 py-2 bg-gray-700 hover:bg-gray-800 rounded-lg text-sm">
+          とじる
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
 
 
@@ -448,6 +468,11 @@ const creditsOverlay = document.getElementById('creditsOverlay');
 const creditsButton = document.getElementById('creditsButton');
 const creditsScroll = document.getElementById('creditsScroll');
 
+const rankingOverlay      = document.getElementById('rankingOverlay');
+const rankingContent      = document.getElementById('rankingContent');
+const closeRankingButton  = document.getElementById('closeRankingButton');
+
+
 const versionLabel = document.getElementById('versionLabel');
 if (versionLabel) {
   versionLabel.textContent = `v${GAME_VERSION}`;
@@ -467,12 +492,74 @@ if (sendScoreButton){
 if (viewRankingButton){
   viewRankingButton.addEventListener('click', (e) => {
     e.preventDefault();
-    window.open(SCORE_API_URL, '_blank');   // GAS側のHTMLランキングを表示
+    openRankingOverlay();
+  });
+}
+
+if (closeRankingButton){
+  closeRankingButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeRankingOverlay();
   });
 }
 
 
-  
+function escapeHtml(str){
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
+  return String(str).replace(/[&<>"']/g, c => map[c]);
+}
+
+
+async function openRankingOverlay(){
+  if (!rankingOverlay || !rankingContent) return;
+
+  rankingOverlay.classList.remove('hidden');
+  rankingOverlay.classList.add('flex');
+
+  rankingContent.innerHTML = '<p class="text-center text-sm">読み込み中むる…</p>';
+
+  try {
+    const res = await fetch(`${SCORE_API_URL}?mode=json`, { method: 'GET' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    const scores = data.scores || [];
+
+    if (!scores.length){
+      rankingContent.innerHTML =
+        '<p class="text-center text-sm">まだ記録がないむる…</p>';
+      return;
+    }
+
+    rankingContent.innerHTML = scores.map(s => `
+      <div class="flex items-center gap-2 border-b border-gray-700 py-1">
+        <span class="w-8 text-left text-xs sm:text-sm">#${s.rank}</span>
+        <span class="flex-1 text-left truncate text-xs sm:text-sm">
+          ${escapeHtml(s.name)}
+        </span>
+        <span class="w-16 text-right font-mono text-sm sm:text-base">
+          ${s.score}
+        </span>
+      </div>
+    `).join('');
+  } catch (err){
+    console.error(err);
+    rankingContent.innerHTML =
+      '<p class="text-center text-sm text-red-300">ランキングの読み込みに失敗したむる…</p>';
+  }
+}
+
+function closeRankingOverlay(){
+  if (!rankingOverlay) return;
+  rankingOverlay.classList.add('hidden');
+  rankingOverlay.classList.remove('flex');
+}
+
 
 
 /* ▼ ボトムのジャンプボタンのモード管理 */
