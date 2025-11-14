@@ -616,9 +616,9 @@ function stopCreditsBgm(){
   
 
 /* ===== 画面サイズ（固定レイアウト） ===== */
-// ゲーム内の論理サイズを常に 768x300 に固定
+
 const gameWidth  = 768;
-const gameHeight = 432;  // ← 縦少し伸ばす（16:9 近く）
+const gameHeight = 384;  // ← 縦少し伸ばす（16:9 近く）
 
 canvas.width  = gameWidth;
 canvas.height = gameHeight;
@@ -1038,7 +1038,7 @@ function startHighScoreRun(){
   if (isHighScoreRun) return;
   isHighScoreRun = true;
 
-  // 見た目
+  // 見た目変更とかはそのまま
   if (scoreLabel){
     scoreLabel.classList.remove('text-blue-600');
     scoreLabel.classList.add('text-orange-400');
@@ -1054,7 +1054,7 @@ function startHighScoreRun(){
     highScoreSeAudio.play();
   }catch(_){}
 
-  // 通常BGMは一旦止めて頭出し＆ボリュームリセット
+  // 旧BGMは止めて頭出し
   if (bgmAudio){
     try{
       bgmAudio.pause();
@@ -1063,11 +1063,15 @@ function startHighScoreRun(){
     }catch(_){}
   }
 
-  // ハイスコア用BGMを普通に再生
-  playHighScoreBgm();
-
-  applyMute();
+  // ★ここから1秒ディレイでBGM2再生
+  setTimeout(() => {
+    // その間にゲームオーバーとかしてたら再生しないガード
+    if (!isHighScoreRun || isGameOver) return;
+    playHighScoreBgm();
+    applyMute();
+  }, 1000);
 }
+
 
   
 
@@ -1403,6 +1407,10 @@ function togglePause(){
 
 function openCredits(e){
   if (e) e.preventDefault();
+
+  // ★ここ追加
+  bootAudioOnce();
+  
   creditsOverlay.classList.remove('hidden');
   creditsOverlay.classList.add('flex');
 
