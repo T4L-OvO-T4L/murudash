@@ -186,9 +186,16 @@ text-shadow:
   
   <!-- スタート -->
   <div id="startScreen" class="absolute inset-0 bg-black bg-opacity-70 flex-col justify-center items-center rounded-b-lg text-white p-8 text-center flex">
-    <h2 class="text-5xl font-bold mb-6">むるだっしゅ！</h2>
-    <p class="text-lg mb-4">ボタンでジャンプ！<br class="sm:hidden">空中でもう一回で2段ジャンプ！</p>
-    <p class="text-lg mb-8">障害物をよけまくろう！</p>
+    <h2 class="text-4xl sm:text-5xl font-bold mb-6">むるだっしゅ！</h2>
+    
+    <p class="text-sm sm:text-lg mb-3">
+      ボタンでジャンプ！<br class="sm:hidden">空中でもう一回で2段ジャンプ！
+    </p>
+    
+    <p class="text-sm sm:text-lg mb-6">
+      障害物をよけまくろう！
+    </p>
+
     
   <!-- 旧スタートボタン ジャンプボタンと統合のためコメントアウト 
     <button id="startButton" class="px-8 py-4 bg-green-600 text-white font-bold rounded-lg shadow-lg text-2xl hover:bg-green-700 transition-colors">
@@ -309,14 +316,6 @@ text-shadow:
         </div>
       </div><!-- /#creditsScroll -->
     </div><!-- /#creditsScrollOuter -->
-
-    <!-- 閉じるボタン：画面下に固定 -->
-    <button
-      id="closeCreditsButton"
-      class="absolute bottom-4 left-1/2 -translate-x-1/2 px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-bold"
-    >
-      とじる
-    </button>
   </div><!-- /.relative -->
 </div><!-- /#creditsOverlay -->
 
@@ -401,7 +400,6 @@ const startScreen = document.getElementById('startScreen');
 const muteButton = document.getElementById('muteButton');
 const creditsOverlay = document.getElementById('creditsOverlay');
 const creditsButton = document.getElementById('creditsButton');
-const closeCreditsButton = document.getElementById('closeCreditsButton');
 const creditsScroll = document.getElementById('creditsScroll');
 
 const versionLabel = document.getElementById('versionLabel');
@@ -414,7 +412,8 @@ if (versionLabel) {
 const JUMP_MODE = {
   START: 'start',    // タイトル中
   PLAY: 'play',      // プレイ中
-  RESTART: 'restart' // ゲームオーバー後
+  RESTART: 'restart',  // ゲームオーバー後
+  CREDITS: 'credits'   // クレジット表示中（ジャンプボタン＝とじる）
 };
 
 let jumpButtonMode = JUMP_MODE.START;
@@ -427,8 +426,10 @@ function updateJumpButton(mode){
   jumpButton.classList.remove(
     'bg-blue-600',
     'bg-green-600',
+    'bg-gray-700',      // ← 追加
     'hover:bg-blue-700',
-    'hover:bg-green-700'
+    'hover:bg-green-700',
+    'hover:bg-gray-800' // ← 追加
   );
 
   switch(mode){
@@ -444,8 +445,13 @@ function updateJumpButton(mode){
       jumpButton.textContent = 'リスタート';
       jumpButton.classList.add('bg-green-600','hover:bg-green-700');
       break;
+    case JUMP_MODE.CREDITS:
+      jumpButton.textContent = 'とじる';
+      jumpButton.classList.add('bg-gray-700','hover:bg-gray-800');
+      break;
   }
 }
+
 
 // 初期状態は「ゲームスタート」（緑）
 updateJumpButton(JUMP_MODE.START);
@@ -612,7 +618,7 @@ function stopCreditsBgm(){
 /* ===== 画面サイズ（固定レイアウト） ===== */
 // ゲーム内の論理サイズを常に 768x300 に固定
 const gameWidth  = 768;
-const gameHeight = 300;
+const gameHeight = 432;  // ← 縦少し伸ばす（16:9 近く）
 
 canvas.width  = gameWidth;
 canvas.height = gameHeight;
@@ -1397,27 +1403,48 @@ function togglePause(){
 
 function openCredits(e){
   if (e) e.preventDefault();
-  creditsOverlay.classList.remove('hidden'); creditsOverlay.classList.add('flex');
+  creditsOverlay.classList.remove('hidden');
+  creditsOverlay.classList.add('flex');
 
-  creditsScroll.classList.remove('credits-scroll'); void creditsScroll.offsetWidth;
+  creditsScroll.classList.remove('credits-scroll');
+  void creditsScroll.offsetWidth;          // リスタート用おまじない
   creditsScroll.classList.add('credits-scroll');
 
   try{ bgmAudio.pause(); bgm2Audio.pause(); }catch(_){}
   playCreditsBgm();
+
+  // ★ クレジット中はジャンプボタン＝「とじる」
+  updateJumpButton(JUMP_MODE.CREDITS);
 }
+
+
 
 function closeCredits(e){
   if (e) e.preventDefault();
-  creditsOverlay.classList.add('hidden'); creditsOverlay.classList.remove('flex');
+  creditsOverlay.classList.add('hidden');
+  creditsOverlay.classList.remove('flex');
   stopCreditsBgm();
+
+  // ★ クレジット閉じたらジャンプボタンの役割を戻す
+  if (isGameOver){
+    updateJumpButton(JUMP_MODE.RESTART);
+  } else if (!gameStarted){
+    updateJumpButton(JUMP_MODE.START);
+  } else {
+    updateJumpButton(JUMP_MODE.PLAY);
+  }
 
   if (gameStarted && !isGameOver && !isPaused){
     try{
-      if (isHighScoreRun){ if (bgm2Audio.paused) bgm2Audio.play(); }
-      else { if (bgmAudio.paused) bgmAudio.play(); }
+      if (isHighScoreRun){
+        if (bgm2Audio.paused) bgm2Audio.play();
+      } else {
+        if (bgmAudio.paused) bgmAudio.play();
+      }
     }catch(_){}
   }
 }
+
 
 
 
@@ -1427,9 +1454,6 @@ function closeCredits(e){
 creditsButton.addEventListener('click', openCredits);
 creditsButton.addEventListener('touchstart', openCredits, { passive: false });
 
-// クレジット画面の「とじる」ボタン
-closeCreditsButton.addEventListener('click', closeCredits);
-closeCreditsButton.addEventListener('touchstart', closeCredits, { passive: false });
 
 
 
@@ -1526,6 +1550,12 @@ window.addEventListener('keyup', e=>{ if(e.code==='Space'||e.code==='ArrowUp') s
 jumpButton.addEventListener('pointerdown', e=>{
   e.preventDefault();
 
+  // ★ クレジット表示中：ジャンプボタン＝「とじる」
+  if (jumpButtonMode === JUMP_MODE.CREDITS){
+    closeCredits();
+    return;
+  }
+
   // ★ ゲームオーバー中ならリスタート
   if (isGameOver) {
     restartGame();
@@ -1551,6 +1581,7 @@ jumpButton.addEventListener('pointerdown', e=>{
   // 通常プレイ中はジャンプ
   playerJump();
 });
+
 
 
 jumpButton.addEventListener('pointerup',   e=>{ e.preventDefault(); stopJump(); });
