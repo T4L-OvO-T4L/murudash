@@ -407,20 +407,16 @@ async function sendScoreToServer(currentScore){
     });
 
     const res = await fetch(`${SCORE_API_URL}?${params.toString()}`, {
-      method: 'GET',   // GETのままでOK
+      method: 'GET',
+      // ★ここは CORS 通すので no-cors 付けない！
     });
 
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-
-    // 返ってきた JSON が {status:"ok"} かどうか一応見る
-    let data = {};
-    try { data = await res.json(); } catch(_) {}
-
-    if (data.status === 'ok') {
-      alert('スコア送信したむる！');
-    } else {
-      alert('サーバーからの返事がおかしいっぽい…時間をおいてためしてみて！');
+    const data = await res.json();
+    if (!data || data.status !== 'ok') {
+      throw new Error(data && data.message ? data.message : 'API status!=ok');
     }
+
+    alert('スコア送信したむる！');
   } catch (err) {
     console.error(err);
     alert('スコア送信に失敗したっぽい…時間を置いて試してみて。');
@@ -536,6 +532,7 @@ async function openRankingOverlay(){
   try {
     const res = await fetch(`${SCORE_API_URL}?mode=json`, { method: 'GET' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
+
     const data = await res.json();
     const scores = data.scores || [];
 
@@ -562,6 +559,7 @@ async function openRankingOverlay(){
       '<p class="text-center text-sm text-red-300">ランキングの読み込みに失敗したむる…</p>';
   }
 }
+
 
 function closeRankingOverlay(){
   if (!rankingOverlay) return;
@@ -661,12 +659,14 @@ async function bootAudioOnce(){
   endAudio  = new Audio('../assets/END.mp3');
   endAudio.preload    = 'auto';
   endAudio.playsInline= true;
+  endAudio.volume      = 0.3;
 
     // ★追加：ハイスコア用ゲームオーバーSE
   highEndAudio = new Audio('../assets/HIGHEND.mp3');
   highEndAudio.preload    = 'auto';
   highEndAudio.playsInline= true;
-
+  highEndAudio.volume      = 0.5;
+  
   highScoreSeAudio = new Audio('../assets/SE.mp3');
   highScoreSeAudio.preload    = 'auto';
   highScoreSeAudio.playsInline= true;
