@@ -232,7 +232,15 @@ text-shadow:
 
   
   <!-- スタート -->
-  <div id="startScreen" class="absolute inset-0 bg-black bg-opacity-70 flex-col justify-center items-center rounded-b-lg text-white p-8 text-center flex">
+  <div
+  id="startScreen"
+  class="absolute inset-0 bg-black bg-opacity-70 rounded-b-lg text-white text-center
+         flex flex-col items-center
+         px-6 pb-8
+         justify-start pt-10
+         sm:justify-center sm:pt-0"
+>
+
     <h2 class="text-4xl sm:text-5xl font-bold mb-6">むるだっしゅ！</h2>
     
     <p class="text-sm sm:text-lg mb-3">
@@ -1356,7 +1364,7 @@ let isHighScoreRun = false;
 
 // ★ ゲームオーバー直後はリスタートを少しだけロックする
 let canRestart = false;
-const RESTART_DELAY_MS = 800; // ← 好きに調整（ミリ秒）
+const RESTART_DELAY_MS = 1500; // ← 好きに調整（ミリ秒）
   
 
 // ★ ハイスコア突入フラッシュ用
@@ -1598,10 +1606,10 @@ function updatePlayer(d) {
   // 着地判定
   if (player.y + player.height >= groundY) {
     if (!player.isGrounded) {
-      // ★ 今ちょうど着地した瞬間だけ「ぺちょっ」とつぶす
-      player.squashTimer = 10;   // どれくらい「戻り」を続けるか
-      player.scaleX = 1.15;
-      player.scaleY = 0.85;
+      // ★ 着地のときはドンッとつぶれる
+      player.squashTimer = 16;   // ← 長め
+      player.scaleX = 1.25;      // ← 横にぐいっと
+      player.scaleY = 0.78;      // ← 縦はかなりぺちゃん
     }
 
     player.y = groundY - player.height;
@@ -1612,24 +1620,25 @@ function updatePlayer(d) {
     player.isGrounded = false;
   }
 
-  // ★ ぷにょんアニメ（スケールの補間）
+  // ★ ぷにゅんアニメ（スケールの補間）
   if (player.squashTimer > 0) {
     player.squashTimer -= d;
 
-    // 強めに「元の形」に戻そうとする
-    const k = 0.2;
+    // 強めに「元の形」に戻す
+    const k = 0.25; // ← 戻りをキビキビ
     player.scaleX += (1 - player.scaleX) * k;
     player.scaleY += (1 - player.scaleY) * k;
   } else {
     // ふだんは、地上と空中でちょっとだけ形変える
-    const targetX = player.isGrounded ? 1.0 : 0.95;  // 空中ちょい細
-    const targetY = player.isGrounded ? 1.0 : 1.05;  // 空中ちょい縦長
+    const targetX = player.isGrounded ? 1.0 : 0.9;  // 空中はちょい細め
+    const targetY = player.isGrounded ? 1.0 : 1.10; // 空中は少し伸びる
 
-    const k = 0.12;
+    const k = 0.15;
     player.scaleX += (targetX - player.scaleX) * k;
     player.scaleY += (targetY - player.scaleY) * k;
   }
 }
+
 
 
 function playerJump() {
@@ -1643,9 +1652,9 @@ function playerJump() {
     player.jumpsRemaining--;
 
     // ★ ジャンプ直後：きゅっと縮んでから伸びる感じ
-    player.squashTimer = 8;
-    player.scaleX = 0.85;  // 横細く
-    player.scaleY = 1.15;  // 縦長く
+    player.squashTimer = 14;  // ← ちょい長め
+    player.scaleX = 0.72;     // ← 横を細く
+    player.scaleY = 1.30;     // ← 縦をグイっと伸ばす
   }
 }
 
