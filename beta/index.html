@@ -274,7 +274,7 @@ text-shadow:
 
       <button
         id="sendScoreButton"
-        class="block w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-lg hover:bg-green-700 transition-colors"
+        class="block w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-lg hover:bg-blue-700 transition-colors"
       >
         ランキングに送信
       </button>
@@ -460,13 +460,22 @@ async function sendScoreToServer(currentScore){
 
     alert('スコア送信したむる！');
 
-    // ★送信完了 → グレーアウト＋二重送信不可
-    if (sendScoreButton){
-      sendScoreButton.textContent = 'スコア送信済み';
-      sendScoreButton.classList.remove('bg-blue-900', 'cursor-wait', 'hover:bg-blue-700');
-      sendScoreButton.classList.add('bg-gray-500', 'cursor-not-allowed');
-      // disabled は true のまま
-    }
+// ★ 送信完了 → ボタンを透明化＆無効化
+sendScoreButton.textContent = "スコア送信済み";
+sendScoreButton.disabled = true;
+
+sendScoreButton.classList.remove(
+  "bg-blue-600",
+  "hover:bg-blue-700",
+  "cursor-pointer"
+);
+
+sendScoreButton.classList.add(
+  "bg-gray-500",
+  "opacity-60",
+  "cursor-not-allowed"
+);
+
 
   } catch (err) {
     console.error(err);
@@ -1525,6 +1534,18 @@ function gameOver(){
   isGameOver = true;
   gameStarted = false;
 
+  // ★ゲームオーバー画面を開くときに、送信ボタンを初期状態に戻す
+sendScoreButton.disabled = false;
+sendScoreButton.textContent = "ランキングに送信";
+sendScoreButton.classList.remove(
+  "bg-gray-500",
+  "cursor-not-allowed",
+  "bg-blue-900",
+  "cursor-wait"
+);
+sendScoreButton.classList.add("bg-blue-600", "hover:bg-blue-700");
+
+
   // ★ハイスコア関係の判定を先にやる
   const isNewHighScore        = score > highScore;
   const hadPreviousHighScore  = highScore > 0;  // ← ここポイント
@@ -1587,6 +1608,23 @@ function gameOver(){
 
   
 function restartGame(){
+
+// ★リスタートしたらスコア送信ボタンを初期化
+sendScoreButton.disabled = false;
+sendScoreButton.textContent = "ランキングに送信";
+
+sendScoreButton.classList.remove(
+  "bg-gray-500",
+  "opacity-60",
+  "cursor-not-allowed"
+);
+
+sendScoreButton.classList.add(
+  "bg-blue-600",
+  "hover:bg-blue-700"
+);
+
+
 
   // まず両方きっちり止めて頭出し & ボリュームリセット
   if (bgm2Audio){
