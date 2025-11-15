@@ -78,12 +78,14 @@
   }
 
 @keyframes credits-scroll {
-  /* ▼ 画面の下の方からスタート（スタッフロールっぽく） */
+  /* 最初から画面内にいる状態（ちょい下からでもOK） */
   0% {
-    transform: translateY(100%);
+    transform: translateY(0%);
+    /* もっと下から出したかったら 20% とか 40% とかでもOK */
+    /* transform: translateY(40%); みたいな感じ */
   }
 
-  /* ▼ そのまま一定速度で上に抜けていく */
+  /* 上に抜ける位置 */
   100% {
     transform: translateY(-120%);
   }
@@ -92,6 +94,7 @@
 .credits-scroll {
   animation: credits-scroll 80s linear;
 }
+
 
 
 
