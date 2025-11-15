@@ -78,12 +78,19 @@
   }
 
     @keyframes credits-scroll {
-    0% { transform: translateY(0%); }
-    100% { transform: translateY(-110%); }
+  /* 最初はコンテナの下のさらに外（100%ぶん下）からスタート */
+  0% {
+    transform: translateY(100%);
   }
+  /* 最後は今まで通り、上に抜けきるところまで */
+  100% {
+    transform: translateY(-110%);
+  }
+}
+
 
   .credits-scroll {
-    animation: credits-scroll 60s linear;
+    animation: credits-scroll 80s linear;
   }
 
 
@@ -387,27 +394,36 @@ text-shadow:
             </p>
           </div>
       
-          <!-- 🎨 飾りイラスト（PCだけ表示） -->
-          <!-- ① ちょい上の方・右に自機 -->
-          <img
-            src="../assets/Muru.png"
-            alt="Muru"
-            class="hidden sm:block absolute right-2 top-16 w-24 opacity-80"
-          >
-      
-          <!-- ② そのだいぶ下・左にひまわり -->
-          <img
-            src="../assets/sunflower.svg"
-            alt="sunflower"
-            class="hidden sm:block absolute left-2 top-[260px] w-16 h-16 opacity-80"
-          >
-      
-          <!-- ③ さらに下・右にブルーベリー -->
-          <img
-            src="../assets/blueberry.svg"
-            alt="blueberry"
-            class="hidden sm:block absolute right-6 top-[440px] w-14 h-14 opacity-80"
-          >
+          <!-- 🎨 飾りイラスト -->
+<!-- ① ちょい上の方・右に自機 -->
+<img
+  src="../assets/Muru.png"
+  alt="Muru"
+  class="absolute right-1 sm:right-2 top-16 w-16 sm:w-24 pointer-events-none select-none"
+/>
+
+<!-- ② そのだいぶ下・左にひまわり -->
+<img
+  src="../assets/sunflower.svg"
+  alt="sunflower"
+  class="absolute left-1 sm:left-2 top-[260px] w-12 sm:w-16 h-auto pointer-events-none select-none"
+/>
+
+<!-- ③ さらに下・右にブルーベリー -->
+<img
+  src="../assets/blueberry.svg"
+  alt="blueberry"
+  class="absolute right-2 sm:right-6 top-[440px] w-10 sm:w-14 h-auto pointer-events-none select-none"
+/>
+
+<!-- ④ さらに下・左にどんぐり（同間隔） -->
+<img
+  src="../assets/Donguri.svg"
+  alt="donguri"
+  class="absolute left-2 sm:left-8 top-[620px] w-10 sm:w-14 h-auto pointer-events-none select-none"
+/>
+
+
       
         </div>
       </div><!-- /#creditsScroll -->
@@ -483,6 +499,7 @@ async function sendScoreToServer(currentScore){
       mode: 'post',
       name: name,
       score: String(currentScore),
+      version: GAME_VERSION,   // ★ ここ追加（例: "2.0"）
     });
 
     const res = await fetch(`${SCORE_API_URL}?${params.toString()}`, {
@@ -1607,9 +1624,9 @@ function updatePlayer(d) {
   if (player.y + player.height >= groundY) {
     if (!player.isGrounded) {
       // ★ 着地のときはドンッとつぶれる
-      player.squashTimer = 16;   // ← 長め
-      player.scaleX = 1.25;      // ← 横にぐいっと
-      player.scaleY = 0.78;      // ← 縦はかなりぺちゃん
+    player.squashTimer = 18;   // 戻り時間ちょい長め
+    player.scaleX = 1.35;      // 横ぐいっと広げる
+    player.scaleY = 0.65;      // 縦はガッツリつぶす
     }
 
     player.y = groundY - player.height;
