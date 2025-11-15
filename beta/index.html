@@ -478,21 +478,36 @@ const SCORE_API_URL = 'https://script.google.com/macros/s/AKfycby2GHfn2Lq9iRqH45
 
 async function sendScoreToServer(currentScore){
   try {
-    // ★前回の名前をデフォルトにする（なければムルル）
-    const prevName = localStorage.getItem('muruPlayerName') || 'ムルル';
+    // ★前回の名前をデフォルトにする（なければ空欄）
+    const prevName = localStorage.getItem('muruPlayerName') || '';
 
-    // ★毎回聞く。第二引数で初期値セット
-    const input = prompt(
-      'ランキングに載せる名前を入れてね（空欄なら「ムルル」）',
-      prevName
-    );
+    // ★必ず何かしら入力させるループ
+    let name = '';
+    while (true) {
+      const input = prompt(
+        'ランキングに載せる名前を入れてね（必須）',
+        prevName
+      );
 
-    // キャンセルされたら何もしない
-    if (input === null) {
-      return;
+      // キャンセルされたら送信自体やめる
+      if (input === null) {
+        return;
+      }
+
+      name = input.trim();
+
+      // 何か入ってたらOK
+      if (name) break;
+
+      alert('名前は必須むりゅ；；');
     }
 
-    const name = (input.trim() || 'ムルル');
+    // （お好み）長すぎるとアレなんでちょい制限かけてもいい
+    if (name.length > 16) {
+      name = name.slice(0, 16);
+      alert('名前長すぎィ！先頭16文字だけ使うむる！');
+    }
+
     localStorage.setItem('muruPlayerName', name);
 
     // ★送信中の見た目
@@ -507,7 +522,7 @@ async function sendScoreToServer(currentScore){
       mode: 'post',
       name: name,
       score: String(currentScore),
-      version: GAME_VERSION,   // ★ ここ追加（例: "2.0"）
+      version: GAME_VERSION,
     });
 
     const res = await fetch(`${SCORE_API_URL}?${params.toString()}`, {
@@ -521,36 +536,41 @@ async function sendScoreToServer(currentScore){
 
     alert('スコア送信したむる！');
 
-// ★ 送信完了 → ボタンを透明化＆無効化
-sendScoreButton.textContent = "スコア送信済み";
-sendScoreButton.disabled = true;
+    // ★ 送信完了 → ボタンを透明化＆無効化
+    sendScoreButton.textContent = "スコア送信済み";
+    sendScoreButton.disabled = true;
 
-sendScoreButton.classList.remove(
-  "bg-blue-600",
-  "hover:bg-blue-700",
-  "cursor-pointer"
-);
+    sendScoreButton.classList.remove(
+      "bg-blue-600",
+      "hover:bg-blue-700",
+      "cursor-pointer"
+    );
 
-sendScoreButton.classList.add(
-  "bg-gray-500",
-  "opacity-60",
-  "cursor-not-allowed"
-);
-
+    sendScoreButton.classList.add(
+      "bg-gray-500",
+      "opacity-60",
+      "cursor-not-allowed"
+    );
 
   } catch (err) {
     console.error(err);
-    alert('スコア送信に失敗したっぽい…時間を置いて試してみて。');
+    alert('送信に失敗したむりゅ…時間を置いて試してみてほしいむる！');
 
     // ★失敗したらボタン復活させる
     if (sendScoreButton){
       sendScoreButton.disabled = false;
       sendScoreButton.textContent = 'ランキングに送信';
-      sendScoreButton.classList.remove('bg-blue-900', 'cursor-wait', 'bg-gray-500', 'cursor-not-allowed');
+      sendScoreButton.classList.remove(
+        'bg-blue-900',
+        'cursor-wait',
+        'bg-gray-500',
+        'cursor-not-allowed'
+      );
       sendScoreButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
     }
   }
 }
+
 
 
 
