@@ -93,7 +93,7 @@
 
 .credits-scroll {
   animation: credits-scroll 80s linear;
-  animation-delay: -27s;  /* 指定時間進んだ状態からスタート */
+  animation-delay: -5s;  /* 指定時間進んだ状態からスタート */
 }
 
 
@@ -249,10 +249,11 @@ text-shadow:
   id="startScreen"
   class="absolute inset-0 bg-black bg-opacity-70 rounded-b-lg text-white text-center
          flex flex-col items-center
-         px-6 pb-8
-         justify-start pt-10
+         px-6 pb-20          <!-- ★ ここ増量 -->
+         justify-center      <!-- ★ ここ変更：最初から中央寄せ -->
          sm:justify-center sm:pt-0"
 >
+
 
     <h2 class="text-4xl sm:text-5xl font-bold mb-6">むるだっしゅ！</h2>
     
@@ -741,6 +742,9 @@ async function openRankingOverlay(){
   rankingOverlay.classList.remove('hidden');
   rankingOverlay.classList.add('flex');
 
+ // ★ アクションボタンを「ランキングを閉じる」モードに
+  updateJumpButton(JUMP_MODE.RANKING);
+  
   rankingContent.innerHTML = '<p class="text-center text-sm">読み込み中むる…</p>';
 
   try {
@@ -779,7 +783,23 @@ function closeRankingOverlay(){
   if (!rankingOverlay) return;
   rankingOverlay.classList.add('hidden');
   rankingOverlay.classList.remove('flex');
+
+  // 状態に応じてアクションボタンを戻す
+  if (isGameOver){
+    updateJumpButton(JUMP_MODE.RESTART);
+
+    // ★ まだクールタイム中ならグレーのまま
+    if (!canRestart){
+      setRestartCooldownActive(true);
+    }
+  } else if (!gameStarted){
+    updateJumpButton(JUMP_MODE.START);
+  } else {
+    updateJumpButton(JUMP_MODE.PLAY);
+  }
 }
+
+
 
 
 function openResetOverlay(){
@@ -857,7 +877,8 @@ const JUMP_MODE = {
   START: 'start',    // タイトル中
   PLAY: 'play',      // プレイ中
   RESTART: 'restart',  // ゲームオーバー後
-  CREDITS: 'credits'   // クレジット表示中（ジャンプボタン＝とじる）
+  CREDITS: 'credits',   // クレジット表示中（ジャンプボタン＝とじる）
+  RANKING: 'ranking'   // ランキング表示中（とじる）
 };
 
 let jumpButtonMode = JUMP_MODE.START;
@@ -870,30 +891,42 @@ function updateJumpButton(mode){
   jumpButton.classList.remove(
     'bg-blue-600',
     'bg-green-600',
-    'bg-gray-700',      // ← 追加
+    'bg-gray-700',
+    'bg-gray-500',          // ★ 追加：ロック中の色
     'hover:bg-blue-700',
     'hover:bg-green-700',
-    'hover:bg-gray-800' // ← 追加
+    'hover:bg-gray-800',
+    'opacity-60',           // ★ 追加：半透明
+    'cursor-not-allowed'    // ★ 追加：禁止カーソル
   );
 
-  switch(mode){
+    switch(mode){
     case JUMP_MODE.START:
       jumpButton.textContent = 'ゲームスタート';
       jumpButton.classList.add('bg-green-600','hover:bg-green-700');
       break;
+
     case JUMP_MODE.PLAY:
       jumpButton.textContent = 'ジャンプ';
       jumpButton.classList.add('bg-blue-600','hover:bg-blue-700');
       break;
+
     case JUMP_MODE.RESTART:
       jumpButton.textContent = 'リスタート';
       jumpButton.classList.add('bg-green-600','hover:bg-green-700');
       break;
+
     case JUMP_MODE.CREDITS:
       jumpButton.textContent = 'とじる';
       jumpButton.classList.add('bg-gray-700','hover:bg-gray-800');
       break;
+
+    case JUMP_MODE.RANKING:          // ★ 追加
+      jumpButton.textContent = 'とじる';
+      jumpButton.classList.add('bg-gray-700','hover:bg-gray-800');
+      break;
   }
+
 }
 
 
@@ -1390,7 +1423,28 @@ let isHighScoreRun = false;
 let canRestart = false;
 const RESTART_DELAY_MS = 1500; // ← 好きに調整（ミリ秒）
   
+// ★ リスタートボタンの見た目を「ロック中/解放済み」で切り替える
+function setRestartCooldownActive(active){
+  if (!jumpButton) return;
+  if (jumpButtonMode !== JUMP_MODE.RESTART) return;
 
+  // いったんグレー系クラスを掃除
+  jumpButton.classList.remove('bg-gray-500', 'opacity-60', 'cursor-not-allowed');
+
+  if (active){
+    // ★ ロック中 → グレー＆押せなさそうに
+    jumpButton.classList.remove('bg-green-600','hover:bg-green-700');
+    jumpButton.classList.add('bg-gray-500','opacity-60','cursor-not-allowed');
+  } else {
+    // ★ 解放済み → いつもの緑に戻す
+    jumpButton.classList.add('bg-green-600','hover:bg-green-700');
+  }
+}
+
+
+
+
+  
 // ★ ハイスコア突入フラッシュ用
 let flashTimer = 0;
 const FLASH_DURATION = 18; // だいたい 18フレーム ≒ 0.3秒
@@ -1900,28 +1954,36 @@ function gameOver(){
   isGameOver = true;
   gameStarted = false;
 
-  // ★ リスタート一時ロック
+  // ★ ゲームオーバー画面を開くときに、送信ボタンを初期状態に戻す
+  sendScoreButton.disabled = false;
+  sendScoreButton.textContent = "ランキングに送信";
+  sendScoreButton.classList.remove(
+    "bg-gray-500",
+    "opacity-60",
+    "cursor-not-allowed",
+    "bg-blue-900",
+    "cursor-wait"
+  );
+  sendScoreButton.classList.add("bg-blue-600", "hover:bg-blue-700");
+
+  // ★ まずボタンモードを「リスタート」にして……
+  updateJumpButton(JUMP_MODE.RESTART);
+
+  // ★ リスタート一時ロック & 見た目をグレーに
   canRestart = false;
+  setRestartCooldownActive(true);  // ← グレー＆押せなさそうに見せる
+
+  // 一定時間後にロック解除（まだゲームオーバーなら緑に戻す）
   setTimeout(() => {
     canRestart = true;
+    if (isGameOver && jumpButtonMode === JUMP_MODE.RESTART){
+      setRestartCooldownActive(false);  // ← 緑に戻す
+    }
   }, RESTART_DELAY_MS);
 
-  
-  // ★ゲームオーバー画面を開くときに、送信ボタンを初期状態に戻す
-sendScoreButton.disabled = false;
-sendScoreButton.textContent = "ランキングに送信";
-sendScoreButton.classList.remove(
-  "bg-gray-500",
-  "cursor-not-allowed",
-  "bg-blue-900",
-  "cursor-wait"
-);
-sendScoreButton.classList.add("bg-blue-600", "hover:bg-blue-700");
-
-
   // ★ハイスコア関係の判定を先にやる
-  const isNewHighScore        = score > highScore;
-  const hadPreviousHighScore  = highScore > 0;  // ← ここポイント
+  const isNewHighScore       = score > highScore;
+  const hadPreviousHighScore = highScore > 0;  // 初回だけ HIGHEND 抜く用
 
   // タイマー停止とか
   if (highScoreBgmTimeoutId !== null){
@@ -1952,14 +2014,14 @@ sendScoreButton.classList.add("bg-blue-600", "hover:bg-blue-700");
     }
   } catch(_) {}
 
-  // ★ハイスコア保存は今まで通りでOK（初回もちゃんと保存する）
+  // ★ハイスコア保存（初回も含めて普通に保存）
   if (isNewHighScore){
     highScore = score;
     localStorage.setItem('muruHighScore', highScore);
     highScoreEl.textContent = `ハイスコア: ${highScore}`;
   }
 
-  // あとの finalScore 表示とか画面表示はそのままでOK
+  // スコア表示とかラベルまわり
   finalScoreEl.textContent = score;
   shareButton.href = buildXIntentUrl(score);
 
@@ -1968,10 +2030,11 @@ sendScoreButton.classList.add("bg-blue-600", "hover:bg-blue-700");
     else gameOverHighScoreLabel.classList.add('hidden');
   }
 
-  updateJumpButton(JUMP_MODE.RESTART);
+  // ゲームオーバー画面を出す
   gameOverScreen.classList.remove('hidden');
   gameOverScreen.classList.add('flex');
 }
+
 
 
 
@@ -2282,6 +2345,11 @@ window.addEventListener('keyup', e=>{
 jumpButton.addEventListener('pointerdown', e=>{
   e.preventDefault();
 
+  // ★ ランキング表示中：アクションボタンで閉じる
+  if (jumpButtonMode === JUMP_MODE.RANKING){
+    closeRankingOverlay();
+    return;
+  }
   // ★ クレジット表示中：ジャンプボタン＝「とじる」
   if (jumpButtonMode === JUMP_MODE.CREDITS){
     closeCredits();
