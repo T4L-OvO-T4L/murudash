@@ -78,27 +78,21 @@
   }
 
 @keyframes credits-scroll {
-  /* ▼ 最初はちょっと下から（画面外スタート） */
+  /* ▼ 画面の下の方からスタート（スタッフロールっぽく） */
   0% {
-    transform: translateY(40%);
+    transform: translateY(100%);
   }
 
-  /* ▼ ここまででスッと画面の基準位置に入ってくる */
-  8% {
-    transform: translateY(0%);
-  }
-
-  /* ▼ あとは今まで通り、上に抜けていく */
+  /* ▼ そのまま一定速度で上に抜けていく */
   100% {
-    transform: translateY(-110%);
+    transform: translateY(-120%);
   }
 }
 
+.credits-scroll {
+  animation: credits-scroll 80s linear;
+}
 
-
-  .credits-scroll {
-    animation: credits-scroll 80s linear;
-  }
 
 
 .rainbow-text {
