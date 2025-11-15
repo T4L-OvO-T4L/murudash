@@ -77,16 +77,23 @@
     -webkit-touch-callout: none;
   }
 
-    @keyframes credits-scroll {
-  /* 最初はコンテナの下のさらに外（100%ぶん下）からスタート */
+@keyframes credits-scroll {
+  /* ▼ 最初はちょっと下から（画面外スタート） */
   0% {
-    transform: translateY(100%);
+    transform: translateY(40%);
   }
-  /* 最後は今まで通り、上に抜けきるところまで */
+
+  /* ▼ ここまででスッと画面の基準位置に入ってくる */
+  8% {
+    transform: translateY(0%);
+  }
+
+  /* ▼ あとは今まで通り、上に抜けていく */
   100% {
     transform: translateY(-110%);
   }
 }
+
 
 
   .credits-scroll {
@@ -259,14 +266,15 @@ text-shadow:
     </p>
 
     <!-- クレジット ＋ リセット（横並び） -->
-    <div class="mt-4 flex flex-col sm:flex-row gap-3 justify-center">
-      <button id="creditsButton" class="px-5 py-2 border border-gray-300 text-sm rounded-lg bg-black/40 hover:bg-black/60 transition-colors">
-        クレジット
-      </button>
-      <button id="resetButton" class="px-5 py-2 border border-red-400 text-sm rounded-lg bg-red-600/80 hover:bg-red-700 transition-colors">
-        リセット
-      </button>
-    </div>
+    <div class="mt-4 flex flex-row flex-wrap gap-3 justify-center">
+  <button id="creditsButton" class="px-5 py-2 border border-gray-300 text-sm rounded-lg bg-black/40 hover:bg-black/60 transition-colors">
+    クレジット
+  </button>
+  <button id="resetButton" class="px-5 py-2 border border-red-400 text-sm rounded-lg bg-red-600/80 hover:bg-red-700 transition-colors">
+    リセット
+  </button>
+</div>
+
 
   </div>
 
@@ -1624,9 +1632,9 @@ function updatePlayer(d) {
   if (player.y + player.height >= groundY) {
     if (!player.isGrounded) {
       // ★ 着地のときはドンッとつぶれる
-    player.squashTimer = 18;   // 戻り時間ちょい長め
-    player.scaleX = 1.35;      // 横ぐいっと広げる
-    player.scaleY = 0.65;      // 縦はガッツリつぶす
+    player.squashTimer = 20;   // 戻り時間ちょい長め
+    player.scaleX = 1.5;      // 横ぐいっと広げる
+    player.scaleY = 0.5;      // 縦はガッツリつぶす
     }
 
     player.y = groundY - player.height;
