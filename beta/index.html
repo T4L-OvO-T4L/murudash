@@ -1393,29 +1393,67 @@ function drawPlayer() {
   ctx.restore();
 }
 
-function updatePlayer(d){ 
-  if(!player.isGrounded){ 
-    player.dy+=player.gravity*d; 
-    player.y+=player.dy*d; 
-  } 
-  if(player.y+player.height>=groundY){ 
-    player.y=groundY-player.height; 
-    player.dy=0; 
-    player.isGrounded=true; 
-    player.jumpsRemaining=2; 
-  } 
+function updatePlayer(d) {
+  // 物理
+  if (!player.isGrounded) {
+    player.dy += player.gravity * d;
+    player.y  += player.dy * d;
+  }
+
+  // 着地判定
+  if (player.y + player.height >= groundY) {
+    if (!player.isGrounded) {
+      // ★ 今ちょうど着地した瞬間だけ「ぺちょっ」とつぶす
+      player.squashTimer = 10;   // どれくらい「戻り」を続けるか
+      player.scaleX = 1.15;
+      player.scaleY = 0.85;
+    }
+
+    player.y = groundY - player.height;
+    player.dy = 0;
+    player.isGrounded = true;
+    player.jumpsRemaining = 2;
+  } else {
+    player.isGrounded = false;
+  }
+
+  // ★ ぷにょんアニメ（スケールの補間）
+  if (player.squashTimer > 0) {
+    player.squashTimer -= d;
+
+    // 強めに「元の形」に戻そうとする
+    const k = 0.2;
+    player.scaleX += (1 - player.scaleX) * k;
+    player.scaleY += (1 - player.scaleY) * k;
+  } else {
+    // ふだんは、地上と空中でちょっとだけ形変える
+    const targetX = player.isGrounded ? 1.0 : 0.95;  // 空中ちょい細
+    const targetY = player.isGrounded ? 1.0 : 1.05;  // 空中ちょい縦長
+
+    const k = 0.12;
+    player.scaleX += (targetX - player.scaleX) * k;
+    player.scaleY += (targetY - player.scaleY) * k;
+  }
 }
 
-function playerJump(){  
-  if(isGameOver||isPaused||!gameStarted) return; 
-  startAudio(); 
-  if(player.jumpsRemaining>0){ 
-    player.dy=-player.jumpForce; 
-    player.isGrounded=false; 
-    player.isJumping=true; 
-    player.jumpsRemaining--; 
-  } 
+
+function playerJump() {
+  if (isGameOver || isPaused || !gameStarted) return;
+  startAudio();
+
+  if (player.jumpsRemaining > 0) {
+    player.dy = -player.jumpForce;
+    player.isGrounded = false;
+    player.isJumping = true;
+    player.jumpsRemaining--;
+
+    // ★ ジャンプ直後：きゅっと縮んでから伸びる感じ
+    player.squashTimer = 8;
+    player.scaleX = 0.85;  // 横細く
+    player.scaleY = 1.15;  // 縦長く
+  }
 }
+
 
 function stopJump(){ if(player.isJumping && player.dy<0){ player.dy=Math.max(player.dy,-5); } player.isJumping=false; }
 
@@ -1727,6 +1765,10 @@ sendScoreButton.classList.add(
 
   isGameOver=false; isPaused=false; gameStarted=true;
   player.y=groundY-player.height; player.dy=0; player.isGrounded=true; player.jumpsRemaining=2;
+    // ★ ぷにょんスケールもリセット
+  player.scaleX = 1;
+  player.scaleY = 1;
+  player.squashTimer = 0;
   gameOverScreen.classList.add('hidden'); gameOverScreen.classList.remove('flex'); pauseOverlay.classList.add('hidden');
 
   // プレイ再開なので「ジャンプ」（青）に戻す
