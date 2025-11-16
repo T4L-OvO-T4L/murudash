@@ -356,7 +356,9 @@ text-shadow:
 
   
 <!-- クレジット（スタッフロール／ゲーム画面フル） -->
-<div id="creditsOverlay" class="absolute inset-0 bg-black bg-opacity-90 rounded-b-lg text-white hidden">
+<div id="creditsOverlay"
+     class="absolute inset-0 bg-black bg-opacity-90 rounded-b-lg text-white hidden z-50">
+
   <div class="relative w-full h-full overflow-hidden">
 
     <!-- 外側：位置だけ担当（X方向センタリング） -->
@@ -367,115 +369,109 @@ text-shadow:
 
       <!-- 内側：アニメーション担当（Y方向スクロール） -->
       <div id="creditsScroll" class="credits-scroll">
-        <!-- ここは今のクレジット本文そのまま -->
-      
-          <!-- 📝 真ん中：クレジットテキスト -->
-          <div class="text-center text-white">
+        <div class="text-center text-white">
 
-  <!-- タイトル -->
-  <div class="text-center text-white">
+          <p class="mt-4 text-xl font-bold">
+            むるだっしゅ！ クレジット
+          </p>
 
-  <!-- タイトル -->
-  <p class="mt-4 text-xl font-bold">
-    むるだっしゅ！ クレジット
-  </p>
+          <!-- 企画・制作 -->
+          <div class="mt-8">
+            <p class="text-xs text-gray-400">企画・制作</p>
+            <p class="mt-1 text-base">たる</p>
+          </div>
 
-  <!-- 企画・制作 -->
-  <div class="mt-8">
-    <p class="text-xs text-gray-400">企画・制作</p>
-    <p class="mt-1 text-base">たる</p>
-  </div>
+          <!-- ディレクター -->
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">ディレクター</p>
+            <p class="mt-1 text-base">たる</p>
+          </div>
 
-  <!-- ディレクター -->
-  <div class="mt-10">
-    <p class="text-xs text-gray-400">ディレクター</p>
-    <p class="mt-1 text-base">たる</p>
-  </div>
+          <!-- ゲームデザイン -->
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">ゲームデザイン</p>
+            <p class="mt-1 text-base">たる</p>
+          </div>
 
-  <!-- ゲームデザイン -->
-  <div class="mt-10">
-    <p class="text-xs text-gray-400">ゲームデザイン</p>
-    <p class="mt-1 text-base">たる</p>
-  </div>
+          <!-- プログラム -->
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">プログラム</p>
+            <p class="mt-1 text-base">たる with ChatGPT</p>
+          </div>
 
-  <!-- プログラム -->
-  <div class="mt-10">
-    <p class="text-xs text-gray-400">プログラム</p>
-    <p class="mt-1 text-base">たる with ChatGPT</p>
-  </div>
+          <!-- グラフィック -->
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">グラフィック</p>
+            <p class="mt-1 text-base leading-relaxed">
+              たる<br>
+              ◯◯◯<br>
+              イラストAC<br>
+              Twemoji（CC BY 4.0）
+            </p>
+          </div>
 
-  <!-- グラフィック -->
-  <div class="mt-10">
-    <p class="text-xs text-gray-400">グラフィック</p>
-    <p class="mt-1 text-base leading-relaxed">
-      たる<br>
-      ◯◯◯<br>
-      イラストAC<br>
-      Twemoji（CC BY 4.0）
-    </p>
-  </div>
+          <!-- サウンド -->
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">サウンド</p>
+            <p class="mt-1 text-base leading-relaxed">
+              たる made with Suno<br>
+              Audiostock
+            </p>
+          </div>
 
-  <!-- サウンド -->
-  <div class="mt-10">
-    <p class="text-xs text-gray-400">サウンド</p>
-    <p class="mt-1 text-base leading-relaxed">
-      たる made with Suno<br>
-      Audiostock
-    </p>
-  </div>
+          <!-- テストプレイ -->
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">テストプレイ</p>
+            <p class="mt-1 text-base leading-relaxed">
+              ゆずうに（X：@yzun_v）<br>
+              ◯◯◯（X：◯◯◯）
+            </p>
+          </div>
 
-  <!-- テストプレイ -->
-  <div class="mt-10">
-    <p class="text-xs text-gray-400">テストプレイ</p>
-    <p class="mt-1 text-base leading-relaxed">
-      ゆずうに（X：@yzun_v）<br>
-      ◯◯◯（X：◯◯◯）
-    </p>
-  </div>
+          <!-- インスパイア & リスペクト -->
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">インスパイア &amp; リスペクト</p>
+            <p class="mt-1 text-base">Google - Dinosaur Game</p>
+          </div>
 
-  <!-- インスパイア & リスペクト -->
-  <div class="mt-10">
-    <p class="text-xs text-gray-400">インスパイア &amp; リスペクト</p>
-    <p class="mt-1 text-base">Google - Dinosaur Game</p>
-  </div>
+          <!-- スペシャルサンクス -->
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">スペシャルサンクス</p>
+            <p class="mt-1 text-base leading-relaxed">
+              くろむ（Lethal Cats）– ｢ムルル｣原案<br>
+              全ムルルたち
+            </p>
+          </div>
 
-  <!-- スペシャルサンクス -->
-  <div class="mt-10">
-    <p class="text-xs text-gray-400">スペシャルサンクス</p>
-    <p class="mt-1 text-base leading-relaxed">
-      くろむ（Lethal Cats）– ｢ムルル｣原案<br>
-      全ムルルたち
-    </p>
-  </div>
+          <!-- 使用ツール -->
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">使用ツール</p>
+            <p class="mt-1 text-base leading-relaxed">
+              HTML5 / JavaScript（Vanilla）<br>
+              Tailwind CSS<br>
+              GitHub Pages<br>
+              Google Apps Script<br>
+              Google Spreadsheet<br>
+              Suno<br>
+              ChatGPT
+            </p>
+          </div>
 
-  <!-- 使用ツール -->
-  <div class="mt-10">
-    <p class="text-xs text-gray-400">使用ツール</p>
-    <p class="mt-1 text-base leading-relaxed">
-      HTML5 / JavaScript（Vanilla）<br>
-      Tailwind CSS<br>
-      GitHub Pages<br>
-      Google Apps Script<br>
-      Google Spreadsheet<br>
-      Suno<br>
-      ChatGPT
-    </p>
-  </div>
+          <!-- コピーライト -->
+          <p class="mt-16 text-sm">
+            © 2025 T4L All Rights Reserved.
+          </p>
 
-  <!-- コピーライト -->
-  <p class="mt-16 text-sm">
-    © 2025 T4L All Rights Reserved.
-  </p>
+          <p class="mt-4 text-xs text-gray-300 leading-relaxed">
+            ※本作品は「ムルル」をモチーフにした非公式ファン作品です。<br>
+            ️　権利者様とは一切関係ありません。
+          </p>
 
-  <p class="mt-4 text-xs text-gray-300 leading-relaxed">
-    ※本作品は「ムルル」をモチーフにした非公式ファン作品です。<br>
-    　権利者様とは一切関係ありません。
-  </p>
-
+        </div><!-- /.text-center -->
       </div><!-- /#creditsScroll -->
     </div><!-- /#creditsScrollOuter -->
 
-    <!-- ★追加：スクロール終了後に出す「Thank You」メッセージ -->
+    <!-- スクロール終了後に出す「Thank You」メッセージ -->
     <div
       id="creditsEndMessage"
       class="hidden absolute inset-0 flex items-center justify-center"
@@ -492,7 +488,8 @@ text-shadow:
 
   </div><!-- /.relative -->
 </div><!-- /#creditsOverlay -->
-</div>
+
+
       
           <!-- 🎨 飾りイラスト -->
 <!-- ① ちょい上の方・右に自機 -->
@@ -523,13 +520,6 @@ text-shadow:
   class="absolute left-2 sm:left-8 top-[620px] w-10 sm:w-14 h-auto pointer-events-none select-none"
 />
 
-
-      
-        </div>
-      </div><!-- /#creditsScroll -->
-    </div><!-- /#creditsScrollOuter -->
-  </div><!-- /.relative -->
-</div><!-- /#creditsOverlay -->
 
 </div><!-- ★ これ：キャンバスの outer relative を閉じる -->
 
@@ -791,14 +781,25 @@ const muteButton = document.getElementById('muteButton');
 const creditsOverlay = document.getElementById('creditsOverlay');
 const creditsButton = document.getElementById('creditsButton');
 const creditsScroll = document.getElementById('creditsScroll');
-const creditsEndMessage = document.getElementById('creditsEndMessage'); // ★追加
+const creditsEndMessage = document.getElementById('creditsEndMessage');
 
-// ★ クレジットのスクロールが終わったら「Thank You」メッセージを出す
-if (creditsScroll && creditsEndMessage) {
-  creditsScroll.addEventListener('animationend', () => {
+// ★ クレジット用：サンキュー表示タイマー
+let creditsEndTimer = null;
+
+// アニメ長さに合わせて呼び出す（今は 80 秒）
+function scheduleCreditsEndMessage() {
+  if (!creditsEndMessage) return;
+
+  if (creditsEndTimer) {
+    clearTimeout(creditsEndTimer);
+    creditsEndTimer = null;
+  }
+
+  creditsEndTimer = setTimeout(() => {
     creditsEndMessage.classList.remove('hidden');
-  });
+  }, 80000); // ← ここを 40000 とかに変えたら 40秒で出る
 }
+
 
   
 const rankingOverlay      = document.getElementById('rankingOverlay');
@@ -929,11 +930,6 @@ function openResetOverlay(){
   resetConfirmOverlay.classList.add('flex');
 }
 
-function closeResetOverlay(){
-  if (!resetConfirmOverlay) return;
-  resetConfirmOverlay.classList.add('hidden');
-  resetConfirmOverlay.classList.remove('flex');
-}
 
 function closeResetOverlay(){
   if (!resetConfirmOverlay) return;
@@ -2291,15 +2287,18 @@ function openCredits(e){
 
   // ★ スクロールアニメをリスタート
   creditsScroll.classList.remove('credits-scroll');
-  void creditsScroll.offsetWidth;          // リスタート用おまじない
+  void creditsScroll.offsetWidth;
   creditsScroll.classList.add('credits-scroll');
 
   try{ bgmAudio.pause(); bgm2Audio.pause(); }catch(_){}
   playCreditsBgm();
 
-  // クレジット中はジャンプボタン＝「とじる」
+  // ★ 一定時間後に「Thank You」表示
+  scheduleCreditsEndMessage();
+
   updateJumpButton(JUMP_MODE.CREDITS);
 }
+
 
 
 
@@ -2309,6 +2308,15 @@ function closeCredits(e){
   creditsOverlay.classList.add('hidden');
   creditsOverlay.classList.remove('flex');
   stopCreditsBgm();
+
+  // ★ サンキュー表示をリセット
+  if (creditsEndMessage) {
+    creditsEndMessage.classList.add('hidden');
+  }
+  if (creditsEndTimer) {
+    clearTimeout(creditsEndTimer);
+    creditsEndTimer = null;
+  }
 
   // ★ クレジット閉じたらジャンプボタンの役割を戻す
   if (isGameOver){
@@ -2329,6 +2337,7 @@ function closeCredits(e){
     }catch(_){}
   }
 }
+
 
 
 
