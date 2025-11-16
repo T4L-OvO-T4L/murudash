@@ -255,10 +255,6 @@ text-shadow:
          justify-start pt-10
          sm:justify-center sm:pt-0"
 >
-
->
-
-
     <h2 class="text-4xl sm:text-5xl font-bold mb-6">むるだっしゅ！</h2>
     
     <p class="text-sm sm:text-lg mb-3">
@@ -505,7 +501,7 @@ text-shadow:
 
 
           <!-- ▼ ラストに流れるひまわり（sunflower2.png） -->
-          <div class="mt-20 mb-8 flex justify-center">
+          <div class="mt-40 mb-8 flex justify-center">
             <img
               src="../assets/sunflower2.png"
               alt="sunflower"
@@ -808,7 +804,7 @@ const creditsEndMessage = document.getElementById('creditsEndMessage');
 // ★ クレジット用：サンキュー表示タイマー
 let creditsEndTimer = null;
 
-// アニメ長さに合わせて呼び出す（今は 80 秒）
+// アニメ長さに合わせて呼び出す
 function scheduleCreditsEndMessage() {
   if (!creditsEndMessage) return;
 
@@ -819,7 +815,7 @@ function scheduleCreditsEndMessage() {
 
   creditsEndTimer = setTimeout(() => {
     creditsEndMessage.classList.remove('hidden');
-  }, 74500); // ← ここを 40000 とかに変えたら 40秒で出る
+  }, 72000); // ← ここを 40000 とかに変えたら 40秒で出る
 }
 
 
