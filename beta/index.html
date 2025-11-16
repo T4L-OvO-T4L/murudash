@@ -80,7 +80,7 @@
 @keyframes credits-scroll {
   /* 最初から画面内にいる状態（ちょい下からでもOK） */
   0% {
-    transform: translateY(20%);
+    transform: translateY(40%);
     /* もっと下から出したかったら 20% とか 40% とかでもOK */
     /* transform: translateY(40%); みたいな感じ */
   }
@@ -367,7 +367,7 @@ text-shadow:
 
       <!-- 内側：アニメーション担当（Y方向スクロール） -->
       <div id="creditsScroll" class="credits-scroll">
-        <div class="relative mx-auto max-w-[720px] px-4 text-white">
+        <!-- ここは今のクレジット本文そのまま -->
       
           <!-- 📝 真ん中：クレジットテキスト -->
           <div class="text-center text-white">
@@ -472,15 +472,27 @@ text-shadow:
     　権利者様とは一切関係ありません。
   </p>
 
+      </div><!-- /#creditsScroll -->
+    </div><!-- /#creditsScrollOuter -->
+
+    <!-- ★追加：スクロール終了後に出す「Thank You」メッセージ -->
+    <div
+      id="creditsEndMessage"
+      class="hidden absolute inset-0 flex items-center justify-center"
+    >
+      <div class="text-center px-4">
+        <p class="text-2xl sm:text-3xl font-bold mb-3">
+          Thank You for Playing!!
+        </p>
+        <p class="text-xs sm:text-sm text-gray-300">
+          「とじる」ボタンでタイトル画面に戻るむる
+        </p>
+      </div>
+    </div>
+
+  </div><!-- /.relative -->
+</div><!-- /#creditsOverlay -->
 </div>
-
-
-</div>
-
-
-
-
-          </div>
       
           <!-- 🎨 飾りイラスト -->
 <!-- ① ちょい上の方・右に自機 -->
@@ -779,7 +791,16 @@ const muteButton = document.getElementById('muteButton');
 const creditsOverlay = document.getElementById('creditsOverlay');
 const creditsButton = document.getElementById('creditsButton');
 const creditsScroll = document.getElementById('creditsScroll');
+const creditsEndMessage = document.getElementById('creditsEndMessage'); // ★追加
 
+// ★ クレジットのスクロールが終わったら「Thank You」メッセージを出す
+if (creditsScroll && creditsEndMessage) {
+  creditsScroll.addEventListener('animationend', () => {
+    creditsEndMessage.classList.remove('hidden');
+  });
+}
+
+  
 const rankingOverlay      = document.getElementById('rankingOverlay');
 const rankingContent      = document.getElementById('rankingContent');
 const closeRankingButton  = document.getElementById('closeRankingButton');
@@ -2258,12 +2279,17 @@ function togglePause(){
 function openCredits(e){
   if (e) e.preventDefault();
 
-  // ★ここ追加
   bootAudioOnce();
   
   creditsOverlay.classList.remove('hidden');
   creditsOverlay.classList.add('flex');
 
+  // ★ 以前の「Thank You」を隠す
+  if (creditsEndMessage) {
+    creditsEndMessage.classList.add('hidden');
+  }
+
+  // ★ スクロールアニメをリスタート
   creditsScroll.classList.remove('credits-scroll');
   void creditsScroll.offsetWidth;          // リスタート用おまじない
   creditsScroll.classList.add('credits-scroll');
@@ -2271,9 +2297,10 @@ function openCredits(e){
   try{ bgmAudio.pause(); bgm2Audio.pause(); }catch(_){}
   playCreditsBgm();
 
-  // ★ クレジット中はジャンプボタン＝「とじる」
+  // クレジット中はジャンプボタン＝「とじる」
   updateJumpButton(JUMP_MODE.CREDITS);
 }
+
 
 
 
