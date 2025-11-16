@@ -80,8 +80,8 @@
 @keyframes credits-scroll {
   /* 最初から画面内にいる状態（ちょい下からでもOK） */
   0% {
-    transform: translateY(40%);
-    /* もっと下から出したかったら 20% とか 40% とかでもOK */
+    transform: translateY(30%);
+    /* クレジット開始位置。もっと下から出したかったら 20% とか 40% とかでもOK */
     /* transform: translateY(40%); みたいな感じ */
   }
 
@@ -93,8 +93,10 @@
 
 .credits-scroll {
   animation: credits-scroll 80s linear;
-  animation-delay: 0s;  /* クレジット 開始位置 指定時間進んだ状態からスタート */
+  animation-delay: 0s;
+  animation-fill-mode: forwards;  /* ★終わったあと元の位置に戻らないよう固定 */
 }
+
 
 
 
@@ -368,7 +370,39 @@ text-shadow:
     >
 
       <!-- 内側：アニメーション担当（Y方向スクロール） -->
-      <div id="creditsScroll" class="credits-scroll">
+      <!-- ★ relative を付けて、ここに飾りイラストも入れる -->
+      <div id="creditsScroll" class="credits-scroll relative">
+
+        <!-- 🎨 飾りイラスト（テキストと一緒にスクロール） -->
+        <!-- ① ちょい上の方・右に自機 -->
+        <img
+          src="../assets/Muru.png"
+          alt="Muru"
+          class="absolute right-1 sm:right-2 top-16 w-16 sm:w-24 pointer-events-none select-none"
+        />
+
+        <!-- ② そのだいぶ下・左にひまわり -->
+        <img
+          src="../assets/sunflower.svg"
+          alt="sunflower"
+          class="absolute left-1 sm:left-2 top-[260px] w-12 sm:w-16 h-auto pointer-events-none select-none"
+        />
+
+        <!-- ③ さらに下・右にブルーベリー -->
+        <img
+          src="../assets/blueberry.svg"
+          alt="blueberry"
+          class="absolute right-2 sm:right-6 top-[440px] w-10 sm:w-14 h-auto pointer-events-none select-none"
+        />
+
+        <!-- ④ さらに下・左にどんぐり -->
+        <img
+          src="../assets/Donguri.svg"
+          alt="donguri"
+          class="absolute left-2 sm:left-8 top-[620px] w-10 sm:w-14 h-auto pointer-events-none select-none"
+        />
+
+        <!-- ★ ここからクレジット本文（中身は今のままコピペでOK） -->
         <div class="text-center text-white">
 
           <p class="mt-4 text-xl font-bold">
@@ -464,7 +498,7 @@ text-shadow:
 
           <p class="mt-4 text-xs text-gray-300 leading-relaxed">
             ※本作品は「ムルル」をモチーフにした非公式ファン作品です。<br>
-            ️　権利者様とは一切関係ありません。
+            　権利者様とは一切関係ありません。
           </p>
 
         </div><!-- /.text-center -->
@@ -490,35 +524,7 @@ text-shadow:
 </div><!-- /#creditsOverlay -->
 
 
-      
-          <!-- 🎨 飾りイラスト -->
-<!-- ① ちょい上の方・右に自機 -->
-<img
-  src="../assets/Muru.png"
-  alt="Muru"
-  class="absolute right-1 sm:right-2 top-16 w-16 sm:w-24 pointer-events-none select-none"
-/>
 
-<!-- ② そのだいぶ下・左にひまわり -->
-<img
-  src="../assets/sunflower.svg"
-  alt="sunflower"
-  class="absolute left-1 sm:left-2 top-[260px] w-12 sm:w-16 h-auto pointer-events-none select-none"
-/>
-
-<!-- ③ さらに下・右にブルーベリー -->
-<img
-  src="../assets/blueberry.svg"
-  alt="blueberry"
-  class="absolute right-2 sm:right-6 top-[440px] w-10 sm:w-14 h-auto pointer-events-none select-none"
-/>
-
-<!-- ④ さらに下・左にどんぐり（同間隔） -->
-<img
-  src="../assets/Donguri.svg"
-  alt="donguri"
-  class="absolute left-2 sm:left-8 top-[620px] w-10 sm:w-14 h-auto pointer-events-none select-none"
-/>
 
 
 </div><!-- ★ これ：キャンバスの outer relative を閉じる -->
@@ -797,7 +803,7 @@ function scheduleCreditsEndMessage() {
 
   creditsEndTimer = setTimeout(() => {
     creditsEndMessage.classList.remove('hidden');
-  }, 80000); // ← ここを 40000 とかに変えたら 40秒で出る
+  }, 74500); // ← ここを 40000 とかに変えたら 40秒で出る
 }
 
 
