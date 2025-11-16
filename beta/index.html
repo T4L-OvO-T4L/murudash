@@ -80,7 +80,7 @@
 @keyframes credits-scroll {
   /* 最初から画面内にいる状態（ちょい下からでもOK） */
   0% {
-    transform: translateY(30%);
+    transform: translateY(25%);
     /* クレジット開始位置。もっと下から出したかったら 20% とか 40% とかでもOK */
     /* transform: translateY(40%); みたいな感じ */
   }
@@ -247,13 +247,15 @@ text-shadow:
 
   
   <!-- スタート -->
-  <div
+<div
   id="startScreen"
   class="absolute inset-0 bg-black bg-opacity-70 rounded-b-lg text-white text-center
          flex flex-col items-center
-         px-6 pb-20          <!-- ★ ここ増量 -->
-         justify-center      <!-- ★ ここ変更：最初から中央寄せ -->
+         px-6 pb-20
+         justify-start pt-10
          sm:justify-center sm:pt-0"
+>
+
 >
 
 
@@ -501,6 +503,20 @@ text-shadow:
             　権利者様とは一切関係ありません。
           </p>
 
+
+          <!-- ▼ ラストに流れるひまわり（sunflower2.png） -->
+          <div class="mt-20 mb-8 flex justify-center">
+            <img
+              src="../assets/sunflower2.png"
+              alt="sunflower"
+              class="w-16 sm:w-20 h-auto mx-auto"
+            />
+          </div>
+
+
+
+
+          
         </div><!-- /.text-center -->
       </div><!-- /#creditsScroll -->
     </div><!-- /#creditsScrollOuter -->
