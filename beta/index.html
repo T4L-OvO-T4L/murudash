@@ -80,7 +80,7 @@
 @keyframes credits-scroll {
   /* 最初から画面内にいる状態（ちょい下からでもOK） */
   0% {
-    transform: translateY(0%);
+    transform: translateY(20%);
     /* もっと下から出したかったら 20% とか 40% とかでもOK */
     /* transform: translateY(40%); みたいな感じ */
   }
@@ -93,7 +93,7 @@
 
 .credits-scroll {
   animation: credits-scroll 80s linear;
-  animation-delay: 5s;  /* クレジット 開始位置 指定時間進んだ状態からスタート */
+  animation-delay: 0s;  /* クレジット 開始位置 指定時間進んだ状態からスタート */
 }
 
 
@@ -373,36 +373,39 @@ text-shadow:
           <div class="text-center text-white">
 
   <!-- タイトル -->
+  <div class="text-center text-white">
+
+  <!-- タイトル -->
   <p class="mt-4 text-xl font-bold">
     むるだっしゅ！ クレジット
   </p>
 
   <!-- 企画・制作 -->
-  <div class="mt-6">
+  <div class="mt-8">
     <p class="text-xs text-gray-400">企画・制作</p>
     <p class="mt-1 text-base">たる</p>
   </div>
 
   <!-- ディレクター -->
-  <div class="mt-6">
+  <div class="mt-10">
     <p class="text-xs text-gray-400">ディレクター</p>
     <p class="mt-1 text-base">たる</p>
   </div>
 
   <!-- ゲームデザイン -->
-  <div class="mt-6">
+  <div class="mt-10">
     <p class="text-xs text-gray-400">ゲームデザイン</p>
     <p class="mt-1 text-base">たる</p>
   </div>
 
   <!-- プログラム -->
-  <div class="mt-6">
+  <div class="mt-10">
     <p class="text-xs text-gray-400">プログラム</p>
     <p class="mt-1 text-base">たる with ChatGPT</p>
   </div>
 
   <!-- グラフィック -->
-  <div class="mt-6">
+  <div class="mt-10">
     <p class="text-xs text-gray-400">グラフィック</p>
     <p class="mt-1 text-base leading-relaxed">
       たる<br>
@@ -413,7 +416,7 @@ text-shadow:
   </div>
 
   <!-- サウンド -->
-  <div class="mt-6">
+  <div class="mt-10">
     <p class="text-xs text-gray-400">サウンド</p>
     <p class="mt-1 text-base leading-relaxed">
       たる made with Suno<br>
@@ -422,7 +425,7 @@ text-shadow:
   </div>
 
   <!-- テストプレイ -->
-  <div class="mt-6">
+  <div class="mt-10">
     <p class="text-xs text-gray-400">テストプレイ</p>
     <p class="mt-1 text-base leading-relaxed">
       ゆずうに（X：@yzun_v）<br>
@@ -431,13 +434,13 @@ text-shadow:
   </div>
 
   <!-- インスパイア & リスペクト -->
-  <div class="mt-6">
+  <div class="mt-10">
     <p class="text-xs text-gray-400">インスパイア &amp; リスペクト</p>
     <p class="mt-1 text-base">Google - Dinosaur Game</p>
   </div>
 
   <!-- スペシャルサンクス -->
-  <div class="mt-6">
+  <div class="mt-10">
     <p class="text-xs text-gray-400">スペシャルサンクス</p>
     <p class="mt-1 text-base leading-relaxed">
       くろむ（Lethal Cats）– ｢ムルル｣原案<br>
@@ -446,7 +449,7 @@ text-shadow:
   </div>
 
   <!-- 使用ツール -->
-  <div class="mt-6">
+  <div class="mt-10">
     <p class="text-xs text-gray-400">使用ツール</p>
     <p class="mt-1 text-base leading-relaxed">
       HTML5 / JavaScript（Vanilla）<br>
@@ -460,7 +463,7 @@ text-shadow:
   </div>
 
   <!-- コピーライト -->
-  <p class="mt-10 text-sm">
+  <p class="mt-16 text-sm">
     © 2025 T4L All Rights Reserved.
   </p>
 
@@ -468,6 +471,9 @@ text-shadow:
     ※本作品は「ムルル」をモチーフにした非公式ファン作品です。<br>
     　権利者様とは一切関係ありません。
   </p>
+
+</div>
+
 
 </div>
 
