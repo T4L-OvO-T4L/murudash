@@ -78,19 +78,45 @@
   }
 
 @keyframes credits-scroll {
-  /* 最初から画面内にいる状態（ちょい下からでもOK） */
   0% {
-    transform: translateY(25%);
-    /* クレジット開始位置。もっと下から出したかったら 20% とか 40% とかでもOK */
-    /* transform: translateY(40%); みたいな感じ */
+    transform: translateY(25%); /* PC用：ちょい下から */
   }
-
-  /* 上に抜ける位置 */
   100% {
     transform: translateY(-120%);
   }
 }
 
+/* スマホ用（開始位置を上げる） */
+@keyframes credits-scroll-mobile {
+  0% {
+    transform: translateY(5%);  /* 好きなら 0% や -5% にしてもOK */
+  }
+  100% {
+    transform: translateY(-120%);
+  }
+}
+
+/* まず共通ルールを定義 */
+.credits-scroll {
+  animation: credits-scroll 80s linear;
+  animation-delay: 0s;
+  animation-fill-mode: forwards;
+}
+
+/* そのあとでスマホだけ上書き */
+@media (max-width: 640px) {
+  .credits-scroll {
+    animation-name: credits-scroll-mobile;
+    /* まとめて書きたければこっちでもOK
+    animation: credits-scroll-mobile 80s linear;
+    */
+  }
+}
+
+
+
+
+  
 .credits-scroll {
   animation: credits-scroll 80s linear;
   animation-delay: 0s;
@@ -402,6 +428,7 @@ text-shadow:
   alt="donguri"
   class="absolute left-2 sm:left-8 top-[80%] w-10 sm:w-14 h-auto pointer-events-none select-none"
 />
+
 
 
         <!-- ★ ここからクレジット本文（中身は今のままコピペでOK） -->
