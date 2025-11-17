@@ -79,7 +79,7 @@
 
 @keyframes credits-scroll {
   0% {
-    transform: translateY(15%); /* PC用：ちょい下から テストで負の値にしたよ*/
+    transform: translateY(20%); /* PC用：ちょい下から 25がちょうどいい？スマホは15くらいかも */
   }
   100% {
     transform: translateY(-120%);
@@ -89,7 +89,7 @@
 /* スマホ用（開始位置を上げる） */
 @keyframes credits-scroll-mobile {
   0% {
-    transform: translateY(15%);  /* 好きなら 0% や -5% にしてもOK */
+    transform: translateY(15%);  /* スマホは15くらいかも */
   }
   100% {
     transform: translateY(-120%);
@@ -111,12 +111,6 @@
 
 
 
-  
-.credits-scroll {
-  animation: credits-scroll 80s linear;
-  animation-delay: 0s;
-  animation-fill-mode: forwards;  /* ★終わったあと元の位置に戻らないよう固定 */
-}
 
 
 
