@@ -96,20 +96,15 @@
   }
 }
 
-/* まず共通ルールを定義 */
+/* 共通デフォルト（PC向け） */
 .credits-scroll {
-  animation: credits-scroll 80s linear;
-  animation-delay: 0s;
-  animation-fill-mode: forwards;
+  animation: credits-scroll 80s linear forwards;
 }
 
-/* そのあとでスマホだけ上書き */
+/* スマホだけ上書き：必ず "最後" に置く */
 @media (max-width: 640px) {
   .credits-scroll {
-    animation-name: credits-scroll-mobile;
-    /* まとめて書きたければこっちでもOK
-    animation: credits-scroll-mobile 80s linear;
-    */
+    animation: credits-scroll-mobile 80s linear forwards;
   }
 }
 
@@ -1153,7 +1148,7 @@ function bootAudioOnce(){
   highScoreSeAudio = new Audio('../assets/SE.mp3');
   highScoreSeAudio.preload     = 'auto';
   highScoreSeAudio.playsInline = true;
-  highScoreSeAudio.volume      = 0.3;
+  highScoreSeAudio.volume      = 0.5;
 
   creditsAudio = new Audio('../assets/CREDIT.mp3');
   creditsAudio.loop        = true;
