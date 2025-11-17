@@ -89,7 +89,7 @@
 /* スマホ用（開始位置を上げる） */
 @keyframes credits-scroll-mobile {
   0% {
-    transform: translateY(0%);  /* 好きなら 0% や -5% にしてもOK */
+    transform: translateY(-10%);  /* 好きなら 0% や -5% にしてもOK */
   }
   100% {
     transform: translateY(-120%);
@@ -1153,7 +1153,7 @@ function bootAudioOnce(){
   highScoreSeAudio = new Audio('../assets/SE.mp3');
   highScoreSeAudio.preload     = 'auto';
   highScoreSeAudio.playsInline = true;
-  highScoreSeAudio.volume      = 0.35;
+  highScoreSeAudio.volume      = 0.2;
 
   creditsAudio = new Audio('../assets/CREDIT.mp3');
   creditsAudio.loop        = true;
