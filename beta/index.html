@@ -89,7 +89,7 @@
 /* スマホ用（開始位置を上げる） */
 @keyframes credits-scroll-mobile {
   0% {
-    transform: translateY(5%);  /* 好きなら 0% や -5% にしてもOK */
+    transform: translateY(0%);  /* 好きなら 0% や -5% にしてもOK */
   }
   100% {
     transform: translateY(-120%);
@@ -186,7 +186,7 @@ text-shadow:
   <div class="flex items-center justify-between gap-3">
     <div class="text-left">
       
-      <span id="scoreLabel" class="text-xl sm:text-2xl font-bold text-blue-600">
+      <span id="scoreLabel" class="text-xl sm:text-2xl font-bold text-blue-600 whitespace-nowrap">
         スコア: <span id="score" class="inline-block min-w-[60px] text-right font-mono">0</span>
       </span>
 
@@ -1111,7 +1111,9 @@ let highScoreBgmTimeoutId = null;  // ★ ハイスコアBGMへの切替タイ�
 let pickupIndex = 0; 
   
 async function bootAudioOnce(){
+  // ★ここで最初にフラグ立ててしまうことで「二重実行」を防ぐ
   if (audioBooted) return;
+  audioBooted = true;
 
   // iOSの「一回タップしないと鳴らへん」対策の無音ワンショットだけ残す
   try {
@@ -1127,10 +1129,10 @@ async function bootAudioOnce(){
 
   // BGM / SE 本体
   bgmAudio  = new Audio('../assets/BGM.mp3');
-  bgmAudio.loop       = true;
-  bgmAudio.preload    = 'auto';
-  bgmAudio.playsInline= true;
-  bgmAudio.volume     = 0.5;
+  bgmAudio.loop        = true;
+  bgmAudio.preload     = 'auto';
+  bgmAudio.playsInline = true;
+  bgmAudio.volume      = 0.5;
 
   bgm2Audio = new Audio('../assets/BGM2.mp3');
   bgm2Audio.loop        = true;
@@ -1139,20 +1141,20 @@ async function bootAudioOnce(){
   bgm2Audio.volume      = 0.5;
 
   endAudio  = new Audio('../assets/END.mp3');
-  endAudio.preload    = 'auto';
-  endAudio.playsInline= true;
+  endAudio.preload     = 'auto';
+  endAudio.playsInline = true;
   endAudio.volume      = 0.4;
 
-    // ★追加：ハイスコア用ゲームオーバーSE
+  // ★追加：ハイスコア用ゲームオーバーSE
   highEndAudio = new Audio('../assets/HIGHEND.mp3');
-  highEndAudio.preload    = 'auto';
-  highEndAudio.playsInline= true;
+  highEndAudio.preload     = 'auto';
+  highEndAudio.playsInline = true;
   highEndAudio.volume      = 0.6;
   
   highScoreSeAudio = new Audio('../assets/SE.mp3');
-  highScoreSeAudio.preload    = 'auto';
-  highScoreSeAudio.playsInline= true;
-  highScoreSeAudio.volume      = 0.5;
+  highScoreSeAudio.preload     = 'auto';
+  highScoreSeAudio.playsInline = true;
+  highScoreSeAudio.volume      = 0.35;
 
   creditsAudio = new Audio('../assets/CREDIT.mp3');
   creditsAudio.loop        = true;
@@ -1161,17 +1163,47 @@ async function bootAudioOnce(){
   creditsAudio.volume      = 0.5;
 
   // どんぐり SE プール
+  pickupPool = [];
   for (let i = 0; i < 6; i++) {
     const a = new Audio('../assets/pick.mp3');
-    a.preload    = 'auto';
-    a.playsInline= true;
+    a.preload     = 'auto';
+    a.playsInline = true;
     pickupPool.push(a);
   }
 
-  audioBooted = true;
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+  if (isIOS) {
+    const WARMUP_AUDIOS = [
+      bgmAudio,
+      bgm2Audio,
+      endAudio,
+      highEndAudio,
+      highScoreSeAudio,
+      creditsAudio
+    ];
+
+    // ★ここから先は「ウォームアップ」だけ
+    for (const a of WARMUP_AUDIOS) {
+      if (!a) continue;
+      try {
+        a.muted = true;      // volume=0 じゃなく muted
+        a.currentTime = 0;
+        const p = a.play();
+        if (p && typeof p.then === 'function') {
+          await p;           // 再生開始が確定するまで
+        }
+        a.pause();
+        a.currentTime = 0;
+        a.muted = false;     // ここで元に戻す（最終的なミュートは applyMute() に任せる）
+      } catch (_) {
+        // 失敗してもゲーム自体は動くように握りつぶし
+      }
+    }
+  }
 }
 
 document.addEventListener('touchstart', () => bootAudioOnce(), { once:true, passive:true });
+
 
 let muted = false;
 
@@ -1950,6 +1982,17 @@ class SpecialSunflower extends Obstacle{
 
 const SCALE = 0.7;
 
+  
+// ★ 紫ジャンプひまわりの “連続出現” を制御するカウンタ
+const MAX_HOP_CHAIN = 2;      // ← 連続何体まで許すか（1にしたらかなり優しめ）
+let hopChainCount   = 0;
+
+function resetHopChain(){
+  hopChainCount = 0;
+}
+
+
+  
 function spawnObstacle(delta){
   spawnTimer += delta;
 
@@ -1991,46 +2034,59 @@ function spawnObstacle(delta){
   const rand = Math.random();
 
   if (rand < 0.4){
-    // ブルーベリー（空中）
+    // ブルーベリー
     const size = (40 + Math.random()*20) * SCALE;
     const yPos = Math.random() < 0.3
       ? groundY - 30
       : groundY - 70 - Math.random()*50;
+
     obstacles.push(new Obstacle('air', SPRITES.blueberry, yPos, size));
-} else {
-  // ★ 普通のひまわり vs 動くひまわり
-  const canUseSpecial = (score >= 300) && SPRITES.sunflower2;
-  const useSpecial = canUseSpecial && (Math.random() < 0.2); // 5回に1回くらい
-
-  if (useSpecial){
-    // ★ 500未満 → ぜんぶジャンプひまわり
-    // ★ 500以上 → 50%で速い / 50%でジャンプ
-    const isRunner = (score >= 500) && (Math.random() < 0.5);
-    const type = isRunner ? 'sun2_run' : 'sun2_hop';
-
-    const baseSize = (70 + Math.random()*20) * SCALE;
-    const size = isRunner ? baseSize * 1.5 : baseSize * 1.65;
-
-    obstacles.push(new SpecialSunflower(type, SPRITES.sunflower2, groundY, size));
+    resetHopChain(); // ★ ここでチェーンはリセット
   } else {
-    // ★ここは今まで通りの普通ひまわり
-    if (score > 10 && Math.random() < 0.3){
-      obstacles.push(
-        new Obstacle('ground_large', SPRITES.sunflower, groundY, 120 * SCALE * 1.25)
-      );
+    // ひまわり側
+    const canUseSpecial = (score >= 300) && SPRITES.sunflower2;
+    let useSpecial = canUseSpecial && (Math.random() < 0.2); // 5回に1回くらい
+
+    // ★ 紫ジャンプひまわりが続きすぎるのを抑制
+    if (useSpecial && hopChainCount >= MAX_HOP_CHAIN){
+      useSpecial = false;  // これ以上 “ジャンプ紫” を続けない
+    }
+
+    if (useSpecial){
+      // 500未満 → ジャンプのみ
+      // 500以上 → 50%で速い / 50%でジャンプ
+      const isRunner = (score >= 500) && (Math.random() < 0.5);
+      const baseSize = (70 + Math.random()*20) * SCALE;
+
+      if (isRunner){
+        const size = baseSize * 1.5;
+        obstacles.push(new SpecialSunflower('sun2_run', SPRITES.sunflower2, groundY, size));
+        resetHopChain();  // 走るほうはチェーンに数えない
+      } else {
+        const size = baseSize * 1.65;
+        obstacles.push(new SpecialSunflower('sun2_hop', SPRITES.sunflower2, groundY, size));
+
+        // ★ ジャンプ紫だけチェーン数を進める
+        hopChainCount++;
+      }
     } else {
-      obstacles.push(
-        new Obstacle('ground', SPRITES.sunflower, groundY, (60 + Math.random()*20) * SCALE)
-      );
+      // 普通のひまわり
+      if (score > 10 && Math.random() < 0.3){
+        obstacles.push(
+          new Obstacle('ground_large', SPRITES.sunflower, groundY, 120 * SCALE * 1.25)
+        );
+      } else {
+        obstacles.push(
+          new Obstacle('ground', SPRITES.sunflower, groundY, (60 + Math.random()*20) * SCALE)
+        );
+      }
+      resetHopChain(); // 普通ひまわりが入った時点でチェーン切る
     }
   }
-}
-
 
   nextSpawnInterval = minSpawnInterval + Math.random()*(maxSpawnInterval - minSpawnInterval);
   spawnTimer = 0;
 }
-
 
 function updateObstacles(d){
   for(let i = obstacles.length - 1; i >= 0; i--){
