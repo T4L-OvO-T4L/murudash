@@ -717,7 +717,9 @@ document.addEventListener('contextmenu', e => e.preventDefault(), { passive: fal
 
 // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ ゲームのバージョン（ここだけ変えたらOK）★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 const GAME_VERSION = '2.0';
+const HIGH_SCORE_KEY = 'muruHighScoreBETA';
 
+  
 // ★★★★★ デバッグ機能マスタースイッチ（ここだけいじればOK） ★★★★★
 // 本番では全部 false にする or 必要なものだけ true にする
 const DEBUG_OPTIONS = {
@@ -1002,7 +1004,7 @@ if (confirmResetButton){
 
     // ローカル保存してるハイスコアを消す
     highScore = 0;
-    localStorage.removeItem('muruHighScore');
+    localStorage.removeItem(HIGH_SCORE_KEY);
 
     if (highScoreEl){
       highScoreEl.textContent = 'ハイスコア: 0';
@@ -1565,7 +1567,10 @@ function drawGroundDetails(df){
 
 
 /* ===== ゲーム本体 ===== */
-let score=0, highScore=parseInt(localStorage.getItem('muruHighScore')||'0',10); highScoreEl.textContent=`ハイスコア: ${highScore}`;
+let score = 0;
+let highScore = parseInt(localStorage.getItem(HIGH_SCORE_KEY) || '0', 10);
+highScoreEl.textContent = `ハイスコア: ${highScore}`;
+
 let gameSpeed=5, baseGameSpeed=5, gameSpeedAcceleration=0.05;
 const GAME_SPEED_MAX=13;
 
@@ -2207,7 +2212,7 @@ function gameOver(){
   // ★ハイスコア保存（初回も含めて普通に保存）
   if (isNewHighScore){
     highScore = score;
-    localStorage.setItem('muruHighScore', highScore);
+    localStorage.setItem(HIGH_SCORE_KEY, highScore);
     highScoreEl.textContent = `ハイスコア: ${highScore}`;
   }
 
