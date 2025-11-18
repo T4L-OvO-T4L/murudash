@@ -646,6 +646,7 @@ async function sendScoreToServer(currentScore){
       name: name,
       score: String(currentScore),
       version: GAME_VERSION,
+      ua: navigator.userAgent
     });
 
     const res = await fetch(`${SCORE_API_URL}?${params.toString()}`, {
@@ -695,6 +696,28 @@ async function sendScoreToServer(currentScore){
 }
 
 
+// ★ プレイログ送信用（ゲームオーバー時に1発だけ叩く）
+function logPlaySession(isNewHighScore) {
+  try {
+    const params = new URLSearchParams({
+      mode: 'logPlay',                // GAS側で分岐に使う
+      version: GAME_VERSION,          // 2.0 みたいなやつ
+      score: String(score),           // 今回のスコア
+      isHighScore: isNewHighScore ? '1' : '0', // ハイスコア更新したか
+      ua: navigator.userAgent || ''   // 端末情報
+    });
+
+    // 応答は特に待たない（プレイヤーに負担かけないため）
+    fetch(`${SCORE_API_URL}?${params.toString()}`, {
+      method: 'GET',
+      keepalive: true, // タブ閉じ際でも送信されやすくするおまじない
+    }).catch(() => {
+      // 失敗してもゲームには一切関係ないので握りつぶし
+    });
+  } catch (e) {
+    console.error('logPlaySession error:', e);
+  }
+}
 
 
 
@@ -2179,6 +2202,9 @@ function gameOver(){
   // ★ハイスコア関係の判定を先にやる
   const isNewHighScore       = score > highScore;
   const hadPreviousHighScore = highScore > 0;  // 初回だけ HIGHEND 抜く用
+
+  // ★ ここでプレイログ送信（日本時間はサーバー側で付与）
+  logPlaySession(isNewHighScore);
 
   // タイマー停止とか
   if (highScoreBgmTimeoutId !== null){
