@@ -699,6 +699,9 @@ async function sendScoreToServer(currentScore){
 // ★ プレイログ送信用（ゲームオーバー時に1発だけ叩く）
 function logPlaySession(isNewHighScore) {
   try {
+    // ★ ここでローカルストレージから名前を拾う
+    const savedName = localStorage.getItem('muruPlayerName') || '';
+
     const params = new URLSearchParams({
       mode: 'logPlay',                // GAS側で分岐に使う
       version: GAME_VERSION,          // 2.0 みたいなやつ
@@ -707,7 +710,11 @@ function logPlaySession(isNewHighScore) {
       ua: navigator.userAgent || ''   // 端末情報
     });
 
-    // 応答は特に待たない（プレイヤーに負担かけないため）
+    // ★ 名前があるときだけ name を付けて送る
+    if (savedName) {
+      params.append('name', savedName);
+    }
+
     fetch(`${SCORE_API_URL}?${params.toString()}`, {
       method: 'GET',
       keepalive: true, // タブ閉じ際でも送信されやすくするおまじない
@@ -718,6 +725,7 @@ function logPlaySession(isNewHighScore) {
     console.error('logPlaySession error:', e);
   }
 }
+
 
 
 
