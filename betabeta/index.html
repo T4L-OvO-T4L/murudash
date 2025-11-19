@@ -2091,7 +2091,13 @@ function warpToScoreBand(targetScore){
 function checkCollision(){
   if(isDebug) return;
   const p={x:player.x,y:player.y,width:player.width*0.6,height:player.height*0.7};
-  for(const o of obstacles){ const h=o.getHitbox(); if(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y){ ; return; } }
+  for(const o of obstacles){ 
+    const h=o.getHitbox(); 
+    if(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y){ 
+      gameOver(); // ★ここ！この命令が抜けていました！
+      return; 
+    } 
+  }
 }
 
 
