@@ -593,6 +593,30 @@ text-shadow:
 
 const SCORE_API_URL = 'https://script.google.com/macros/s/AKfycby2GHfn2Lq9iRqH45iOH8t1f9rM8e7Wm5AeUO92g8g35u7F7muzXokQoagjKaQrpg9ALw/exec';
 
+// ★ ユーザーID（ローカルに一生保持）
+const USER_ID_KEY = 'muruUserId';
+
+function generateUserId() {
+  const t = Date.now().toString(36);               // 時間ベース
+  const r = Math.random().toString(36).slice(2,10); // ランダム
+  return `muru_${t}_${r}`;
+}
+
+function getOrCreateUserId() {
+  let id = localStorage.getItem(USER_ID_KEY);
+  if (!id) {
+    id = generateUserId();
+    localStorage.setItem(USER_ID_KEY, id);
+  }
+  return id;
+}
+
+// このプレイヤー専用のID
+const USER_ID = getOrCreateUserId();
+
+
+
+  
 async function sendScoreToServer(currentScore){
   try {
     // ★前回の名前をデフォルトにする（なければ空欄）
@@ -640,7 +664,8 @@ async function sendScoreToServer(currentScore){
       name: name,
       score: String(currentScore),
       version: GAME_VERSION,
-      ua: navigator.userAgent
+      ua: navigator.userAgent,
+      userId: USER_ID
     });
 
     const res = await fetch(`${SCORE_API_URL}?${params.toString()}`, {
@@ -701,7 +726,9 @@ function logPlaySession(isNewHighScore) {
       version: GAME_VERSION,          // 2.0 みたいなやつ
       score: String(score),           // 今回のスコア
       isHighScore: isNewHighScore ? '1' : '0', // ハイスコア更新したか
-      ua: navigator.userAgent || ''   // 端末情報
+      ua: navigator.userAgent || '',  // 端末情報
+      userId: USER_ID,                // ★ 追加：誰のプレイか
+      deathType: lastDeathType || 'none' // ★ 追加：何に当たって死んだか
     });
 
     // ★ 名前があるときだけ name を付けて送る
@@ -719,6 +746,7 @@ function logPlaySession(isNewHighScore) {
     console.error('logPlaySession error:', e);
   }
 }
+
 
 
 
@@ -1122,180 +1150,149 @@ updateJumpButton(JUMP_MODE.START);
 
   
   
-/* ===== Audio（BGM/SE。フェード一切なし版） ===== */
+/* ===== Audio（Web Audio API版：iPhoneカクつき対策） ===== */
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx; // 初期化はユーザー操作後に行う
+const seBuffers = {};
+
+// BGMは従来通り（ストリーミング再生）
+let bgmAudio = new Audio('../assets/BGM.mp3');
+bgmAudio.loop = true; bgmAudio.volume = 0.5;
+let bgm2Audio = new Audio('../assets/BGM2.mp3');
+bgm2Audio.loop = true; bgm2Audio.volume = 0.5;
+let creditsAudio = new Audio('../assets/CREDIT.mp3');
+creditsAudio.loop = true; creditsAudio.volume = 0.5;
+
+let highScoreBgmTimeoutId = null;
+let muted = false;
 let audioBooted = false;
-let bgmAudio, bgm2Audio, endAudio, highEndAudio, highScoreSeAudio, creditsAudio, pickupPool = [];
-let highScoreBgmTimeoutId = null;  // ★ ハイスコアBGMへの切替タイマー
 
-let pickupIndex = 0;
-
-// ★ できるだけ軽い初期化だけに戻す版
-function bootAudioOnce(){
-  if (audioBooted) return;
-
-  // iOSの「一回タップしないと鳴らへん」対策の無音ワンショットだけ残す
+// SEデータの読み込み＆デコード（これがカクつきをなくす肝）
+async function loadSeBuffer(name, url) {
+  if (!audioCtx) return;
   try {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    const ctx = new Ctx();
-    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.05), ctx.sampleRate);
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    src.start(0);
-    setTimeout(() => { try { ctx.close(); } catch(_){} }, 80);
-  } catch(_) {}
-
-  // BGM / SE 本体
-  bgmAudio  = new Audio('../assets/BGM.mp3');
-  bgmAudio.loop        = true;
-  bgmAudio.preload     = 'auto';
-  bgmAudio.playsInline = true;
-  bgmAudio.volume      = 0.5;
-
-  bgm2Audio = new Audio('../assets/BGM2.mp3');
-  bgm2Audio.loop        = true;
-  bgm2Audio.preload     = 'auto';
-  bgm2Audio.playsInline = true;
-  bgm2Audio.volume      = 0.5;
-
-  endAudio  = new Audio('../assets/END.mp3');
-  endAudio.preload     = 'auto';
-  endAudio.playsInline = true;
-  endAudio.volume      = 0.4;
-
-  // ★ハイスコア用ゲームオーバーSE
-  highEndAudio = new Audio('../assets/HIGHEND.mp3');
-  highEndAudio.preload     = 'auto';
-  highEndAudio.playsInline = true;
-  highEndAudio.volume      = 0.5;
-
-  highScoreSeAudio = new Audio('../assets/SE.mp3');
-  highScoreSeAudio.preload     = 'auto';
-  highScoreSeAudio.playsInline = true;
-  highScoreSeAudio.volume      = 0.5;
-
-  creditsAudio = new Audio('../assets/CREDIT.mp3');
-  creditsAudio.loop        = true;
-  creditsAudio.preload     = 'auto';
-  creditsAudio.playsInline = true;
-  creditsAudio.volume      = 0.5;
-
-  // どんぐり SE プール
-  pickupPool = [];
-  for (let i = 0; i < 6; i++) {
-    const a = new Audio('../assets/pick.mp3');
-    a.preload     = 'auto';
-    a.playsInline = true;
-    pickupPool.push(a);
+    const res = await fetch(url);
+    const arrayBuffer = await res.arrayBuffer();
+    const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    seBuffers[name] = decodedBuffer;
+  } catch (e) {
+    console.error(`Failed to load SE: ${name}`, e);
   }
-
-  audioBooted = true;
 }
 
-// ここはそのままでOK
-document.addEventListener('touchstart', () => bootAudioOnce(), {
-  once: true,
-  passive: true,
-});
 
+  // ★ iOS 判定（Safari/Chrome まとめて）
+const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+// ★ SE 全体のマスターゲイン
+const SE_MASTER_GAIN = isIOS ? 1.6 : 1.0;  // iPhoneだけ少し持ち上げる
 
-
-let muted = false;
 
   
-function applyMute(){
-  const arr = [bgmAudio, bgm2Audio, endAudio, highEndAudio, highScoreSeAudio, creditsAudio, ...pickupPool];
-  for (const a of arr){
-    if (a) a.muted = muted;
-  }
+// SE再生用関数
+function playSeBuffer(name, volume = 0.5) {
+  if (muted || !audioCtx || !seBuffers[name]) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+
+  const source = audioCtx.createBufferSource();
+  source.buffer = seBuffers[name];
+
+  const gainNode = audioCtx.createGain();
+  gainNode.gain.value = volume * SE_MASTER_GAIN;  // ★ここでブースト
+
+  source.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  source.start(0);
 }
 
 
+// 初期化（ワンタップ目で実行）
+async function bootAudioOnce() {
+  if (audioBooted) return;
+  audioBooted = true;
 
-// ▼ 通常BGM（止まってたらだけ再生）
-function playMainBgm(){
-  if (!bgmAudio) return;
-  try { if (bgm2Audio) bgm2Audio.pause(); } catch(_) {}
+  // AudioContext作成
+  audioCtx = new AudioContext();
 
+  // iOS用: 無音再生でオーディオエンジンを起こす
   try {
-    if (bgmAudio.paused) {
+    const buf = audioCtx.createBuffer(1, 1, 22050);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(audioCtx.destination);
+    src.start(0);
+  } catch (_) {}
+
+  // ここでSEを一括ロード（非同期）
+  loadSeBuffer('pick', '../assets/pick.mp3');
+  loadSeBuffer('end', '../assets/END.mp3');
+  loadSeBuffer('highend', '../assets/HIGHEND.mp3');
+  loadSeBuffer('se', '../assets/SE.mp3');
+}
+
+// 画面タッチ/クリックで初期化
+const initEvents = ['touchstart', 'click', 'keydown'];
+const initAudioHandler = () => {
+  bootAudioOnce();
+  initEvents.forEach(evt => document.removeEventListener(evt, initAudioHandler));
+};
+initEvents.forEach(evt => document.addEventListener(evt, initAudioHandler, { passive: false }));
+
+
+/* --- 既存機能との互換用 --- */
+
+function applyMute() {
+  if (bgmAudio) bgmAudio.muted = muted;
+  if (bgm2Audio) bgm2Audio.muted = muted;
+  if (creditsAudio) creditsAudio.muted = muted;
+}
+
+function playPickup() {
+  playSeBuffer('pick', 0.5);
+}
+
+function playMainBgm() {
+  if (bgm2Audio) bgm2Audio.pause();
+  try {
+    if (bgmAudio && bgmAudio.paused) {
+      bgmAudio.currentTime = 0;
       bgmAudio.play().catch(() => {});
     }
-  } catch(_) {}
+  } catch (_) {}
 }
 
-// ▼ ハイスコア中BGM（止まってたらだけ再生）
-function playHighScoreBgm(){
-  if (!bgm2Audio) return;
-  try { if (bgmAudio) bgmAudio.pause(); } catch(_) {}
-
+function playHighScoreBgm() {
+  if (bgmAudio) bgmAudio.pause();
   try {
-    if (bgm2Audio.paused) {
+    if (bgm2Audio && bgm2Audio.paused) {
+      bgm2Audio.currentTime = 0;
       bgm2Audio.play().catch(() => {});
     }
-  } catch(_) {}
+  } catch (_) {}
 }
 
-// ▼ 共通スタート
-async function startAudio(){
-  await bootAudioOnce();
-
-  if (isHighScoreRun){
-    playHighScoreBgm();
-  } else {
-    playMainBgm();
-  }
-
+function startAudio() {
+  bootAudioOnce();
+  if (isHighScoreRun) playHighScoreBgm();
+  else playMainBgm();
   applyMute();
 }
 
-
-
-
-
-
-  
-// どんぐりSE（既存のplayPickup()はこのままでOK）
-  function playPickup(){
-  if(!pickupPool.length) return;
-  const a = pickupPool[pickupIndex];
-  pickupIndex = (pickupIndex + 1) % pickupPool.length;
-
-  try{
-    // iOSで稀にcurrentTimeが無視される対策：一旦停止→巻き戻し
-    a.pause();
-    a.currentTime = 0;
-    const p = a.play();
-    if(p && typeof p.catch === 'function'){ p.catch(()=>{}); }
-  }catch(_){}
+function playCreditsBgm() {
+  try { creditsAudio.currentTime = 0; creditsAudio.play(); } catch (_) {}
+}
+function stopCreditsBgm() {
+  try { creditsAudio.pause(); creditsAudio.currentTime = 0; } catch (_) {}
 }
 
-
-// ミュートボタン
-if (muteButton){
-  const toggleMute = (e) => {
+if (muteButton) {
+  muteButton.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
     muted = !muted;
     applyMute();
     muteButton.textContent = muted ? '🔇' : '🔊';
-  };
-  muteButton.addEventListener('click', toggleMute);
+  });
 }
-
-
-
-
-
-  
-// ▼ クレジット専用BGM
-function playCreditsBgm(){
-  try{ creditsAudio.currentTime = 0; creditsAudio.play(); }catch(_){}
-}
-function stopCreditsBgm(){
-  try{ creditsAudio.pause(); creditsAudio.currentTime = 0; }catch(_){}
-}
-
 
   
 
@@ -1599,6 +1596,11 @@ highScoreEl.textContent = `ハイスコア: ${highScore}`;
 let gameSpeed=5, baseGameSpeed=5, gameSpeedAcceleration=0.05;
 const GAME_SPEED_MAX=13;
 
+// ★ 追加：最後に死んだときの相手
+let lastDeathType = 'none';
+
+  
+
 let timeElapsed=0, obstacles=[], frame=0, spawnTimer=0;
 const minSpawnIntervalBase=105, maxSpawnIntervalBase=155, spawnIntervalReductionPerSec=4;
 const EARLY_EASE_MS=15000, EARLY_EASE_START_MULT=1.15;
@@ -1773,11 +1775,10 @@ function startHighScoreRun(){
   }
   flashTimer = FLASH_DURATION;
 
-  // SE
-  try{
-    highScoreSeAudio.currentTime = 0;
-    highScoreSeAudio.play();
-  }catch(_){}
+  // SE（ここがエラーの元なので、失敗しても無視するように包む）
+  try {
+    playSeBuffer('se', 0.5);
+  } catch(e) { console.error(e); }
 
   // いったん BGM1/BGM2 を止める
   try{
@@ -1810,7 +1811,6 @@ function startHighScoreRun(){
 
   applyMute();
 }
-
 
 
   
@@ -2134,10 +2134,45 @@ function warpToScoreBand(targetScore){
 
 /* ===== 当たり判定 / スコア / 速度 ===== */
 function checkCollision(){
-  if(isDebug) return;
-  const p={x:player.x,y:player.y,width:player.width*0.6,height:player.height*0.7};
-  for(const o of obstacles){ const h=o.getHitbox(); if(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y){ gameOver(); return; } }
+  if (isDebug) return;
+
+  const p = {
+    x: player.x,
+    y: player.y,
+    width:  player.width * 0.6,
+    height: player.height * 0.7
+  };
+
+  for (const o of obstacles) {
+    const h = o.getHitbox();
+
+    if (
+      p.x < h.x + h.width &&
+      p.x + p.width > h.x &&
+      p.y < h.y + h.height &&
+      p.y + p.height > h.y
+    ) {
+      // ★ ここでデスタイプ判定
+      if (o.type === 'ground') {
+        lastDeathType = 'sunflower_small';
+      } else if (o.type === 'ground_large') {
+        lastDeathType = 'sunflower_big';
+      } else if (o.type === 'air') {
+        lastDeathType = 'blueberry';
+      } else if (o.type === 'sun2_run') {
+        lastDeathType = 'sunflower2_run';
+      } else if (o.type === 'sun2_hop') {
+        lastDeathType = 'sunflower2_hop';
+      } else {
+        lastDeathType = 'unknown';
+      }
+
+      gameOver();
+      return;
+    }
+  }
 }
+
 
 
 
@@ -2174,92 +2209,79 @@ function gameOver(){
   isGameOver = true;
   gameStarted = false;
 
-  // ★ ゲームオーバー画面を開くときに、送信ボタンを初期状態に戻す
-  sendScoreButton.disabled = false;
-  sendScoreButton.textContent = "ランキングに送信";
-  sendScoreButton.classList.remove(
-    "bg-gray-500",
-    "opacity-60",
-    "cursor-not-allowed",
-    "bg-blue-900",
-    "cursor-wait"
-  );
-  sendScoreButton.classList.add("bg-blue-600", "hover:bg-blue-700");
-
-  // ★ まずボタンモードを「リスタート」にして……
-  updateJumpButton(JUMP_MODE.RESTART);
-
-  // ★ リスタート一時ロック & 見た目をグレーに
-  canRestart = false;
-  setRestartCooldownActive(true);  // ← グレー＆押せなさそうに見せる
-
-  // 一定時間後にロック解除（まだゲームオーバーなら緑に戻す）
-  setTimeout(() => {
-    canRestart = true;
-    if (isGameOver && jumpButtonMode === JUMP_MODE.RESTART){
-      setRestartCooldownActive(false);  // ← 緑に戻す
-    }
-  }, RESTART_DELAY_MS);
-
-  // ★ハイスコア関係の判定を先にやる
-  const isNewHighScore       = score > highScore;
-  const hadPreviousHighScore = highScore > 0;  // 初回だけ HIGHEND 抜く用
-
-  // ★ ここでプレイログ送信（日本時間はサーバー側で付与）
-  logPlaySession(isNewHighScore);
-
-  // タイマー停止とか
-  if (highScoreBgmTimeoutId !== null){
-    clearTimeout(highScoreBgmTimeoutId);
-    highScoreBgmTimeoutId = null;
-  }
-
+  // ▼▼▼ 1. 何はともあれBGMを止める（最優先・エラー無視） ▼▼▼
   try {
-    // BGM1 / BGM2 をきっちり止める
-    if (bgmAudio){
-      bgmAudio.pause();
-      bgmAudio.currentTime = 0;
-      bgmAudio.volume = 0.5;
+    if (highScoreBgmTimeoutId !== null){
+      clearTimeout(highScoreBgmTimeoutId);
+      highScoreBgmTimeoutId = null;
     }
-    if (bgm2Audio){
-      bgm2Audio.pause();
-      bgm2Audio.currentTime = 0;
-      bgm2Audio.volume = 0.5;
+    if (bgmAudio) { bgmAudio.pause(); bgmAudio.currentTime = 0; }
+    if (bgm2Audio) { bgm2Audio.pause(); bgm2Audio.currentTime = 0; }
+  } catch(e) { console.error(e); }
+
+
+  // ▼▼▼ 2. 画面やボタンの準備 ▼▼▼
+  try {
+    if(sendScoreButton){
+      sendScoreButton.disabled = false;
+      sendScoreButton.textContent = "ランキングに送信";
+      sendScoreButton.classList.remove("bg-gray-500", "opacity-60", "cursor-not-allowed", "bg-blue-900", "cursor-wait");
+      sendScoreButton.classList.add("bg-blue-600", "hover:bg-blue-700");
     }
 
-    // ★ 初回（highScore=0）のハイスコアでは HIGHEND を鳴らさない
-    const useHighEnd = isNewHighScore && hadPreviousHighScore && highEndAudio;
-    const se = useHighEnd ? highEndAudio : endAudio;
+    updateJumpButton(JUMP_MODE.RESTART);
 
-    if (se){
-      se.currentTime = 0;
-      se.play();
+    canRestart = false;
+    setRestartCooldownActive(true);
+    setTimeout(() => {
+      canRestart = true;
+      if (isGameOver && jumpButtonMode === JUMP_MODE.RESTART){
+        setRestartCooldownActive(false);
+      }
+    }, RESTART_DELAY_MS);
+
+    // スコア計算
+    const isNewHighScore       = score > highScore;
+    const hadPreviousHighScore = highScore > 0;
+
+    // ログ送信
+    logPlaySession(isNewHighScore);
+
+    // ハイスコア保存
+    if (isNewHighScore){
+      highScore = score;
+      localStorage.setItem(HIGH_SCORE_KEY, highScore);
+      if(highScoreEl) highScoreEl.textContent = `ハイスコア: ${highScore}`;
     }
-  } catch(_) {}
 
-  // ★ハイスコア保存（初回も含めて普通に保存）
-  if (isNewHighScore){
-    highScore = score;
-    localStorage.setItem(HIGH_SCORE_KEY, highScore);
-    highScoreEl.textContent = `ハイスコア: ${highScore}`;
+    // ラベル表示
+    if(finalScoreEl) finalScoreEl.textContent = score;
+    if(shareButton) shareButton.href = buildXIntentUrl(score);
+
+    if (gameOverHighScoreLabel){
+      if (isHighScoreRun) gameOverHighScoreLabel.classList.remove('hidden');
+      else gameOverHighScoreLabel.classList.add('hidden');
+    }
+
+    // ▼▼▼ 3. 最後にSEを鳴らす（ここが失敗しても他には影響させない） ▼▼▼
+    // ※ 初回（highScore=0）のハイスコアでは HIGHEND を鳴らさない
+    const useHighEnd = isNewHighScore && hadPreviousHighScore;
+    if (useHighEnd){
+      playSeBuffer('highend', 0.5);
+    } else {
+      playSeBuffer('end', 0.4);
+    }
+
+  } catch (err) {
+    console.error("Error in gameOver:", err);
   }
 
-  // スコア表示とかラベルまわり
-  finalScoreEl.textContent = score;
-  shareButton.href = buildXIntentUrl(score);
-
-  if (gameOverHighScoreLabel){
-    if (isHighScoreRun) gameOverHighScoreLabel.classList.remove('hidden');
-    else gameOverHighScoreLabel.classList.add('hidden');
+  // ▼▼▼ 4. 絶対に画面を出す ▼▼▼
+  if(gameOverScreen){
+    gameOverScreen.classList.remove('hidden');
+    gameOverScreen.classList.add('flex');
   }
-
-  // ゲームオーバー画面を出す
-  gameOverScreen.classList.remove('hidden');
-  gameOverScreen.classList.add('flex');
 }
-
-
-
 
 
 
