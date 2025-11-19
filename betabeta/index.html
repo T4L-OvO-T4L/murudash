@@ -2091,7 +2091,7 @@ function warpToScoreBand(targetScore){
 function checkCollision(){
   if(isDebug) return;
   const p={x:player.x,y:player.y,width:player.width*0.6,height:player.height*0.7};
-  for(const o of obstacles){ const h=o.getHitbox(); if(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y){ gameOver(); return; } }
+  for(const o of obstacles){ const h=o.getHitbox(); if(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y){ ; return; } }
 }
 
 
@@ -2129,91 +2129,91 @@ function gameOver(){
   isGameOver = true;
   gameStarted = false;
 
-  // ★ ゲームオーバー画面を開くときに、送信ボタンを初期状態に戻す
-  sendScoreButton.disabled = false;
-  sendScoreButton.textContent = "ランキングに送信";
-  sendScoreButton.classList.remove(
-    "bg-gray-500",
-    "opacity-60",
-    "cursor-not-allowed",
-    "bg-blue-900",
-    "cursor-wait"
-  );
-  sendScoreButton.classList.add("bg-blue-600", "hover:bg-blue-700");
-
-  // ★ まずボタンモードを「リスタート」にして……
-  updateJumpButton(JUMP_MODE.RESTART);
-
-  // ★ リスタート一時ロック & 見た目をグレーに
-  canRestart = false;
-  setRestartCooldownActive(true);  // ← グレー＆押せなさそうに見せる
-
-  // 一定時間後にロック解除（まだゲームオーバーなら緑に戻す）
-  setTimeout(() => {
-    canRestart = true;
-    if (isGameOver && jumpButtonMode === JUMP_MODE.RESTART){
-      setRestartCooldownActive(false);  // ← 緑に戻す
-    }
-  }, RESTART_DELAY_MS);
-
-  // ★ハイスコア関係の判定を先にやる
-  const isNewHighScore       = score > highScore;
-  const hadPreviousHighScore = highScore > 0;  // 初回だけ HIGHEND 抜く用
-
-  // ★ ここでプレイログ送信（日本時間はサーバー側で付与）
-  logPlaySession(isNewHighScore);
-
-  // タイマー停止とか
-  if (highScoreBgmTimeoutId !== null){
-    clearTimeout(highScoreBgmTimeoutId);
-    highScoreBgmTimeoutId = null;
-  }
-
+  // ▼▼▼ エラーが起きても絶対に画面を出すための安全策 ▼▼▼
   try {
-    // BGM1 / BGM2 をきっちり止める
-    if (bgmAudio){
-      bgmAudio.pause();
-      bgmAudio.currentTime = 0;
-      bgmAudio.volume = 0.5;
-    }
-    if (bgm2Audio){
-      bgm2Audio.pause();
-      bgm2Audio.currentTime = 0;
-      bgm2Audio.volume = 0.5;
+    // 1. UI系の初期化
+    if(sendScoreButton){
+      sendScoreButton.disabled = false;
+      sendScoreButton.textContent = "ランキングに送信";
+      sendScoreButton.classList.remove("bg-gray-500", "opacity-60", "cursor-not-allowed", "bg-blue-900", "cursor-wait");
+      sendScoreButton.classList.add("bg-blue-600", "hover:bg-blue-700");
     }
 
-   // ★ 初回（highScore=0）のハイスコアでは HIGHEND を鳴らさない
-    const useHighEnd = isNewHighScore && hadPreviousHighScore;
-    
-    if (useHighEnd){
-      playSeBuffer('highend', 0.5);
-    } else {
-      playSeBuffer('end', 0.4);
-    }
-  } catch(_) {}
+    // 2. ボタンモード変更
+    updateJumpButton(JUMP_MODE.RESTART);
 
-  // ★ハイスコア保存（初回も含めて普通に保存）
-  if (isNewHighScore){
-    highScore = score;
-    localStorage.setItem(HIGH_SCORE_KEY, highScore);
-    highScoreEl.textContent = `ハイスコア: ${highScore}`;
+    // 3. リスタートロック
+    canRestart = false;
+    setRestartCooldownActive(true);
+    setTimeout(() => {
+      canRestart = true;
+      if (isGameOver && jumpButtonMode === JUMP_MODE.RESTART){
+        setRestartCooldownActive(false);
+      }
+    }, RESTART_DELAY_MS);
+
+    // 4. スコア判定
+    const isNewHighScore       = score > highScore;
+    const hadPreviousHighScore = highScore > 0;
+
+    // 5. ログ送信（失敗しても無視）
+    logPlaySession(isNewHighScore);
+
+    // 6. 音声停止 & SE再生（ここが一番エラー起きやすいので厳重に囲む）
+    try {
+      if (highScoreBgmTimeoutId !== null){
+        clearTimeout(highScoreBgmTimeoutId);
+        highScoreBgmTimeoutId = null;
+      }
+      if (bgmAudio){
+        bgmAudio.pause();
+        bgmAudio.currentTime = 0;
+        bgmAudio.volume = 0.5;
+      }
+      if (bgm2Audio){
+        bgm2Audio.pause();
+        bgm2Audio.currentTime = 0;
+        bgm2Audio.volume = 0.5;
+      }
+
+      // ★ 新しいWebAudio方式で再生
+      const useHighEnd = isNewHighScore && hadPreviousHighScore;
+      if (useHighEnd){
+        playSeBuffer('highend', 0.5);
+      } else {
+        playSeBuffer('end', 0.4);
+      }
+    } catch(e) {
+      console.error('Audio error in gameOver:', e);
+    }
+
+    // 7. ハイスコア保存
+    if (isNewHighScore){
+      highScore = score;
+      localStorage.setItem(HIGH_SCORE_KEY, highScore);
+      if(highScoreEl) highScoreEl.textContent = `ハイスコア: ${highScore}`;
+    }
+
+    // 8. 画面表示更新
+    if(finalScoreEl) finalScoreEl.textContent = score;
+    if(shareButton) shareButton.href = buildXIntentUrl(score);
+
+    if (gameOverHighScoreLabel){
+      if (isHighScoreRun) gameOverHighScoreLabel.classList.remove('hidden');
+      else gameOverHighScoreLabel.classList.add('hidden');
+    }
+
+  } catch (err) {
+    // 万が一どこかでエラーが出ても、ログだけ出して画面表示へ進む
+    console.error("Critical error in gameOver sequence:", err);
   }
 
-  // スコア表示とかラベルまわり
-  finalScoreEl.textContent = score;
-  shareButton.href = buildXIntentUrl(score);
-
-  if (gameOverHighScoreLabel){
-    if (isHighScoreRun) gameOverHighScoreLabel.classList.remove('hidden');
-    else gameOverHighScoreLabel.classList.add('hidden');
+  // ▼▼▼ 最後に必ず画面を出す（ここが実行されればフリーズしない） ▼▼▼
+  if(gameOverScreen){
+    gameOverScreen.classList.remove('hidden');
+    gameOverScreen.classList.add('flex');
   }
-
-  // ゲームオーバー画面を出す
-  gameOverScreen.classList.remove('hidden');
-  gameOverScreen.classList.add('flex');
 }
-
-
 
 
 
