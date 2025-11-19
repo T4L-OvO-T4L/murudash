@@ -1731,8 +1731,10 @@ function startHighScoreRun(){
   }
   flashTimer = FLASH_DURATION;
 
-// SE
-  playSeBuffer('se', 0.5);
+  // SE（ここがエラーの元なので、失敗しても無視するように包む）
+  try {
+    playSeBuffer('se', 0.5);
+  } catch(e) { console.error(e); }
 
   // いったん BGM1/BGM2 を止める
   try{
@@ -1765,7 +1767,6 @@ function startHighScoreRun(){
 
   applyMute();
 }
-
 
 
   
@@ -2093,8 +2094,9 @@ function checkCollision(){
   const p={x:player.x,y:player.y,width:player.width*0.6,height:player.height*0.7};
   for(const o of obstacles){ 
     const h=o.getHitbox(); 
+    // 当たったら gameOver() を呼ぶ！
     if(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y){ 
-      gameOver(); // ★ここ！この命令が抜けていました！
+      gameOver(); 
       return; 
     } 
   }
@@ -2135,9 +2137,19 @@ function gameOver(){
   isGameOver = true;
   gameStarted = false;
 
-  // ▼▼▼ エラーが起きても絶対に画面を出すための安全策 ▼▼▼
+  // ▼▼▼ 1. 何はともあれBGMを止める（最優先・エラー無視） ▼▼▼
   try {
-    // 1. UI系の初期化
+    if (highScoreBgmTimeoutId !== null){
+      clearTimeout(highScoreBgmTimeoutId);
+      highScoreBgmTimeoutId = null;
+    }
+    if (bgmAudio) { bgmAudio.pause(); bgmAudio.currentTime = 0; }
+    if (bgm2Audio) { bgm2Audio.pause(); bgm2Audio.currentTime = 0; }
+  } catch(e) { console.error(e); }
+
+
+  // ▼▼▼ 2. 画面やボタンの準備 ▼▼▼
+  try {
     if(sendScoreButton){
       sendScoreButton.disabled = false;
       sendScoreButton.textContent = "ランキングに送信";
@@ -2145,10 +2157,8 @@ function gameOver(){
       sendScoreButton.classList.add("bg-blue-600", "hover:bg-blue-700");
     }
 
-    // 2. ボタンモード変更
     updateJumpButton(JUMP_MODE.RESTART);
 
-    // 3. リスタートロック
     canRestart = false;
     setRestartCooldownActive(true);
     setTimeout(() => {
@@ -2158,49 +2168,21 @@ function gameOver(){
       }
     }, RESTART_DELAY_MS);
 
-    // 4. スコア判定
+    // スコア計算
     const isNewHighScore       = score > highScore;
     const hadPreviousHighScore = highScore > 0;
 
-    // 5. ログ送信（失敗しても無視）
+    // ログ送信
     logPlaySession(isNewHighScore);
 
-    // 6. 音声停止 & SE再生（ここが一番エラー起きやすいので厳重に囲む）
-    try {
-      if (highScoreBgmTimeoutId !== null){
-        clearTimeout(highScoreBgmTimeoutId);
-        highScoreBgmTimeoutId = null;
-      }
-      if (bgmAudio){
-        bgmAudio.pause();
-        bgmAudio.currentTime = 0;
-        bgmAudio.volume = 0.5;
-      }
-      if (bgm2Audio){
-        bgm2Audio.pause();
-        bgm2Audio.currentTime = 0;
-        bgm2Audio.volume = 0.5;
-      }
-
-      // ★ 新しいWebAudio方式で再生
-      const useHighEnd = isNewHighScore && hadPreviousHighScore;
-      if (useHighEnd){
-        playSeBuffer('highend', 0.5);
-      } else {
-        playSeBuffer('end', 0.4);
-      }
-    } catch(e) {
-      console.error('Audio error in gameOver:', e);
-    }
-
-    // 7. ハイスコア保存
+    // ハイスコア保存
     if (isNewHighScore){
       highScore = score;
       localStorage.setItem(HIGH_SCORE_KEY, highScore);
       if(highScoreEl) highScoreEl.textContent = `ハイスコア: ${highScore}`;
     }
 
-    // 8. 画面表示更新
+    // ラベル表示
     if(finalScoreEl) finalScoreEl.textContent = score;
     if(shareButton) shareButton.href = buildXIntentUrl(score);
 
@@ -2209,18 +2191,25 @@ function gameOver(){
       else gameOverHighScoreLabel.classList.add('hidden');
     }
 
+    // ▼▼▼ 3. 最後にSEを鳴らす（ここが失敗しても他には影響させない） ▼▼▼
+    // ※ 初回（highScore=0）のハイスコアでは HIGHEND を鳴らさない
+    const useHighEnd = isNewHighScore && hadPreviousHighScore;
+    if (useHighEnd){
+      playSeBuffer('highend', 0.5);
+    } else {
+      playSeBuffer('end', 0.4);
+    }
+
   } catch (err) {
-    // 万が一どこかでエラーが出ても、ログだけ出して画面表示へ進む
-    console.error("Critical error in gameOver sequence:", err);
+    console.error("Error in gameOver:", err);
   }
 
-  // ▼▼▼ 最後に必ず画面を出す（ここが実行されればフリーズしない） ▼▼▼
+  // ▼▼▼ 4. 絶対に画面を出す ▼▼▼
   if(gameOverScreen){
     gameOverScreen.classList.remove('hidden');
     gameOverScreen.classList.add('flex');
   }
 }
-
 
 
 
