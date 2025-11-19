@@ -1152,20 +1152,30 @@ async function loadSeBuffer(name, url) {
   }
 }
 
+
+  // ★ iOS 判定（Safari/Chrome まとめて）
+const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+// ★ SE 全体のマスターゲイン
+const SE_MASTER_GAIN = isIOS ? 1.6 : 1.0;  // iPhoneだけ少し持ち上げる
+
+
+  
 // SE再生用関数
 function playSeBuffer(name, volume = 0.5) {
   if (muted || !audioCtx || !seBuffers[name]) return;
-  // iOSでサスペンド状態なら復帰させる
   if (audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
 
   const source = audioCtx.createBufferSource();
   source.buffer = seBuffers[name];
+
   const gainNode = audioCtx.createGain();
-  gainNode.gain.value = volume;
+  gainNode.gain.value = volume * SE_MASTER_GAIN;  // ★ここでブースト
+
   source.connect(gainNode);
   gainNode.connect(audioCtx.destination);
   source.start(0);
 }
+
 
 // 初期化（ワンタップ目で実行）
 async function bootAudioOnce() {
