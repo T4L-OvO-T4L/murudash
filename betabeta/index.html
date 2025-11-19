@@ -1122,180 +1122,138 @@ updateJumpButton(JUMP_MODE.START);
 
   
   
-/* ===== Audio（BGM/SE。フェード一切なし版） ===== */
-let audioBooted = false;
-let bgmAudio, bgm2Audio, endAudio, highEndAudio, highScoreSeAudio, creditsAudio, pickupPool = [];
-let highScoreBgmTimeoutId = null;  // ★ ハイスコアBGMへの切替タイマー
+/* ===== Audio（Web Audio API版：iPhoneカクつき対策） ===== */
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx; // 初期化はユーザー操作後に行う
+const seBuffers = {};
 
-let pickupIndex = 0;
-
-// ★ できるだけ軽い初期化だけに戻す版
-function bootAudioOnce(){
-  if (audioBooted) return;
-
-  // iOSの「一回タップしないと鳴らへん」対策の無音ワンショットだけ残す
-  try {
-    const Ctx = window.AudioContext || window.webkitAudioContext;
-    const ctx = new Ctx();
-    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.05), ctx.sampleRate);
-    const src = ctx.createBufferSource();
-    src.buffer = buf;
-    src.connect(ctx.destination);
-    src.start(0);
-    setTimeout(() => { try { ctx.close(); } catch(_){} }, 80);
-  } catch(_) {}
-
-  // BGM / SE 本体
-  bgmAudio  = new Audio('../assets/BGM.mp3');
-  bgmAudio.loop        = true;
-  bgmAudio.preload     = 'auto';
-  bgmAudio.playsInline = true;
-  bgmAudio.volume      = 0.5;
-
-  bgm2Audio = new Audio('../assets/BGM2.mp3');
-  bgm2Audio.loop        = true;
-  bgm2Audio.preload     = 'auto';
-  bgm2Audio.playsInline = true;
-  bgm2Audio.volume      = 0.5;
-
-  endAudio  = new Audio('../assets/END.mp3');
-  endAudio.preload     = 'auto';
-  endAudio.playsInline = true;
-  endAudio.volume      = 0.4;
-
-  // ★ハイスコア用ゲームオーバーSE
-  highEndAudio = new Audio('../assets/HIGHEND.mp3');
-  highEndAudio.preload     = 'auto';
-  highEndAudio.playsInline = true;
-  highEndAudio.volume      = 0.5;
-
-  highScoreSeAudio = new Audio('../assets/SE.mp3');
-  highScoreSeAudio.preload     = 'auto';
-  highScoreSeAudio.playsInline = true;
-  highScoreSeAudio.volume      = 0.5;
-
-  creditsAudio = new Audio('../assets/CREDIT.mp3');
-  creditsAudio.loop        = true;
-  creditsAudio.preload     = 'auto';
-  creditsAudio.playsInline = true;
-  creditsAudio.volume      = 0.5;
-
-  // どんぐり SE プール
-  pickupPool = [];
-  for (let i = 0; i < 6; i++) {
-    const a = new Audio('../assets/pick.mp3');
-    a.preload     = 'auto';
-    a.playsInline = true;
-    pickupPool.push(a);
-  }
-
-  audioBooted = true;
-}
-
-// ここはそのままでOK
-document.addEventListener('touchstart', () => bootAudioOnce(), {
-  once: true,
-  passive: true,
-});
-
-
+// BGMは従来通り（ストリーミング再生）
+let bgmAudio = new Audio('../assets/BGM.mp3');
+bgmAudio.loop = true; bgmAudio.volume = 0.5;
+let bgm2Audio = new Audio('../assets/BGM2.mp3');
+bgm2Audio.loop = true; bgm2Audio.volume = 0.5;
+let creditsAudio = new Audio('../assets/CREDIT.mp3');
+creditsAudio.loop = true; creditsAudio.volume = 0.5;
 
 let muted = false;
+let audioBooted = false;
 
-  
-function applyMute(){
-  const arr = [bgmAudio, bgm2Audio, endAudio, highEndAudio, highScoreSeAudio, creditsAudio, ...pickupPool];
-  for (const a of arr){
-    if (a) a.muted = muted;
+// SEデータの読み込み＆デコード（これがカクつきをなくす肝）
+async function loadSeBuffer(name, url) {
+  if (!audioCtx) return;
+  try {
+    const res = await fetch(url);
+    const arrayBuffer = await res.arrayBuffer();
+    const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    seBuffers[name] = decodedBuffer;
+  } catch (e) {
+    console.error(`Failed to load SE: ${name}`, e);
   }
 }
 
+// SE再生用関数
+function playSeBuffer(name, volume = 0.5) {
+  if (muted || !audioCtx || !seBuffers[name]) return;
+  // iOSでサスペンド状態なら復帰させる
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
 
+  const source = audioCtx.createBufferSource();
+  source.buffer = seBuffers[name];
+  const gainNode = audioCtx.createGain();
+  gainNode.gain.value = volume;
+  source.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  source.start(0);
+}
 
-// ▼ 通常BGM（止まってたらだけ再生）
-function playMainBgm(){
-  if (!bgmAudio) return;
-  try { if (bgm2Audio) bgm2Audio.pause(); } catch(_) {}
+// 初期化（ワンタップ目で実行）
+async function bootAudioOnce() {
+  if (audioBooted) return;
+  audioBooted = true;
 
+  // AudioContext作成
+  audioCtx = new AudioContext();
+
+  // iOS用: 無音再生でオーディオエンジンを起こす
   try {
-    if (bgmAudio.paused) {
+    const buf = audioCtx.createBuffer(1, 1, 22050);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(audioCtx.destination);
+    src.start(0);
+  } catch (_) {}
+
+  // ここでSEを一括ロード（非同期）
+  loadSeBuffer('pick', '../assets/pick.mp3');
+  loadSeBuffer('end', '../assets/END.mp3');
+  loadSeBuffer('highend', '../assets/HIGHEND.mp3');
+  loadSeBuffer('se', '../assets/SE.mp3');
+}
+
+// 画面タッチ/クリックで初期化
+const initEvents = ['touchstart', 'click', 'keydown'];
+const initAudioHandler = () => {
+  bootAudioOnce();
+  initEvents.forEach(evt => document.removeEventListener(evt, initAudioHandler));
+};
+initEvents.forEach(evt => document.addEventListener(evt, initAudioHandler, { passive: false }));
+
+
+/* --- 既存機能との互換用 --- */
+
+function applyMute() {
+  if (bgmAudio) bgmAudio.muted = muted;
+  if (bgm2Audio) bgm2Audio.muted = muted;
+  if (creditsAudio) creditsAudio.muted = muted;
+}
+
+function playPickup() {
+  playSeBuffer('pick', 0.5);
+}
+
+function playMainBgm() {
+  if (bgm2Audio) bgm2Audio.pause();
+  try {
+    if (bgmAudio && bgmAudio.paused) {
+      bgmAudio.currentTime = 0;
       bgmAudio.play().catch(() => {});
     }
-  } catch(_) {}
+  } catch (_) {}
 }
 
-// ▼ ハイスコア中BGM（止まってたらだけ再生）
-function playHighScoreBgm(){
-  if (!bgm2Audio) return;
-  try { if (bgmAudio) bgmAudio.pause(); } catch(_) {}
-
+function playHighScoreBgm() {
+  if (bgmAudio) bgmAudio.pause();
   try {
-    if (bgm2Audio.paused) {
+    if (bgm2Audio && bgm2Audio.paused) {
+      bgm2Audio.currentTime = 0;
       bgm2Audio.play().catch(() => {});
     }
-  } catch(_) {}
+  } catch (_) {}
 }
 
-// ▼ 共通スタート
-async function startAudio(){
-  await bootAudioOnce();
-
-  if (isHighScoreRun){
-    playHighScoreBgm();
-  } else {
-    playMainBgm();
-  }
-
+function startAudio() {
+  bootAudioOnce();
+  if (isHighScoreRun) playHighScoreBgm();
+  else playMainBgm();
   applyMute();
 }
 
-
-
-
-
-
-  
-// どんぐりSE（既存のplayPickup()はこのままでOK）
-  function playPickup(){
-  if(!pickupPool.length) return;
-  const a = pickupPool[pickupIndex];
-  pickupIndex = (pickupIndex + 1) % pickupPool.length;
-
-  try{
-    // iOSで稀にcurrentTimeが無視される対策：一旦停止→巻き戻し
-    a.pause();
-    a.currentTime = 0;
-    const p = a.play();
-    if(p && typeof p.catch === 'function'){ p.catch(()=>{}); }
-  }catch(_){}
+function playCreditsBgm() {
+  try { creditsAudio.currentTime = 0; creditsAudio.play(); } catch (_) {}
+}
+function stopCreditsBgm() {
+  try { creditsAudio.pause(); creditsAudio.currentTime = 0; } catch (_) {}
 }
 
-
-// ミュートボタン
-if (muteButton){
-  const toggleMute = (e) => {
+if (muteButton) {
+  muteButton.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
     muted = !muted;
     applyMute();
     muteButton.textContent = muted ? '🔇' : '🔊';
-  };
-  muteButton.addEventListener('click', toggleMute);
+  });
 }
-
-
-
-
-
-  
-// ▼ クレジット専用BGM
-function playCreditsBgm(){
-  try{ creditsAudio.currentTime = 0; creditsAudio.play(); }catch(_){}
-}
-function stopCreditsBgm(){
-  try{ creditsAudio.pause(); creditsAudio.currentTime = 0; }catch(_){}
-}
-
 
   
 
@@ -1773,11 +1731,8 @@ function startHighScoreRun(){
   }
   flashTimer = FLASH_DURATION;
 
-  // SE
-  try{
-    highScoreSeAudio.currentTime = 0;
-    highScoreSeAudio.play();
-  }catch(_){}
+// SE
+  playSeBuffer('se', 0.5);
 
   // いったん BGM1/BGM2 を止める
   try{
@@ -2227,13 +2182,13 @@ function gameOver(){
       bgm2Audio.volume = 0.5;
     }
 
-    // ★ 初回（highScore=0）のハイスコアでは HIGHEND を鳴らさない
-    const useHighEnd = isNewHighScore && hadPreviousHighScore && highEndAudio;
-    const se = useHighEnd ? highEndAudio : endAudio;
-
-    if (se){
-      se.currentTime = 0;
-      se.play();
+   // ★ 初回（highScore=0）のハイスコアでは HIGHEND を鳴らさない
+    const useHighEnd = isNewHighScore && hadPreviousHighScore;
+    
+    if (useHighEnd){
+      playSeBuffer('highend', 0.5);
+    } else {
+      playSeBuffer('end', 0.4);
     }
   } catch(_) {}
 
