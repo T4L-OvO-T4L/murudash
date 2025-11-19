@@ -593,6 +593,30 @@ text-shadow:
 
 const SCORE_API_URL = 'https://script.google.com/macros/s/AKfycby2GHfn2Lq9iRqH45iOH8t1f9rM8e7Wm5AeUO92g8g35u7F7muzXokQoagjKaQrpg9ALw/exec';
 
+// ★ ユーザーID（ローカルに一生保持）
+const USER_ID_KEY = 'muruUserId';
+
+function generateUserId() {
+  const t = Date.now().toString(36);               // 時間ベース
+  const r = Math.random().toString(36).slice(2,10); // ランダム
+  return `muru_${t}_${r}`;
+}
+
+function getOrCreateUserId() {
+  let id = localStorage.getItem(USER_ID_KEY);
+  if (!id) {
+    id = generateUserId();
+    localStorage.setItem(USER_ID_KEY, id);
+  }
+  return id;
+}
+
+// このプレイヤー専用のID
+const USER_ID = getOrCreateUserId();
+
+
+
+  
 async function sendScoreToServer(currentScore){
   try {
     // ★前回の名前をデフォルトにする（なければ空欄）
@@ -640,7 +664,8 @@ async function sendScoreToServer(currentScore){
       name: name,
       score: String(currentScore),
       version: GAME_VERSION,
-      ua: navigator.userAgent
+      ua: navigator.userAgent,
+      userId: USER_ID
     });
 
     const res = await fetch(`${SCORE_API_URL}?${params.toString()}`, {
@@ -701,7 +726,9 @@ function logPlaySession(isNewHighScore) {
       version: GAME_VERSION,          // 2.0 みたいなやつ
       score: String(score),           // 今回のスコア
       isHighScore: isNewHighScore ? '1' : '0', // ハイスコア更新したか
-      ua: navigator.userAgent || ''   // 端末情報
+      ua: navigator.userAgent || '',  // 端末情報
+      userId: USER_ID,                // ★ 追加：誰のプレイか
+      deathType: lastDeathType || 'none' // ★ 追加：何に当たって死んだか
     });
 
     // ★ 名前があるときだけ name を付けて送る
@@ -719,6 +746,7 @@ function logPlaySession(isNewHighScore) {
     console.error('logPlaySession error:', e);
   }
 }
+
 
 
 
@@ -1568,6 +1596,11 @@ highScoreEl.textContent = `ハイスコア: ${highScore}`;
 let gameSpeed=5, baseGameSpeed=5, gameSpeedAcceleration=0.05;
 const GAME_SPEED_MAX=13;
 
+// ★ 追加：最後に死んだときの相手
+let lastDeathType = 'none';
+
+  
+
 let timeElapsed=0, obstacles=[], frame=0, spawnTimer=0;
 const minSpawnIntervalBase=105, maxSpawnIntervalBase=155, spawnIntervalReductionPerSec=4;
 const EARLY_EASE_MS=15000, EARLY_EASE_START_MULT=1.15;
@@ -2101,17 +2134,45 @@ function warpToScoreBand(targetScore){
 
 /* ===== 当たり判定 / スコア / 速度 ===== */
 function checkCollision(){
-  if(isDebug) return;
-  const p={x:player.x,y:player.y,width:player.width*0.6,height:player.height*0.7};
-  for(const o of obstacles){ 
-    const h=o.getHitbox(); 
-    // 当たったら gameOver() を呼ぶ！
-    if(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y){ 
-      gameOver(); 
-      return; 
-    } 
+  if (isDebug) return;
+
+  const p = {
+    x: player.x,
+    y: player.y,
+    width:  player.width * 0.6,
+    height: player.height * 0.7
+  };
+
+  for (const o of obstacles) {
+    const h = o.getHitbox();
+
+    if (
+      p.x < h.x + h.width &&
+      p.x + p.width > h.x &&
+      p.y < h.y + h.height &&
+      p.y + p.height > h.y
+    ) {
+      // ★ ここでデスタイプ判定
+      if (o.type === 'ground') {
+        lastDeathType = 'sunflower_small';
+      } else if (o.type === 'ground_large') {
+        lastDeathType = 'sunflower_big';
+      } else if (o.type === 'air') {
+        lastDeathType = 'blueberry';
+      } else if (o.type === 'sun2_run') {
+        lastDeathType = 'sunflower2_run';
+      } else if (o.type === 'sun2_hop') {
+        lastDeathType = 'sunflower2_hop';
+      } else {
+        lastDeathType = 'unknown';
+      }
+
+      gameOver();
+      return;
+    }
   }
 }
+
 
 
 
