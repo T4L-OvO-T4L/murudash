@@ -1158,6 +1158,9 @@ const AudioContext = window.AudioContext || window.webkitAudioContext;
 let audioCtx; // 初期化はユーザー操作後に行う
 const seBuffers = {};
 
+// ★ HIGHEND 用の再生中ソースを覚えておく
+let currentHighEndSource = null;
+
 // BGMは従来通り（ストリーミング再生）
 let bgmAudio = new Audio('../assets/BGM.mp3');
 bgmAudio.loop = true; bgmAudio.volume = 0.5;
@@ -1191,7 +1194,6 @@ const SE_MASTER_GAIN = isIOS ? 1.6 : 1.0;  // iPhoneだけ少し持ち上げる
 
 
   
-// SE再生用関数
 function playSeBuffer(name, volume = 0.5) {
   if (muted || !audioCtx || !seBuffers[name]) return;
   if (audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
@@ -1200,13 +1202,46 @@ function playSeBuffer(name, volume = 0.5) {
   source.buffer = seBuffers[name];
 
   const gainNode = audioCtx.createGain();
-  gainNode.gain.value = volume * SE_MASTER_GAIN;  // ★ここでブースト
+  gainNode.gain.value = volume * SE_MASTER_GAIN;
 
   source.connect(gainNode);
   gainNode.connect(audioCtx.destination);
+
+  // ★ HIGHEND だけは「今鳴ってるやつ」を覚えておく
+  if (name === 'highend') {
+    // すでに鳴ってるのがあれば止める
+    if (currentHighEndSource) {
+      try {
+        currentHighEndSource.stop();
+      } catch (_) {}
+    }
+    currentHighEndSource = source;
+
+    // 再生し終わったら参照クリア
+    source.onended = () => {
+      if (currentHighEndSource === source) {
+        currentHighEndSource = null;
+      }
+    };
+  }
+
   source.start(0);
 }
 
+function stopHighEndSe() {
+  if (currentHighEndSource) {
+    try {
+      currentHighEndSource.stop();
+    } catch (_) {}
+    currentHighEndSource = null;
+  }
+}
+
+
+
+
+
+  
 
 // 初期化（ワンタップ目で実行）
 async function bootAudioOnce() {
@@ -2293,6 +2328,10 @@ function gameOver(){
   
 function restartGame(){
 
+  // ★ まず HIGHEND を止める
+  stopHighEndSe();
+
+  
   // ★ リスタートした瞬間はまたロック
   canRestart = false;
   
