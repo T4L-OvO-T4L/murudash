@@ -1982,7 +1982,32 @@ class Obstacle{
   }
   draw(){ ctx.drawImage(this.img,this.x,this.y-this.height,this.width,this.height); }
   update(d){ this.x -= gameSpeed*d; }
-  getHitbox(){ const shrink=this.type==='ground_large'?0.65:0.8; const w=this.width*shrink, h=this.height*shrink; return { x:this.x+(this.width-w)/2, y:(this.y-this.height)+(this.height-h)/2, width:w, height:h }; }
+  getHitbox() {
+  // デフォルトは今まで通り 0.8
+  let shrinkX = 0.8;
+  let shrinkY = 0.8;
+
+  if (this.type === 'ground_large') {
+    // デカひまわりは今まで通り
+    shrinkX = 0.65;
+    shrinkY = 0.65;
+  } else if (this.type === 'sun2_hop') {
+    // ★ジャンプする紫ひまわりだけ、ほんの少し当たり判定を小さく
+    shrinkX = 0.74; // 横ちょい削る
+    shrinkY = 0.72; // 縦もちょい削る
+  }
+
+  const w = this.width  * shrinkX;
+  const h = this.height * shrinkY;
+
+  return {
+    x: this.x + (this.width  - w) / 2,
+    y: (this.y - this.height) + (this.height - h) / 2,
+    width:  w,
+    height: h
+  };
+}
+
 }
 
 /* ★ 追加：動くひまわり専用クラス */
