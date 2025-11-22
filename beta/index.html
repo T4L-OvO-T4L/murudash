@@ -1993,7 +1993,7 @@ class Obstacle{
     shrinkY = 0.65;
   } else if (this.type === 'sun2_hop') {
     // ★ジャンプする紫ひまわりだけ、ほんの少し当たり判定を小さく
-    shrinkX = 0.74; // 横ちょい削る
+    shrinkX = 0.65; // 横ちょい削る
     shrinkY = 0.72; // 縦もちょい削る
   }
 
@@ -2016,8 +2016,8 @@ class SpecialSunflower extends Obstacle{
     super(type,img,y,size);
     this.baseY = y;
     this.phase = Math.random()*Math.PI*2;
-    this.hopAmp = size * 0.5;   // ぴょんぴょんの高さ
-    this.hopSpeed = 0.18;        // ぴょんぴょんの速さ
+    this.hopAmp = size * 0.6;   // ぴょんぴょんの高さ
+    this.hopSpeed = 0.15;        // ぴょんぴょんの速さ
   }
 
   update(d){
@@ -2045,7 +2045,7 @@ const SCALE = 0.7;
 
   
 // ★ 紫ジャンプひまわりの “連続出現” を制御するカウンタ
-const MAX_HOP_CHAIN = 2;      // ← 連続何体まで許すか（1にしたらかなり優しめ）
+const MAX_HOP_CHAIN = 3;      // ← 連続何体まで許すか（1にしたらかなり優しめ）
 let hopChainCount   = 0;
 
 function resetHopChain(){
