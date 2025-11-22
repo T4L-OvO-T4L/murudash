@@ -2079,7 +2079,7 @@ function spawnObstacle(delta){
   minSpawnInterval *= ld;
   maxSpawnInterval *= ld;
 
-  // ★ 追加：このフレームで「ジャンプひまわり」を出したら true にする
+  // ★ このフレームで「ジャンプひまわり」を出したら true にする
   let forceMaxInterval = false;
 
   if (spawnTimer < nextSpawnInterval) return;
@@ -2108,30 +2108,54 @@ function spawnObstacle(delta){
     resetHopChain();
 
   } else {
+    // ひまわり側
     const canUseSpecial = (score >= 300) && SPRITES.sunflower2;
     let useSpecial = canUseSpecial && (Math.random() < 0.2);
 
+    // 紫ジャンプひまわり連続出現制御
     if (useSpecial && hopChainCount >= MAX_HOP_CHAIN){
       useSpecial = false;
     }
 
     if (useSpecial){
+      // 500未満 → ジャンプのみ
+      // 500以上 → 50%で速い / 50%でジャンプ
       const isRunner = (score >= 500) && (Math.random() < 0.5);
       const baseSize = (70 + Math.random()*20) * SCALE;
 
       if (isRunner){
+        // ダッシュ紫
         const size = baseSize * 1.5;
-        obstacles.push(new SpecialSunflower('sun2_run', SPRITES.sunflower2, groundY, size));
+        obstacles.push(
+          new SpecialSunflower('sun2_run', SPRITES.sunflower2, groundY, size)
+        );
         resetHopChain();
+
       } else {
+        // ★★★ ジャンピングひまわり用「直前スキマ」チェック ★★★
+        if (last){
+          const baseMinGap = getMinPixelGap(timeElapsed);
+          // 直前は通常よりちょい広め（係数 1.4 は好みで調整OK）
+          const hopMinGap  = baseMinGap * 1.4;
+
+          const gapPx = gameWidth - (last.x + last.width);
+          if (gapPx < hopMinGap){
+            // 直前が詰まりすぎ → 今フレームは何も出さず様子見
+            // spawnTimer/nextSpawnInterval はそのままなので、
+            // 距離が空いたタイミングで改めて spawn される
+            return;
+          }
+        }
+
+        // ジャンピングひまわり本体
         const size = baseSize * 1.65;
-        obstacles.push(new SpecialSunflower('sun2_hop', SPRITES.sunflower2, groundY, size));
+        obstacles.push(
+          new SpecialSunflower('sun2_hop', SPRITES.sunflower2, groundY, size)
+        );
 
         hopChainCount++;
 
-        // ★★ ココがポイント ★★
-        // ジャンピングひまわりを出した回だけ、
-        // 「次の出現までの間隔」を MAX に固定する
+        // ★ 直後の1体分は MAX 間隔を強制
         forceMaxInterval = true;
       }
     } else {
@@ -2149,17 +2173,17 @@ function spawnObstacle(delta){
     }
   }
 
-  // ★ ここも変更
+  // ★ ジャンピングひまわりだけ「次は必ず MAX 間隔」
   if (forceMaxInterval){
-    // ジャンプひまわりの“次の1体”までは絶対に最大間隔空ける
     nextSpawnInterval = maxSpawnInterval;
   } else {
-    // それ以外は今まで通りランダム
-    nextSpawnInterval = minSpawnInterval + Math.random()*(maxSpawnInterval - minSpawnInterval);
+    nextSpawnInterval =
+      minSpawnInterval + Math.random()*(maxSpawnInterval - minSpawnInterval);
   }
 
   spawnTimer = 0;
 }
+
 
 
   
