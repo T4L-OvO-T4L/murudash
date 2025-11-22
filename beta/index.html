@@ -1646,8 +1646,11 @@ let score = 0;
 let highScore = parseInt(localStorage.getItem(HIGH_SCORE_KEY) || '0', 10);
 highScoreEl.textContent = `ハイスコア: ${highScore}`;
 
-let gameSpeed=5, baseGameSpeed=5, gameSpeedAcceleration=0.05;
-const GAME_SPEED_MAX=13;
+let gameSpeed           = 5;
+let baseGameSpeed       = 5;
+let gameSpeedAcceleration = 0.03;  // ★ここ下げる
+const GAME_SPEED_MAX    = 12;      // ★ここも少し下げる
+
 
 // ★ 追加：最後に死んだときの相手
 let lastDeathType = 'none';
@@ -2229,14 +2232,15 @@ function updateObstacles(d){
 
 
 
-// ★ デバッグ用：スコア帯にワープする
+// ここを追加
+const SCORE_PER_SEC_FOR_WARP = 5; // 6 → 5 に落とした（早く感じさせたいなら 4.5 とか）
+
 function warpToScoreBand(targetScore){
-  // スコアを一気に飛ばす
   score = targetScore;
   scoreEl.textContent = score;
 
-  // ざっくり「1秒あたりスコア約6」くらいで時間を逆算
-  const approxSec = targetScore / 6; // 300 → 約50秒、500 → 約83秒
+  // ざっくり「1秒あたりスコア◯くらい」想定で逆算
+  const approxSec = targetScore / SCORE_PER_SEC_FOR_WARP;
   timeElapsed = approxSec * 1000;
 
   // ゲームスピードも、その時間帯に近い値に合わせる
