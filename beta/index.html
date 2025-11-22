@@ -2158,7 +2158,7 @@ function spawnObstacle(delta){
         if (last){
           const baseMinGap = getMinPixelGap(timeElapsed);
           // 直前は通常よりちょい広め（係数 1.4 は好みで調整OK）
-          const hopMinGap  = baseMinGap * 1.4;
+          const hopMinGap  = baseMinGap * 1.55;
 
           const gapPx = gameWidth - (last.x + last.width);
           if (gapPx < hopMinGap){
