@@ -2118,25 +2118,27 @@ function spawnObstacle(delta){
     }
 
     if (useSpecial){
-      // 500未満 → ジャンプのみ
-      // 500以上 → 50%で速い / 50%でジャンプ
-      const isRunner = (score >= 500) && (Math.random() < 0.5);
       const baseSize = (70 + Math.random()*20) * SCALE;
 
-      if (isRunner){
-        // ダッシュ紫
+      // ★ ここで役割交代
+      // 300〜499 → 走るひまわりのみ
+      // 500〜     → ジャンピングひまわりのみ
+      if (score < 500){
+        // 🏃‍♂️ 走るひまわり（300〜499 の新顔）
         const size = baseSize * 1.5;
         obstacles.push(
           new SpecialSunflower('sun2_run', SPRITES.sunflower2, groundY, size)
         );
-        resetHopChain();
+        resetHopChain(); // 走るほうはチェーンに数えない
 
       } else {
+        // 🌻 ジャンピングひまわり（500〜から解禁）
+
         // ★★★ ジャンピングひまわり用「直前スキマ」チェック ★★★
         if (last){
           const baseMinGap = getMinPixelGap(timeElapsed);
           // 直前は通常よりちょい広め（係数 1.4 は好みで調整OK）
-          const hopMinGap  = baseMinGap * 1.6;
+          const hopMinGap  = baseMinGap * 1.4;
 
           const gapPx = gameWidth - (last.x + last.width);
           if (gapPx < hopMinGap){
@@ -2158,6 +2160,7 @@ function spawnObstacle(delta){
         // ★ 直後の1体分は MAX 間隔を強制
         forceMaxInterval = true;
       }
+
     } else {
       // 普通のひまわり
       if (score > 10 && Math.random() < 0.3){
