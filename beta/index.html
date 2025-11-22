@@ -724,6 +724,9 @@ function logPlaySession(isNewHighScore) {
     // ★ ここでローカルストレージから名前を拾う
     const savedName = localStorage.getItem('muruPlayerName') || '';
 
+    // ★ 総どんぐり数（なければ 0 扱い）
+    const acornTotalStr = String(totalAcorns || 0);
+    
     const params = new URLSearchParams({
       mode: 'logPlay',                // GAS側で分岐に使う
       version: GAME_VERSION,          // 2.0 みたいなやつ
@@ -731,7 +734,10 @@ function logPlaySession(isNewHighScore) {
       isHighScore: isNewHighScore ? '1' : '0', // ハイスコア更新したか
       ua: navigator.userAgent || '',  // 端末情報
       userId: USER_ID,                // ★ 追加：誰のプレイか
-      deathType: lastDeathType || 'none' // ★ 追加：何に当たって死んだか
+      deathType: lastDeathType || 'none', // 何に当たって死んだか
+
+      // ★ 追加：そのプレイヤーの累計どんぐり数
+      acornTotal: acornTotalStr
     });
 
     // ★ 名前があるときだけ name を付けて送る
@@ -774,7 +780,6 @@ document.addEventListener('contextmenu', e => e.preventDefault(), { passive: fal
 // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ ゲームのバージョン（ここだけ変えたらOK）★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
 const GAME_VERSION = '2.0';
 const HIGH_SCORE_KEY = 'muruHighScoreBETA';
-
   
 // ★★★★★ デバッグ機能マスタースイッチ（ここだけいじればOK） ★★★★★
 // 本番では全部 false にする or 必要なものだけ true にする
@@ -785,6 +790,16 @@ const DEBUG_OPTIONS = {
 };
 
 
+// ★ どんぐり累計（バージョンまたいで使う）
+const ACORN_TOTAL_KEY = 'muruAcornTotal';
+let totalAcorns = parseInt(localStorage.getItem(ACORN_TOTAL_KEY) || '0', 10);
+
+// デバッグ確認したかったら
+console.log('累計どんぐり数:', totalAcorns);
+
+
+
+  
   
 /* ===== 基本セットアップ ===== */
 const canvas = document.getElementById('gameCanvas');
@@ -1762,6 +1777,11 @@ function tryCollectAcorns(){
       const gained = isDebug ? 200 : 10;
       score += gained;
 
+      // ★ 累計どんぐり数（バージョンまたいでカウント）
+      totalAcorns += 1;
+      localStorage.setItem(ACORN_TOTAL_KEY, String(totalAcorns));
+
+      
       // ★ ここで「+10」(or +200) フキダシ追加
       floatTexts.push(
         new FloatText(
