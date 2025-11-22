@@ -2006,18 +2006,21 @@ class Obstacle{
   draw(){ ctx.drawImage(this.img,this.x,this.y-this.height,this.width,this.height); }
   update(d){ this.x -= gameSpeed*d; }
   getHitbox() {
-  // デフォルトは今まで通り 0.8
+  // デフォルト：ちょい小さめ
   let shrinkX = 0.8;
   let shrinkY = 0.8;
+  let offsetY = 0; // 縦方向のずらし量
 
   if (this.type === 'ground_large') {
-    // デカひまわりは今まで通り
-    shrinkX = 0.65;
-    shrinkY = 0.65;
+    // ★デカひまわりだけ、かなり甘めにする
+    shrinkX = 0.70;   // 横も少し小さく
+    shrinkY = 0.55;   // 縦はガッツリ低く
+    offsetY = this.height * 0.08; // 判定を気持ち下にずらす（上の花びらは飾り）
   } else if (this.type === 'sun2_hop') {
-    // ★ジャンプする紫ひまわりだけ、ほんの少し当たり判定を小さく
-    shrinkX = 0.6; // 横ちょい削る
-    shrinkY = 0.6; // 縦もちょい削る
+    // ★ジャンピングひまわり用（同じ設定）
+    shrinkX = 0.70;   // 横も少し小さく
+    shrinkY = 0.55;   // 縦はガッツリ低く
+    offsetY = this.height * 0.08; // 判定を気持ち下にずらす（上の花びらは飾り）
   }
 
   const w = this.width  * shrinkX;
@@ -2025,11 +2028,12 @@ class Obstacle{
 
   return {
     x: this.x + (this.width  - w) / 2,
-    y: (this.y - this.height) + (this.height - h) / 2,
+    y: (this.y - this.height) + (this.height - h) / 2 + offsetY,
     width:  w,
     height: h
   };
 }
+
 
 }
 
