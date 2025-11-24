@@ -1727,16 +1727,25 @@ class Acorn{
 }
 let acorns = [];
 
+// ★どんぐりコンボ用
+let acornComboCount = 0;  // 連続取得数（0ならノーコンボ状態）
+
  // ★ どんぐり取ったときに出す「+10」みたいなフキダシ用
 class FloatText {
-  constructor(text, x, y) {
+  constructor(text, x, y, options = {}) {
     this.text = text;
     this.x = x;
     this.y = y;
-    this.vy = -0.6;   // 上にふわっと上がる速さ
-    this.life = 30;   // 寿命（大きいほど長く残る）
+    this.vy = options.vy ?? -0.6;   // 上にふわっと上がる速さ
+    this.life = options.life ?? 30; // 寿命
+
+    // ★ 追加：色やフォントサイズをオプションで
+    this.color      = options.color      ?? '#fff7aa';
+    this.stroke     = options.stroke     ?? 'rgba(0,0,0,0.75)';
+    this.fontSize   = options.fontSize   ?? 20;
   }
 }
+
 
 let floatTexts = [];
  
@@ -1766,39 +1775,97 @@ function spawnAcornMs(deltaMs){
 }
 
 function updateAcorns(d){
-  for(let i=acorns.length-1;i>=0;i--){ acorns[i].update(d); acorns[i].draw(); if(acorns[i].x<-50) acorns.splice(i,1); }
+  for(let i=acorns.length-1;i>=0;i--){
+    const a = acorns[i];
+    a.update(d);
+    a.draw();
+
+    // 画面左に抜けた = 取り逃し
+    if(a.x < -50){
+      acorns.splice(i, 1);
+
+      // ★コンボリセット
+      acornComboCount = 0;
+    }
+  }
 }
+
 
   
 function tryCollectAcorns(){
-  const p={x:player.x,y:player.y,width:player.width*0.6,height:player.height*0.7};
-  for(let i=acorns.length-1;i>=0;i--){
-    const a=acorns[i], h=a.getHitbox();
-    if(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y){
+  const p = {
+    x: player.x,
+    y: player.y,
+    width:  player.width * 0.6,
+    height: player.height * 0.7
+  };
 
-      // ★ 通常：+10 / デバッグ中：+200
-      const gained = isDebug ? 200 : 10;
+  for (let i = acorns.length - 1; i >= 0; i--) {
+    const a = acorns[i];
+    const h = a.getHitbox();
+
+    const hit =
+      p.x < h.x + h.width &&
+      p.x + p.width > h.x &&
+      p.y < h.y + h.height &&
+      p.y + p.height > h.y;
+
+    if (hit) {
+      // ★ コンボカウント更新
+      acornComboCount++;                 // 1個目→1, 2個目→2, 3個目→3...
+
+      const comboBonus = acornComboCount - 1;     // 1個目:0, 2個目:1, 3個目:2...
+      const basePoints = isDebug ? 200 : 10;      // デバッグ時は 200 からスタート
+      const gained     = basePoints + comboBonus; // 10,11,12... / 200,201,202...
+
+      // スコア加算
       score += gained;
 
       // ★ 累計どんぐり数（バージョンまたいでカウント）
       totalAcorns += 1;
       localStorage.setItem(ACORN_TOTAL_KEY, String(totalAcorns));
 
-      
-      // ★ ここで「+10」(or +200) フキダシ追加
+      const baseX = a.x + a.size * 0.5;
+      const baseY = a.y - a.size * 0.4;
+
+      // メインの "+10" / "+11" など（今までのやつ）
       floatTexts.push(
         new FloatText(
           `+${gained}`,
-          a.x + a.size * 0.5,     // どんぐりの真ん中あたり
-          a.y - a.size * 0.4      // 少し上
+          baseX,
+          baseY,
+          {
+            // 色とかはデフォルトでOKなので指定なしでも可
+            // ここでいじりたくなったら options 追加してもOK
+          }
         )
       );
 
-      acorns.splice(i,1);
+      // ★ コンボ中だけ「COMBO!! +1」を上に表示（オレンジ文字）
+      if (comboBonus > 0) {
+        floatTexts.push(
+          new FloatText(
+            `COMBO!! +${comboBonus}`,
+            baseX,
+            baseY - 24,  // ちょい上に表示
+            {
+              color:    '#FFA500',                  // オレンジ
+              stroke:   'rgba(0,0,0,0.9)',
+              fontSize: 18,
+              life:     32,
+              vy:       -0.55
+            }
+          )
+        );
+      }
+
+      // どんぐり削除＆SE
+      acorns.splice(i, 1);
       playPickup();
     }
   }
 }
+
 
 
 
@@ -2348,6 +2415,9 @@ function gameOver(){
   isGameOver = true;
   gameStarted = false;
 
+  // ★コンボも終了
+  acornComboCount = 0;
+
   // ▼▼▼ 1. 何はともあれBGMを止める（最優先・エラー無視） ▼▼▼
   try {
     if (highScoreBgmTimeoutId !== null){
@@ -2433,6 +2503,7 @@ function restartGame(){
   stopHighEndSe();
 
   
+  
   // ★ リスタートした瞬間はまたロック
   canRestart = false;
   
@@ -2478,6 +2549,10 @@ sendScoreButton.classList.add(
   score=0; scoreEl.textContent=score; timeElapsed=0; gameSpeed=baseGameSpeed;
   obstacles=[]; acorns=[]; floatTexts=[]; frame=0; spawnTimer=0;
 
+  // ★コンボリセット
+  acornComboCount = 0;
+
+  
   initStars();
   starAlpha = 0;
   shooting = null;
@@ -2664,16 +2739,19 @@ function gameLoop(ts){
     // 残り寿命に応じてだんだん透明に
     const alpha = Math.max(0, Math.min(1, ft.life / 30));
 
+    const color    = ft.color    || '#fff7aa';
+    const stroke   = ft.stroke   || 'rgba(0,0,0,0.75)';
+    const fontSize = ft.fontSize || 20;
+
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.font = 'bold 20px "Inter", system-ui, sans-serif';
+    ctx.font = `bold ${fontSize}px "Inter", system-ui, sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
 
-    // ちょっとクリーム色＋黒フチ
-    ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+    ctx.strokeStyle = stroke;
     ctx.lineWidth = 3;
-    ctx.fillStyle = '#fff7aa';
+    ctx.fillStyle = color;
 
     ctx.strokeText(ft.text, ft.x, ft.y);
     ctx.fillText(ft.text, ft.x, ft.y);
@@ -2684,6 +2762,7 @@ function gameLoop(ts){
       floatTexts.splice(i, 1);
     }
   }
+
 
   
   // ★ ハイスコア突入フラッシュ
