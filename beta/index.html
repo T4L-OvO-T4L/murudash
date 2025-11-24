@@ -2067,20 +2067,17 @@ class SpecialSunflower extends Obstacle{
 
 
   
-
+  
 const SCALE = 0.7;
 
-  
-// ★ 紫ジャンプひまわりの “連続出現” を制御するカウンタ
-const MAX_HOP_CHAIN = 2;      // ← 連続何体まで許すか（1にしたらかなり優しめ）
-let hopChainCount   = 0;
+// ★ 特別ひまわり（ジャンプ＆走る）の “連続出現” を制御するカウンタ
+const MAX_SPECIAL_CHAIN = 2;      // ← 特別ひまわりが何体まで連続で出るか
+let specialChainCount    = 0;
 
-function resetHopChain(){
-  hopChainCount = 0;
+function resetSpecialChain() {
+  specialChainCount = 0;
 }
 
-
-  
 function spawnObstacle(delta){
   spawnTimer += delta;
 
@@ -2106,7 +2103,7 @@ function spawnObstacle(delta){
   minSpawnInterval *= ld;
   maxSpawnInterval *= ld;
 
-  // ★ このフレームで「ジャンプひまわり」を出したら true にする
+  // ★ このフレームで「特別ひまわり（走る/ジャンプ）」を出したら true にする
   let forceMaxInterval = false;
 
   if (spawnTimer < nextSpawnInterval) return;
@@ -2132,7 +2129,9 @@ function spawnObstacle(delta){
       : groundY - 70 - Math.random()*50;
 
     obstacles.push(new Obstacle('air', SPRITES.blueberry, yPos, size));
-    resetHopChain();
+
+    // ★ ブルーベリーを挟んだら特別ひまわり連鎖もリセット
+    resetSpecialChain();
 
   } else {
     // 🌻 ひまわり側
@@ -2140,7 +2139,10 @@ function spawnObstacle(delta){
     const hasHopper = (score >= 500); // 500〜 ジャンプひまわり解禁
 
     const canUseSpecial = (hasRunner || hasHopper) && SPRITES.sunflower2;
-    let useSpecial = canUseSpecial && (Math.random() < 0.2); // ひまわり系のうち20%を「特別枠」に
+
+    // ★ 連続出現数も見ながら特別枠を使うか決定
+    let useSpecial =
+      !!(canUseSpecial && Math.random() < 0.2 && specialChainCount < MAX_SPECIAL_CHAIN);
 
     if (useSpecial){
       const baseSize = (70 + Math.random()*20) * SCALE;
@@ -2150,49 +2152,47 @@ function spawnObstacle(delta){
       // 500〜     → 走る or ジャンプ（ランダム）
       let spawnHop = false;
 
-      if (hasHopper && hopChainCount < MAX_HOP_CHAIN) {
-        // 500以上かつ、ジャンプ連鎖の上限に達してないときだけ
-        // ここで確率調整（0.5なら半々）
-        if (Math.random() < 0.5) {
-          spawnHop = true;
+      if (hasHopper){
+        // 500以上なら走る / ジャンプ半々くらい
+        spawnHop = (Math.random() < 0.5);
+      }
+
+      // ★ 特別ひまわりのときは「直前スキマ」をちょい広めに要求（走る／ジャンプ共通）
+      if (last){
+        const baseMinGap    = getMinPixelGap(timeElapsed);
+        const specialMinGap = baseMinGap * 1.55; // ← ジャンプひまわりと同じ倍率
+
+        const gapPx = gameWidth - (last.x + last.width);
+        if (gapPx < specialMinGap){
+          // 着地ポイント / 走り抜けるスペースが詰まりすぎてたら
+          // 今回は特別ひまわりはナシ → 通常ひまわりに切り替え
+          useSpecial = false;
         }
       }
 
-      if (spawnHop){
-        // 🌻 ジャンピングひまわり
-
-        // ★ ジャンプ前の「直前スキマ」チェック
-        if (last){
-          const baseMinGap = getMinPixelGap(timeElapsed);
-          const hopMinGap  = baseMinGap * 1.55; // ここで二段ジャンプ用にちょい広め
-
-          const gapPx = gameWidth - (last.x + last.width);
-          if (gapPx < hopMinGap){
-            // 着地ポイントが詰まりすぎてたら、今回は出さない
-            return;
-          }
+      if (useSpecial){
+        if (spawnHop && hasHopper){
+          // 🌻 ジャンピングひまわり
+          const size = baseSize * 1.65;
+          obstacles.push(
+            new SpecialSunflower('sun2_hop', SPRITES.sunflower2, groundY, size)
+          );
+        } else {
+          // 🏃‍♂️ 走るひまわり（300〜でも500〜でも出る）
+          const size = baseSize * 1.5;
+          obstacles.push(
+            new SpecialSunflower('sun2_run', SPRITES.sunflower2, groundY, size)
+          );
         }
 
-        const size = baseSize * 1.65;
-        obstacles.push(
-          new SpecialSunflower('sun2_hop', SPRITES.sunflower2, groundY, size)
-        );
-
-        hopChainCount++;       // ジャンピング連鎖カウント
-        forceMaxInterval = true; // 直後の1体分は MAX 間隔を強制
-
-      } else {
-        // 🏃‍♂️ 走るひまわり（300〜でも500〜でも出る）
-        const size = baseSize * 1.5;
-        obstacles.push(
-          new SpecialSunflower('sun2_run', SPRITES.sunflower2, groundY, size)
-        );
-
-        // 走るやつが出たらジャンプ連鎖はリセット
-        resetHopChain();
+        // ★ 走る／ジャンプどっちでも連鎖カウント
+        specialChainCount++;
+        // ★ 特別ひまわり出した回は「次の出現」を MAX 間隔にする（後ろ側の距離）
+        forceMaxInterval = true;
       }
+    }
 
-    } else {
+    if (!useSpecial){
       // 🌻 普通のひまわり（これも全スコア帯でずっと出る）
       if (score > 10 && Math.random() < 0.3){
         obstacles.push(
@@ -2203,11 +2203,12 @@ function spawnObstacle(delta){
           new Obstacle('ground', SPRITES.sunflower, groundY, (60 + Math.random()*20) * SCALE)
         );
       }
-      resetHopChain();
+      // ★ 通常ひまわりが出たら特別ひまわり連鎖はリセット
+      resetSpecialChain();
     }
   }
 
-  // ★ ジャンピングひまわり出した回だけ「次の出現」を MAX 間隔にする
+  // ★ 特別ひまわり（走る/ジャンプ）が出た回だけ「次の出現」を MAX 間隔にする
   if (forceMaxInterval){
     nextSpawnInterval = maxSpawnInterval;
   } else {
@@ -2217,6 +2218,7 @@ function spawnObstacle(delta){
 
   spawnTimer = 0;
 }
+
 
 
 
