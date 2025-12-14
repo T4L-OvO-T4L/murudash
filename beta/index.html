@@ -358,6 +358,14 @@ text-shadow:
         ランキングを見る
       </button>
 
+      <button
+        id="backToTitleButton"
+        class="block w-full px-6 py-3 bg-gray-600 text-white font-bold rounded-lg shadow-lg text-lg hover:bg-gray-700 transition-colors"
+      >
+        タイトルへもどる
+      </button>
+
+
       <!-- 送信中・完了メッセージ -->
       <p
         id="sendStatusMessage"
@@ -937,7 +945,10 @@ const sendScoreButton   = document.getElementById('sendScoreButton');
 const sendStatusMessage = document.getElementById('sendStatusMessage');
 
 const viewRankingButton = document.getElementById('viewRankingButton');
+const backToTitleButton = document.getElementById('backToTitleButton');
 
+
+  
 if (sendScoreButton){
   sendScoreButton.addEventListener('click', (e) => {
     e.preventDefault();
@@ -958,6 +969,15 @@ if (closeRankingButton){
     closeRankingOverlay();
   });
 }
+
+if (backToTitleButton){
+  backToTitleButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    backToTitleFromGameOver();
+  });
+}
+
+  
 
 
 function escapeHtml(str){
@@ -2594,6 +2614,90 @@ sendScoreButton.classList.add(
   lastTime=performance.now(); requestAnimationFrame(gameLoop);
 }
 
+function backToTitleFromGameOver(){
+
+  // 念のため鳴りっぱなし対策
+  stopHighEndSe();
+
+  // 念のためBGM/タイマー停止（gameOverで止めてるけど保険）
+  try {
+    if (highScoreBgmTimeoutId !== null){
+      clearTimeout(highScoreBgmTimeoutId);
+      highScoreBgmTimeoutId = null;
+    }
+    if (bgmAudio) { bgmAudio.pause(); bgmAudio.currentTime = 0; }
+    if (bgm2Audio) { bgm2Audio.pause(); bgm2Audio.currentTime = 0; }
+  } catch (_) {}
+
+  // 状態を「タイトル待機」に戻す（プレイ開始はしない）
+  isGameOver = false;
+  isPaused = false;
+  gameStarted = false;
+
+  // 画面を切り替え
+  if (gameOverScreen){
+    gameOverScreen.classList.add('hidden');
+    gameOverScreen.classList.remove('flex');
+  }
+  if (pauseOverlay){
+    pauseOverlay.classList.add('hidden');
+    pauseOverlay.classList.remove('flex');
+  }
+  if (rankingOverlay){
+    rankingOverlay.classList.add('hidden');
+    rankingOverlay.classList.remove('flex');
+  }
+  if (startScreen){
+    startScreen.classList.remove('hidden');
+  }
+
+  // 見た目も最低限だけ初期化（余計な保存系は触らない）
+  score = 0;
+  if (scoreEl) scoreEl.textContent = score;
+
+  obstacles = [];
+  acorns = [];
+  floatTexts = [];
+  spawnTimer = 0;
+  frame = 0;
+  timeElapsed = 0;
+  gameSpeed = baseGameSpeed;
+
+  acornComboCount = 0;
+
+  // ハイスコア演出を戻す（数値は消さない）
+  isHighScoreRun = false;
+  if (scoreLabel){
+    scoreLabel.classList.remove('text-orange-400');
+    scoreLabel.classList.add('text-blue-600');
+  }
+  if (highScoreBanner){
+    highScoreBanner.classList.add('hidden');
+  }
+  if (gameOverHighScoreLabel){
+    gameOverHighScoreLabel.classList.add('hidden');
+  }
+
+  // プレイヤー位置だけ整える（描画は次のスタート時にループで走る）
+  player.y = groundY - player.height;
+  player.dy = 0;
+  player.isGrounded = true;
+  player.jumpsRemaining = 2;
+  player.scaleX = 1;
+  player.scaleY = 1;
+  player.squashTimer = 0;
+
+  // 空/星の初期状態も戻す
+  resetAudioSyncState();
+  initStars();
+  starAlpha = 0;
+  shooting = null;
+
+  // アクションボタンを「ゲームスタート」に戻す
+  updateJumpButton(JUMP_MODE.START);
+
+  applyMute();
+}
 
   
 function togglePause(){
