@@ -1,8 +1,11 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; media-src 'self';">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> 
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; media-src 'self'; object-src 'none'; base-uri 'self';">
 <meta name="referrer" content="strict-origin-when-cross-origin">
+  
 <link rel="preload" as="image" href="../assets/blueberry.svg">
 <link rel="preload" as="image" href="../assets/sunflower.svg">
 <link rel="preload" as="image" href="../assets/Donguri.svg">
@@ -22,9 +25,6 @@
 <link rel="preload" as="image" href="../assets/T4LMRR.png">
 
 
-  
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
 <title>むるだっしゅ！</title>
   
 <!-- 🌻 ファビコン（ひまわりSVG）※ベータから見て一個上の assets -->
@@ -186,6 +186,12 @@ text-shadow:
     <div class="flex items-center gap-3 shrink-0">
       <span id="highScore" class="text-xs text-gray-500 block">ハイスコア: 0</span>
 
+    <span id="bgmStatus" class="text-[10px] text-gray-400 block text-right">
+      BGM: デフォルト
+    </span>
+
+
+      
         <!-- 🔇 ミュートボタン追加 -->
       <button
         id="muteButton"
@@ -262,6 +268,36 @@ text-shadow:
     </div>
   </div>
 
+<!-- 🍂 どんぐり商店 オーバーレイ -->
+<div id="shopOverlay"
+     class="absolute inset-0 bg-black bg-opacity-85 rounded-lg text-white hidden z-50">
+  <div class="w-full h-full flex flex-col items-center justify-center px-4">
+    <div class="w-full max-w-[600px] max-h-[85%] bg-gray-900/80 rounded-lg p-4 overflow-y-auto">
+      <h2 class="text-2xl font-bold mb-2 text-center">どんぐり商店</h2>
+
+      <p class="text-center text-sm text-gray-300 mb-4">
+        累計どんぐり：<span id="shopAcornTotal" class="font-mono text-base">0</span>
+      </p>
+
+      <div id="shopContent" class="space-y-2 text-sm sm:text-base">
+        <!-- JSで埋める -->
+      </div>
+
+      <div class="mt-5 text-center">
+        <button id="closeShopButton"
+                class="px-6 py-2 bg-gray-700 hover:bg-gray-800 rounded-lg text-sm">
+          タイトルにもどる
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
 
   
   <!-- スタート -->
@@ -284,6 +320,14 @@ text-shadow:
   障害物をよけまくろう！
 </p>
 
+  <!-- 🍂 どんぐり商店（上段） -->
+<div class="mt-3 flex justify-center">
+  <button id="shopButton"
+    class="px-6 py-2 border border-amber-300 text-sm rounded-lg bg-amber-700/70 hover:bg-amber-700 transition-colors">
+    どんぐり商店
+  </button>
+</div>
+
 
     <!-- クレジット ＋ リセット（横並び） -->
     <div class="mt-3 flex flex-row flex-wrap gap-3 justify-center">
@@ -294,11 +338,9 @@ text-shadow:
   <button id="resetButton" class="px-5 py-2 border border-red-400 text-sm rounded-lg bg-red-600/80 hover:bg-red-700 transition-colors">
     ハイスコアリセット
   </button>
-</div>
+ </div> <!-- ← クレジット＋リセットの行の閉じ -->
 
-
-  </div>
-
+</div> <!-- #startScreen を閉じる -->
 
   <!-- ポーズ -->
   <div id="pauseOverlay" class="absolute inset-0 bg-black bg-opacity-50 flex-col justify-center items-center rounded-b-lg text-white p-8 text-center hidden">
@@ -600,6 +642,22 @@ text-shadow:
 
 </div>
 
+
+
+<!-- ロード中むる -->
+<div id="loadingOverlay"
+     class="fixed inset-0 bg-black/80 text-white hidden z-[60]">
+  <div class="w-full h-full flex items-center justify-center">
+    <div class="text-center">
+      <p class="text-2xl font-bold mb-2">ロード中むる</p>
+      <p class="text-xs text-gray-300">BGMを準備してるむる</p>
+    </div>
+  </div>
+</div>
+
+
+
+  
 <script>
 
 const SCORE_API_URL = 'https://script.google.com/macros/s/AKfycby2GHfn2Lq9iRqH45iOH8t1f9rM8e7Wm5AeUO92g8g35u7F7muzXokQoagjKaQrpg9ALw/exec';
@@ -647,6 +705,7 @@ async function sendScoreToServer(currentScore){
       }
 
       name = input.trim();
+      name = name.replace(/[\r\n\t]/g, ' ');  // ★追加：改行・タブ潰し
 
       // 何か入ってたらOK
       if (name) break;
@@ -808,6 +867,106 @@ console.log('累計どんぐり数:', totalAcorns);
 
 
   
+// ===== どんぐり商店（解放・BGM選択） =====
+// ★選択は「このページ開いてる間だけ」：リロードしたら必ずデフォルト
+let selectedBgmId = 'default';
+
+const BGM_META = {
+  default: { label: 'デフォルト', unlockedAt: 0 },
+  sougen:  { label: '草原を駆けるむるる', unlockedAt: 100, file: '../assets/BGM_SOUGEN.mp3' },
+  yoru:    { label: '夜の街を駆けるむるる', unlockedAt: 200, file: '../assets/BGM_YORU.mp3' }
+};
+
+function isBgmFeatureUnlocked(){
+  return (totalAcorns || 0) >= 5;
+}
+
+function getSelectedBgmId(){
+  return selectedBgmId;
+}
+
+function setSelectedBgmId(id){
+  selectedBgmId = id || 'default';
+  updateBgmStatusLabel();
+  renderShop();
+}
+
+
+// 「まだロードしてない」状態を作るために、ここで Audio を作らず遅延ロード
+let bgmSougenAudio = null;
+let bgmYoruAudio   = null;
+let bgmSougenBlobUrl = null;
+let bgmYoruBlobUrl   = null;
+
+const loadingOverlay = document.getElementById('loadingOverlay');
+const bgmStatusEl = document.getElementById('bgmStatus');
+
+function showLoadingOverlay(show){
+  if (!loadingOverlay) return;
+  if (show){
+    loadingOverlay.classList.remove('hidden');
+    loadingOverlay.classList.add('flex');
+  } else {
+    loadingOverlay.classList.add('hidden');
+    loadingOverlay.classList.remove('flex');
+  }
+}
+
+function updateBgmStatusLabel(){
+  if (!bgmStatusEl) return;
+  const id = getSelectedBgmId();
+  const label = (BGM_META[id]?.label) || 'デフォルト';
+  bgmStatusEl.textContent = `BGM: ${label}`;
+}
+updateBgmStatusLabel();
+
+function waitCanPlay(a){
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const ok = () => { if(done) return; done=true; cleanup(); resolve(); };
+    const ng = (e) => { if(done) return; done=true; cleanup(); reject(e); };
+
+    const cleanup = () => {
+      a.removeEventListener('canplaythrough', ok);
+      a.removeEventListener('canplay', ok);
+      a.removeEventListener('error', ng);
+      clearTimeout(t);
+    };
+
+    // 保険（環境でイベント飛ばん時あるから）
+    const t = setTimeout(ok, 8000);
+
+    a.addEventListener('canplaythrough', ok, { once:true });
+    a.addEventListener('canplay', ok, { once:true });
+    a.addEventListener('error', ng, { once:true });
+
+    try { a.load(); } catch (_) { ok(); }
+  });
+}
+
+async function preloadSelectableBgm(id){
+  if (id === 'default') return;
+
+  const meta = BGM_META[id];
+  if (!meta?.file) return;
+
+  // すでにロード済みなら何もしない
+  if (id === 'sougen' && bgmSougenAudio) return;
+  if (id === 'yoru'   && bgmYoruAudio)   return;
+
+  const a = new Audio(meta.file);   // ★ blobにしない！
+  a.loop = true;
+  a.volume = 0.5;
+  a.preload = 'auto';
+
+  await waitCanPlay(a);
+
+  if (id === 'sougen') bgmSougenAudio = a;
+  if (id === 'yoru')   bgmYoruAudio   = a;
+}
+
+
+  
   
 /* ===== 基本セットアップ ===== */
 const canvas = document.getElementById('gameCanvas');
@@ -818,6 +977,18 @@ const gameOverScreen = document.getElementById('gameOverScreen');
 
 const scoreLabel = document.getElementById('scoreLabel');
 
+
+const shopButton = document.getElementById('shopButton');
+const shopOverlay = document.getElementById('shopOverlay');
+const closeShopButton = document.getElementById('closeShopButton');
+const shopContent = document.getElementById('shopContent');
+const shopAcornTotalEl = document.getElementById('shopAcornTotal');
+
+
+
+
+
+  
 // ★ スマホ用：ポーズ中にスコア/ハイスコア連打でワープ
 let warpTapCount300 = 0;
 let warpTapCount500 = 0;
@@ -1129,7 +1300,9 @@ const JUMP_MODE = {
   PLAY: 'play',      // プレイ中
   RESTART: 'restart',  // ゲームオーバー後
   CREDITS: 'credits',   // クレジット表示中（ジャンプボタン＝とじる）
-  RANKING: 'ranking'   // ランキング表示中（とじる）
+  RANKING: 'ranking',   // ランキング表示中（とじる）
+  SHOP: 'shop'
+
 };
 
 let jumpButtonMode = JUMP_MODE.START;
@@ -1176,6 +1349,13 @@ function updateJumpButton(mode){
       jumpButton.textContent = 'とじる';
       jumpButton.classList.add('bg-gray-700','hover:bg-gray-800');
       break;
+
+
+   case JUMP_MODE.SHOP:
+      jumpButton.textContent = 'とじる';
+      jumpButton.classList.add('bg-gray-700','hover:bg-gray-800');
+      break;
+
   }
 
 }
@@ -1317,24 +1497,54 @@ function applyMute() {
   if (bgmAudio) bgmAudio.muted = muted;
   if (bgm2Audio) bgm2Audio.muted = muted;
   if (creditsAudio) creditsAudio.muted = muted;
+
+  if (bgmSougenAudio) bgmSougenAudio.muted = muted;
+  if (bgmYoruAudio)   bgmYoruAudio.muted = muted;
 }
+
 
 function playPickup() {
   playSeBuffer('pick', 0.5);
 }
 
+function stopAllMainBgms(){
+  try { if (bgmAudio) { bgmAudio.pause(); bgmAudio.currentTime = 0; } } catch(_){}
+  try { if (bgmSougenAudio) { bgmSougenAudio.pause(); bgmSougenAudio.currentTime = 0; } } catch(_){}
+  try { if (bgmYoruAudio)   { bgmYoruAudio.pause(); bgmYoruAudio.currentTime = 0; } } catch(_){}
+}
+
+  function pauseAllMainBgms(){
+  try { if (bgmAudio) bgmAudio.pause(); } catch(_){}
+  try { if (bgmSougenAudio) bgmSougenAudio.pause(); } catch(_){}
+  try { if (bgmYoruAudio) bgmYoruAudio.pause(); } catch(_){}
+}
+
+
+function getSelectedMainAudio(){
+  const id = getSelectedBgmId();
+  if (id === 'sougen' && bgmSougenAudio) return bgmSougenAudio;
+  if (id === 'yoru'   && bgmYoruAudio)   return bgmYoruAudio;
+  return bgmAudio; // フォールバックはデフォルト
+}
+
 function playMainBgm() {
-  if (bgm2Audio) bgm2Audio.pause();
+  if (bgm2Audio) bgm2Audio.pause(); // 既存のハイスコアBGMは別枠のまま
+
+  stopAllMainBgms();
+
+  const a = getSelectedMainAudio();
   try {
-    if (bgmAudio && bgmAudio.paused) {
-      bgmAudio.currentTime = 0;
-      bgmAudio.play().catch(() => {});
+    if (a && a.paused) {
+      a.currentTime = 0;
+      a.play().catch(()=>{});
     }
   } catch (_) {}
 }
 
+
 function playHighScoreBgm() {
-  if (bgmAudio) bgmAudio.pause();
+  stopAllMainBgms(); // ★追加：草原/夜も止める
+
   try {
     if (bgm2Audio && bgm2Audio.paused) {
       bgm2Audio.currentTime = 0;
@@ -1342,6 +1552,7 @@ function playHighScoreBgm() {
     }
   } catch (_) {}
 }
+
 
 function startAudio() {
   bootAudioOnce();
@@ -1928,19 +2139,18 @@ function startHighScoreRun(){
     playSeBuffer('se', 0.5);
   } catch(e) { console.error(e); }
 
-  // いったん BGM1/BGM2 を止める
-  try{
-    if (bgmAudio){
-      bgmAudio.pause();
-      bgmAudio.currentTime = 0;
-      bgmAudio.volume = 0.5;
-    }
-    if (bgm2Audio){
-      bgm2Audio.pause();
-      bgm2Audio.currentTime = 0;
-      bgm2Audio.volume = 0.5;
-    }
-  }catch(_){}
+  // いったん「メインBGM（選択BGM含む）」を止める
+stopAllMainBgms();
+
+// ハイスコアBGMも念のため止めて頭出し
+try{
+  if (bgm2Audio){
+    bgm2Audio.pause();
+    bgm2Audio.currentTime = 0;
+    bgm2Audio.volume = 0.5;
+  }
+}catch(_){}
+
 
   // 既存のディレイタイマーがあればキャンセル
   if (highScoreBgmTimeoutId !== null){
@@ -2444,8 +2654,9 @@ function gameOver(){
       clearTimeout(highScoreBgmTimeoutId);
       highScoreBgmTimeoutId = null;
     }
-    if (bgmAudio) { bgmAudio.pause(); bgmAudio.currentTime = 0; }
-    if (bgm2Audio) { bgm2Audio.pause(); bgm2Audio.currentTime = 0; }
+    stopAllMainBgms();
+    try { if (bgm2Audio) { bgm2Audio.pause(); bgm2Audio.currentTime = 0; } } catch(_){}
+
   } catch(e) { console.error(e); }
 
 
@@ -2625,8 +2836,8 @@ function backToTitleFromGameOver(){
       clearTimeout(highScoreBgmTimeoutId);
       highScoreBgmTimeoutId = null;
     }
-    if (bgmAudio) { bgmAudio.pause(); bgmAudio.currentTime = 0; }
-    if (bgm2Audio) { bgm2Audio.pause(); bgm2Audio.currentTime = 0; }
+    stopAllMainBgms();
+    try { if (bgm2Audio) { bgm2Audio.pause(); bgm2Audio.currentTime = 0; } } catch(_){}
   } catch (_) {}
 
   // 状態を「タイトル待機」に戻す（プレイ開始はしない）
@@ -2704,14 +2915,20 @@ function togglePause(){
   if (isGameOver || !gameStarted) return;
   isPaused = !isPaused;
 
-  if (isPaused){
-    try{ bgmAudio.pause(); bgm2Audio.pause(); }catch(_){}
-    pauseOverlay.classList.remove('hidden'); pauseOverlay.classList.add('flex');
+ if (isPaused){
+    pauseAllMainBgms();           // ★追加：草原/夜も止まる
+    try{ bgm2Audio.pause(); }catch(_){}
+    pauseOverlay.classList.remove('hidden');
+    pauseOverlay.classList.add('flex');
   } else {
-    try{
-      if (isHighScoreRun){ if (bgm2Audio.paused) bgm2Audio.play(); }
-      else { if (bgmAudio.paused) bgmAudio.play(); }
-    }catch(_){}
+      try{
+        if (isHighScoreRun){
+          if (bgm2Audio.paused) bgm2Audio.play();
+        } else {
+          const a = getSelectedMainAudio();
+          if (a && a.paused) a.play();
+        }
+      }catch(_){}
     pauseOverlay.classList.add('hidden'); pauseOverlay.classList.remove('flex');
     lastTime = performance.now();
     requestAnimationFrame(gameLoop);
@@ -2740,7 +2957,8 @@ function openCredits(e){
   void creditsScroll.offsetWidth;
   creditsScroll.classList.add('credits-scroll');
 
-  try{ bgmAudio.pause(); bgm2Audio.pause(); }catch(_){}
+  pauseAllMainBgms();             // ★置き換え
+  try{ bgm2Audio.pause(); }catch(_){}
   playCreditsBgm();
 
   // ★ 一定時間後に「Thank You」表示
@@ -2778,14 +2996,16 @@ function closeCredits(e){
   }
 
   if (gameStarted && !isGameOver && !isPaused){
-    try{
-      if (isHighScoreRun){
-        if (bgm2Audio.paused) bgm2Audio.play();
-      } else {
-        if (bgmAudio.paused) bgmAudio.play();
-      }
-    }catch(_){}
-  }
+  try{
+    if (isHighScoreRun){
+      if (bgm2Audio.paused) bgm2Audio.play();
+    } else {
+      const a = getSelectedMainAudio();
+      if (a && a.paused) a.play();
+    }
+  }catch(_){}
+}
+
 }
 
 
@@ -2935,6 +3155,12 @@ window.addEventListener('keyup', e=>{
 jumpButton.addEventListener('pointerdown', e=>{
   e.preventDefault();
 
+  if (jumpButtonMode === JUMP_MODE.SHOP){
+    closeShop();
+    return;
+  }
+
+  
   // ★ ランキング表示中：アクションボタンで閉じる
   if (jumpButtonMode === JUMP_MODE.RANKING){
     closeRankingOverlay();
@@ -2988,6 +3214,144 @@ pauseButton.addEventListener('pointerdown', e => {
 });
 
 
+function openShop(e){
+  if (e) e.preventDefault();
+  if (!shopOverlay) return;
+
+  renderShop();
+  shopOverlay.classList.remove('hidden');
+  shopOverlay.classList.add('flex');
+
+  updateJumpButton(JUMP_MODE.SHOP);
+}
+
+async function closeShop(e){
+  if (e) e.preventDefault();
+
+  // ここで「選択BGMが未ロードならロード」してから閉じる
+  const id = getSelectedBgmId();
+  const needLoad = (id !== 'default') && (
+    (id === 'sougen' && !bgmSougenAudio) ||
+    (id === 'yoru'   && !bgmYoruAudio)
+  );
+
+  if (needLoad){
+    showLoadingOverlay(true);
+    try{
+      await preloadSelectableBgm(id);
+    }catch(err){
+      console.error(err);
+      alert('BGMのロード失敗したむる… いったんデフォルトに戻すむる');
+      setSelectedBgmId('default');
+    } finally {
+      showLoadingOverlay(false);
+    }
+  }
+
+  if (!shopOverlay) return;
+  shopOverlay.classList.add('hidden');
+  shopOverlay.classList.remove('flex');
+
+  // タイトル中なので START に戻す
+  if (!gameStarted) updateJumpButton(JUMP_MODE.START);
+  else updateJumpButton(JUMP_MODE.PLAY);
+}
+
+function renderShop(){
+  if (!shopContent) return;
+
+  const ac = totalAcorns || 0;
+  if (shopAcornTotalEl) shopAcornTotalEl.textContent = String(ac);
+
+  const featureUnlocked = isBgmFeatureUnlocked();
+  const selected = getSelectedBgmId();
+
+  const row = (html) => `<div class="p-3 rounded-lg bg-gray-800/70 border border-gray-700">${html}</div>`;
+  const lockedTag = `<span class="ml-2 text-xs text-gray-400">（未解放）</span>`;
+  const readyTag  = `<span class="ml-2 text-xs text-gray-300">（解放済み）</span>`;
+
+  // 5個：BGM変更機能
+  const featureRow = row(`
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="font-bold">BGM変更機能 追加</div>
+        <div class="text-xs text-gray-300">必要どんぐり：5</div>
+      </div>
+      <div class="text-sm ${featureUnlocked ? 'text-green-300' : 'text-gray-400'}">
+        ${featureUnlocked ? '解放' : '未解放'}
+      </div>
+    </div>
+  `);
+
+  // BGM選択ボタン（解放＆機能ONの時だけ押せる）
+  function bgmItem(id){
+    const meta = BGM_META[id];
+    const unlocked = ac >= meta.unlockedAt;
+    const enabled = featureUnlocked && unlocked;
+
+    const isSelected = (selected === id);
+    const label = isSelected ? `${meta.label}（選択中！）` : `${meta.label} 解放`;
+
+    const btnClass = enabled
+      ? (isSelected
+        ? 'bg-emerald-700 hover:bg-emerald-800 border-emerald-300'
+        : 'bg-gray-700 hover:bg-gray-800 border-gray-500')
+      : 'bg-gray-900/60 border-gray-700 opacity-60 cursor-not-allowed';
+
+    const sub = enabled ? '' : `必要どんぐり：${meta.unlockedAt}${lockedTag}`;
+
+    return row(`
+      <button class="w-full text-left px-4 py-3 rounded-lg border ${btnClass}"
+        data-bgm="${id}" ${enabled ? '' : 'disabled'}>
+        <div class="font-bold">${label}</div>
+        <div class="text-xs text-gray-300 mt-1">${sub}</div>
+      </button>
+    `);
+  }
+
+  const sougenRow = bgmItem('sougen');
+  const yoruRow   = bgmItem('yoru');
+
+  const comingRow = (need) => row(`
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="font-bold">準備中</div>
+        <div class="text-xs text-gray-300">必要どんぐり：${need}</div>
+      </div>
+      <div class="text-sm text-gray-400">準備中</div>
+    </div>
+  `);
+
+  shopContent.innerHTML = [
+    featureRow,
+    `<p class="text-xs text-gray-400 text-center mt-2 mb-2">※BGM選択は「機能解放（5個）」後に使えるむる</p>`,
+    sougenRow,
+    yoruRow,
+    comingRow(500),
+    comingRow(1000),
+  ].join('\n');
+
+  // ボタンのクリック処理（トグル）
+  shopContent.querySelectorAll('button[data-bgm]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-bgm');
+      if (!id) return;
+
+      // もう一回押したら解除（デフォルトへ）
+      if (getSelectedBgmId() === id) setSelectedBgmId('default');
+      else setSelectedBgmId(id);
+    });
+  });
+}
+
+
+if (shopButton) shopButton.addEventListener('click', openShop);
+if (closeShopButton) closeShopButton.addEventListener('click', closeShop);
+
+
+
+  
+
 function handleGameStart(e){
 
   
@@ -3013,6 +3377,7 @@ function handleGameStart(e){
   nextSpawnInterval = minSpawnIntervalBase + Math.random()*(maxSpawnIntervalBase - minSpawnIntervalBase);
   spawnTimer = 0;
 }
+
 
   
 
