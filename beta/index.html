@@ -1899,14 +1899,28 @@ const GROUND_THEMES = {
     grain:  [55, 140, 70],
     pebble: [40, 110, 55],
     streak: [30, 95, 45],
-  }
+  },
+    concrete: {
+    base: '#6E727A',      // コンクリのベース
+    grain:  [140, 142, 148], // 砂っぽい粒
+    pebble: [120, 123, 130], // 小石っぽい点
+    streak: [95,  98,  104], // うっすら擦れ
+  },
 };
 
 // 今どっちの地面か（初期は選択BGMから決める）
-let groundThemeKey = (getSelectedBgmId() === 'sougen') ? 'grass' : 'dirt';
+let groundThemeKey =
+  (getSelectedBgmId() === 'sougen') ? 'grass' :
+  (getSelectedBgmId() === 'yoru')   ? 'concrete' :
+  'dirt';
+
 
 function applyGroundThemeFromBgm(){
-  const nextKey = (getSelectedBgmId() === 'sougen') ? 'grass' : 'dirt';
+  const nextKey =
+  (getSelectedBgmId() === 'sougen') ? 'grass' :
+  (getSelectedBgmId() === 'yoru')   ? 'concrete' :
+  'dirt';
+
   if (nextKey === groundThemeKey) return;
   groundThemeKey = nextKey;
 
@@ -1922,10 +1936,28 @@ const groundY = gameHeight - 50;
 
 // ===== 夜の街（ビル群） =====
 let cityBuildings = [];
+let cityInited = false; // ★追加（setSelectedBgmIdで使ってるなら保険にもなる）
+
+function makeWindowPattern(w, h){
+  const wx = 8, wy = 10;
+  const gapX = 8, gapY = 10;
+
+  const cols = Math.max(1, Math.floor((w - 10) / (wx + gapX)));
+  const rows = Math.max(1, Math.floor((h - 18) / (wy + gapY)));
+
+  // ★点灯してる窓だけを [r,c] で持つ（これで点滅しない）
+  const lit = [];
+  for (let r=0; r<rows; r++){
+    for (let c=0; c<cols; c++){
+      if (Math.random() < 0.22) lit.push([r, c]);
+    }
+  }
+
+  return { wx, wy, gapX, gapY, cols, rows, lit };
+}
 
 function initCity(){
   cityBuildings = [];
-  // 遠景なので数は控えめ。足りなければ増やしてOK
   const COUNT = 18;
 
   for (let i = 0; i < COUNT; i++){
@@ -1936,16 +1968,18 @@ function initCity(){
       x: Math.random() * gameWidth,
       w,
       h,
-      // 0:遠い / 1:ちょい近い（視差）
       layer: Math.random() < 0.6 ? 0 : 1,
-      // 窓の光り具合（ビルごとに違う感じ）
-      light: 0.25 + Math.random()*0.35
+      light: 0.25 + Math.random()*0.35,
+
+      // ★追加：窓の固定パターン
+      win: makeWindowPattern(w, h)
     });
   }
 
-  // x順にしておくと見た目が安定しやすい（好み）
   cityBuildings.sort((a,b)=>a.x-b.x);
+  cityInited = true; // ★追加
 }
+
 
 // 空のフェーズで薄くする（朝は消したいなら 0.0 にする）
 function phaseMulForCity(){
@@ -1970,33 +2004,24 @@ function drawCity(df){
       b.x = gameWidth + 50 + Math.random()*120;
     }
 
-    const baseY = groundY; // ← ここが地面にピッタリ接する（隙間なし）
+    const baseY = groundY;
 
-    // ビル本体（うっすら）
+    // ビル本体
     ctx.fillStyle = `rgba(20, 25, 35, ${0.55 * mul})`;
     ctx.fillRect(b.x, baseY - b.h, b.w, b.h);
 
-    // 窓（点々と光る）
-    const wx = 8, wy = 10;         // 窓サイズ感
-    const gapX = 8, gapY = 10;     // 間隔
-    const cols = Math.floor((b.w - 10) / (wx + gapX));
-    const rows = Math.floor((b.h - 18) / (wy + gapY));
-
-    // 窓の色（夜景っぽく）
+    // 窓（固定パターン）
+    const W = b.win;
     ctx.fillStyle = `rgba(255, 220, 120, ${b.light * mul})`;
 
-    for (let r=0; r<rows; r++){
-      for (let c=0; c<cols; c++){
-        // ランダムで点灯（多すぎると派手なので控えめ）
-        if (Math.random() < 0.22){
-          const px = b.x + 6 + c*(wx + gapX);
-          const py = baseY - b.h + 10 + r*(wy + gapY);
-          ctx.fillRect(px, py, wx, wy);
-        }
-      }
+    for (const [r, c] of W.lit){
+      const px = b.x + 6 + c*(W.wx + W.gapX);
+      const py = baseY - b.h + 10 + r*(W.wy + W.gapY);
+      ctx.fillRect(px, py, W.wx, W.wy);
     }
   }
 }
+
 
 // 1回だけ初期化
 initCity();
@@ -3362,7 +3387,11 @@ drawStars(df);
 drawClouds(df);
 // ★BGMによって背景演出
 if (getSelectedBgmId() === 'sougen') drawMountains(df); // 既にあるならそのまま
-if (getSelectedBgmId() === 'yoru')   drawCity(df);      // ★追加：夜の街
+if (getSelectedBgmId() === 'yoru'){
+  if (!cityInited) initCity(); // ★保険
+  drawCity(df);
+}
+
 
 
   // 地面＋流れる砂利（障害物と同速で流す）
