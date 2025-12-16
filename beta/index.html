@@ -894,7 +894,11 @@ function setSelectedBgmId(id){
   selectedBgmId = id || 'default';
   updateBgmStatusLabel();
   renderShop();
+
+  // ★追加：地面テーマもBGMに合わせて更新
+  applyGroundThemeFromBgm();
 }
+
 
 
 // 「まだロードしてない」状態を作るために、ここで Audio を作らず遅延ロード
@@ -1873,12 +1877,45 @@ function drawStars(df){
 }
 
 
+// ===== 地面テーマ（BGMで切替） =====
+const GROUND_THEMES = {
+  dirt: {
+    base: '#8B5A2B',
+    grain:  [139, 90, 43],
+    pebble: [133, 84, 40],
+    streak: [130, 82, 38],
+  },
+  grass: {
+    base: '#2F7D3B',     // 草原っぽい緑
+    grain:  [55, 140, 70],
+    pebble: [40, 110, 55],
+    streak: [30, 95, 45],
+  }
+};
+
+// 今どっちの地面か（初期は選択BGMから決める）
+let groundThemeKey = (getSelectedBgmId() === 'sougen') ? 'grass' : 'dirt';
+
+function applyGroundThemeFromBgm(){
+  const nextKey = (getSelectedBgmId() === 'sougen') ? 'grass' : 'dirt';
+  if (nextKey === groundThemeKey) return;
+  groundThemeKey = nextKey;
+
+  // 粒/小石の色も切り替えたいから作り直す
+  initGroundDetails();
+}
 
 
   
 /* ===== 地面（色味調整＋速度一致） ===== */
 const groundY = gameHeight - 50;
-function drawGround(){ ctx.fillStyle='#8B5A2B'; ctx.fillRect(0,groundY,gameWidth,50); }
+function drawGround(){
+  const t = GROUND_THEMES[groundThemeKey] || GROUND_THEMES.dirt;
+  ctx.fillStyle = t.base;
+  ctx.fillRect(0, groundY, gameWidth, 50);
+}
+
+
 initStars(); 
 
 let groundGrains = [];   // 細かい砂
@@ -1886,37 +1923,43 @@ let groundPebbles = [];  // 小石
 let groundStreaks = [];  // 地表の横線
 
 function initGroundDetails(){
+  const t = GROUND_THEMES[groundThemeKey] || GROUND_THEMES.dirt;
+
   const grainsN  = Math.floor(gameWidth * 0.38);
   const pebblesN = Math.floor(gameWidth * 0.08);
   const streaksN = Math.floor(gameWidth * 0.05);
 
-  // 床色寄せ（#8B5A2B 付近）
+  const jitter = (v, j) => v + Math.floor((Math.random()*2 - 1) * j);
+
   groundGrains = Array.from({length:grainsN},()=>({
     x: Math.random()*gameWidth,
     y: groundY + 8 + Math.random()*38,
     r: 0.8 + Math.random()*1.4,
-    shadeR: 139 + Math.floor(Math.random()*8),   // 139〜146
-    shadeG: 90  + Math.floor(Math.random()*6),   // 90〜95
-    shadeB: 43  + Math.floor(Math.random()*6)    // 43〜49
+    shadeR: jitter(t.grain[0], 8),
+    shadeG: jitter(t.grain[1], 8),
+    shadeB: jitter(t.grain[2], 8)
   }));
+
   groundPebbles = Array.from({length:pebblesN},()=>({
     x: Math.random()*gameWidth,
     y: groundY + 10 + Math.random()*36,
     w: 2 + Math.random()*3,
     h: 1 + Math.random()*2,
-    shadeR: 133 + Math.floor(Math.random()*10),  // 少し暗め
-    shadeG: 84  + Math.floor(Math.random()*10),
-    shadeB: 40  + Math.floor(Math.random()*10)
+    shadeR: jitter(t.pebble[0], 10),
+    shadeG: jitter(t.pebble[1], 10),
+    shadeB: jitter(t.pebble[2], 10)
   }));
+
   groundStreaks = Array.from({length:streaksN},()=>({
     x: Math.random()*gameWidth,
     y: groundY + 6 + Math.random()*10,
     len: 8 + Math.random()*18,
-    shadeR: 130 + Math.floor(Math.random()*8),
-    shadeG: 82  + Math.floor(Math.random()*8),
-    shadeB: 38  + Math.floor(Math.random()*8)
+    shadeR: jitter(t.streak[0], 10),
+    shadeG: jitter(t.streak[1], 10),
+    shadeB: jitter(t.streak[2], 10)
   }));
 }
+
 initGroundDetails();
 
 /* ★ 地面スクロール速度＝障害物（= gameSpeed）に完全一致させる */
@@ -2065,7 +2108,7 @@ function nextAcornIntervalMs(){ return 5000 + Math.random()*2000; } // 5〜7秒�
 let acornNextIntervalMs = nextAcornIntervalMs();
 
 function maybeSpawnAcorn(){
-  if(Math.random() >= 0.30) return; // 30%で出す
+  if(Math.random() >= 0.45) return; // どんぐり発生率
   const x = gameWidth + 20;         // ★ 未定義バグ修正
   const size = 56 + Math.floor(Math.random()*12); // ちょい大きめ
   if(Math.random()<0.5){
