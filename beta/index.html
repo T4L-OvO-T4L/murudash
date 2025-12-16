@@ -1909,12 +1909,111 @@ function applyGroundThemeFromBgm(){
   
 /* ===== 地面（色味調整＋速度一致） ===== */
 const groundY = gameHeight - 50;
+
+
+/* ===== 山並み（草原BGM専用：遠景パララックス） ===== */
+let mountains = [];
+let mountainAlpha = 0;        // 0〜1（フェード用）
+const MOUNTAIN_LERP = 0.04;   // フェード速度（大きいほど速い）
+
+function initMountains(){
+  const count = 7;          // 768幅ならこれくらいで十分
+  mountains = [];
+
+  let x = -200;
+  for (let i = 0; i < count; i++){
+    const w = 220 + Math.random()*260;  // 山の横幅
+    const h = 60  + Math.random()*90;   // 山の高さ
+
+    mountains.push({
+      x, w, h,
+      p1: 0.35 + Math.random()*0.10,    // 1つめのピーク位置
+      p2: 0.65 + Math.random()*0.10,    // 2つめのピーク位置
+      h2: 0.72 + Math.random()*0.16     // 2つめピークの高さ比
+    });
+
+    x += w * (0.75 + Math.random()*0.25);
+  }
+}
+
+function mountainColor(){
+  // 空のテーマに合わせてうっすら色味だけ変える（くっきりさせない）
+  if (phaseName === 'night')   return 'rgb(45,55,75)';
+  if (phaseName === 'evening') return 'rgb(120,95,85)';
+  return 'rgb(85,110,125)'; // morning/day
+}
+
+function drawMountains(df){
+  // 草原BGMのときだけ出す（フェード付き）
+  const target = (getSelectedBgmId() === 'sougen') ? 1 : 0;
+  mountainAlpha += (target - mountainAlpha) * (MOUNTAIN_LERP * df);
+  if (mountainAlpha <= 0.01) return;
+
+  const baseY = groundY - 6;
+
+  // 遠景だからめっちゃ遅く（ゲーム速度にも少しだけ連動）
+  const speed = (gameSpeed * 0.18 + 0.3) * df;
+
+  ctx.save();
+  ctx.fillStyle = mountainColor();
+
+  // うっすら本体
+  ctx.globalAlpha = 0.18 * mountainAlpha;
+
+  for (const m of mountains){
+    m.x -= speed;
+
+    // 左に抜けたら右に回す
+    if (m.x + m.w < -260){
+      const rightMost = Math.max(...mountains.map(mm => mm.x + mm.w));
+      m.x = rightMost + (m.w * (0.55 + Math.random()*0.35));
+      m.w = 220 + Math.random()*260;
+      m.h = 60  + Math.random()*90;
+      m.p1 = 0.35 + Math.random()*0.10;
+      m.p2 = 0.65 + Math.random()*0.10;
+      m.h2 = 0.72 + Math.random()*0.16;
+    }
+
+    const x0 = m.x;
+    const x1 = m.x + m.w;
+    const y0 = baseY;
+    const yPeak1 = baseY - m.h;
+    const yPeak2 = baseY - (m.h * m.h2);
+
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x0 + m.w * m.p1, yPeak1);
+    ctx.lineTo(x0 + m.w * m.p2, yPeak2);
+    ctx.lineTo(x1, y0);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // ぼかしっぽく見せるための薄い重ね（擬似）
+  ctx.globalAlpha = 0.08 * mountainAlpha;
+  for (const m of mountains){
+    const base2 = baseY + 7;
+    ctx.beginPath();
+    ctx.moveTo(m.x, base2);
+    ctx.lineTo(m.x + m.w * m.p1, base2 - m.h + 12);
+    ctx.lineTo(m.x + m.w * m.p2, base2 - (m.h * m.h2) + 12);
+    ctx.lineTo(m.x + m.w, base2);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+
+  
 function drawGround(){
   const t = GROUND_THEMES[groundThemeKey] || GROUND_THEMES.dirt;
   ctx.fillStyle = t.base;
   ctx.fillRect(0, groundY, gameWidth, 50);
 }
 
+initMountains();
 
 initStars(); 
 
@@ -3163,9 +3262,11 @@ function gameLoop(ts){
 
   // 背景＆雲
   ctx.clearRect(0,0,gameWidth,gameHeight);
-  drawSky(df); 
-  drawStars(df); 
-  drawClouds(df);
+drawSky(df); 
+drawStars(df); 
+drawMountains(df);   // ★追加：草原だけ遠景の山
+drawClouds(df);
+
 
   // 地面＋流れる砂利（障害物と同速で流す）
   drawGround(); drawGroundDetails(df);
@@ -3228,10 +3329,68 @@ function gameLoop(ts){
   frame++; requestAnimationFrame(gameLoop);
 }
 
+function handleActionButtonDown(){
+  // SHOP中：とじる
+  if (jumpButtonMode === JUMP_MODE.SHOP){
+    closeShop();
+    return;
+  }
+
+  // ランキング中：とじる
+  if (jumpButtonMode === JUMP_MODE.RANKING){
+    closeRankingOverlay();
+    return;
+  }
+
+  // クレジット中：とじる
+  if (jumpButtonMode === JUMP_MODE.CREDITS){
+    closeCredits();
+    return;
+  }
+
+  // ゲームオーバー中：リスタート（クールタイム尊重）
+  if (isGameOver){
+    if (!canRestart) return;
+    restartGame();
+    return;
+  }
+
+  // タイトル中：スタート
+  if (!gameStarted){
+    handleGameStart();
+    return;
+  }
+
+  // ポーズ中：今の仕様どおり（無敵デバッグ用トリガー）
+  if (isPaused){
+    if (DEBUG_OPTIONS.invincibleMode){
+      debugTapCount++;
+      if (debugTapCount >= DEBUG_TAPS_TO_ENABLE){
+        enableDebugMode();
+        resetDebugTapCounter();
+      }
+    }
+    return;
+  }
+
+  // 通常プレイ中：ジャンプ
+  playerJump();
+}
+
+
+
+  
 /* ===== 入力 ===== */
 window.addEventListener('keydown', e=>{
   if (e.repeat) return;
 
+  // ★ PC：スペースキーは「下のアクションボタン」と同じ
+  if (e.code === 'Space'){
+    e.preventDefault();      // スクロール/ボタン押下などの既定動作を殺す
+    handleActionButtonDown();
+    return;
+  }
+  
   // ★ ポーズ中の挙動
   if (isPaused){
     // ① 無敵モードトリガー（デバッグ有効のときだけ）
@@ -3277,56 +3436,9 @@ window.addEventListener('keyup', e=>{
 
 jumpButton.addEventListener('pointerdown', e=>{
   e.preventDefault();
-
-  if (jumpButtonMode === JUMP_MODE.SHOP){
-    closeShop();
-    return;
-  }
-
-  
-  // ★ ランキング表示中：アクションボタンで閉じる
-  if (jumpButtonMode === JUMP_MODE.RANKING){
-    closeRankingOverlay();
-    return;
-  }
-  // ★ クレジット表示中：ジャンプボタン＝「とじる」
-  if (jumpButtonMode === JUMP_MODE.CREDITS){
-    closeCredits();
-    return;
-  }
-
-  // ★ ゲームオーバー中ならリスタート
-  if (isGameOver) {
-
-    // まだクールタイム中 → 何もしない（誤タップ防止）
-    if (!canRestart) return;
-
-    restartGame();
-    return;
-  }
-
-  // まだゲームが始まっていない＝タイトル画面中なら「スタートボタン」として動く
-  if (!gameStarted) {
-    handleGameStart();  // e なしで呼んでOKなようにしてある
-    return;
-  }
-
-  // ポーズ中：無敵モードトリガー（有効なときだけ）
-  if (isPaused){
-    if (DEBUG_OPTIONS.invincibleMode){
-      debugTapCount++;
-      if (debugTapCount >= DEBUG_TAPS_TO_ENABLE){
-        enableDebugMode();
-        resetDebugTapCounter();
-      }
-    }
-    return;
-  }
-
-
-  // 通常プレイ中はジャンプ
-  playerJump();
+  handleActionButtonDown();
 });
+
 
 
 
@@ -3414,7 +3526,7 @@ function renderShop(){
       <button class="w-full text-left px-4 py-3 rounded-lg border ${btnClass}"
         data-bgm="${id}" ${unlocked ? '' : 'disabled'}>
         <div class="flex items-center justify-between">
-          <div class="font-bold">${meta.label}</div>
+          <div class="font-bold">♪BGM：${meta.label}</div>
           <div class="text-xs ${statusClass}">${statusText}</div>
         </div>
         <div class="text-xs text-gray-300 mt-1">${sub}</div>
