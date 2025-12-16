@@ -880,9 +880,10 @@ let selectedBgmId = 'default';
 
 const BGM_META = {
   default: { label: 'デフォルト', unlockedAt: 0 },
-  sougen:  { label: '草原を駆けるむるる', unlockedAt: 100, file: '../assets/BGM_SOUGEN.mp3' },
-  yoru:    { label: '夜の街を駆けるむるる', unlockedAt: 200, file: '../assets/BGM_YORU.mp3' }
+  sougen:  { label: '草原を駆けるむるる', unlockedAt: 100, file: '../assets/BGM_SOUGEN.mp3', volume: 0.6 },
+  yoru:    { label: '夜の街を駆けるむるる', unlockedAt: 200, file: '../assets/BGM_YORU.mp3',   volume: 0.5 }
 };
+
 
 
 function getSelectedBgmId(){
@@ -899,8 +900,7 @@ function setSelectedBgmId(id){
 // 「まだロードしてない」状態を作るために、ここで Audio を作らず遅延ロード
 let bgmSougenAudio = null;
 let bgmYoruAudio   = null;
-let bgmSougenBlobUrl = null;
-let bgmYoruBlobUrl   = null;
+
 
 const loadingOverlay = document.getElementById('loadingOverlay');
 const bgmStatusEl = document.getElementById('bgmStatus');
@@ -960,7 +960,7 @@ async function preloadSelectableBgm(id){
 
   const a = new Audio(meta.file);   // ★ blobにしない！
   a.loop = true;
-  a.volume = 0.5;
+  a.volume = (meta.volume ?? 0.5);
   a.preload = 'auto';
 
   await waitCanPlay(a);
@@ -1616,6 +1616,23 @@ function startAudio() {
   applyMute();
 }
 
+function ensureBgmPlaying() {
+  bootAudioOnce(); // iOS対策も込みで起こす
+  applyMute();
+
+  try {
+    if (isHighScoreRun) {
+      if (bgm2Audio && bgm2Audio.paused) bgm2Audio.play().catch(() => {});
+    } else {
+      const a = getSelectedMainAudio();
+      if (a && a.paused) a.play().catch(() => {});
+    }
+  } catch (_) {}
+}
+  
+
+
+  
 function playCreditsBgm() {
   try { creditsAudio.currentTime = 0; creditsAudio.play(); } catch (_) {}
 }
@@ -1678,33 +1695,39 @@ let skyEveningTriggered = false;
 function resetAudioSyncState(){
   skyLoopIndex        = 0;
   skyEveningTriggered = false;
-  setBackgroundTheme('morning');
+
+  // ★Yoru選択なら夜から、それ以外は朝から
+  const startNight = (getSelectedBgmId() === 'yoru');
+  setBackgroundTheme(startNight ? 'night' : 'morning');
 }
+
 
 // 経過時間（timeElapsed）から「BGM のどのあたりか」を逆算して空を決める
 function updateSkyByTimeline(){
   if (!gameStarted || isPaused || isGameOver) return;
 
-  const tSec = timeElapsed / 1000;           // 全体の経過秒数
-  const loopIndex = Math.floor(tSec / TRACK_LENGTH_S); // 何周目か
-  const localSec  = tSec % TRACK_LENGTH_S;   // その周の何秒目か
+  const tSec = timeElapsed / 1000;
+  const loopIndex = Math.floor(tSec / TRACK_LENGTH_S);
+  const localSec  = tSec % TRACK_LENGTH_S;
 
-  // ★ ループが切り替わった瞬間
+  // ★Yoruならトグルの基準を反転（0周目=夜）
+  const startOffset = (getSelectedBgmId() === 'yoru') ? 1 : 0;
+
   if (loopIndex !== skyLoopIndex){
     skyLoopIndex        = loopIndex;
     skyEveningTriggered = false;
 
-    // ループ毎に 朝 ↔ 夜 をトグル
-    // 0周目: 朝, 1周目: 夜, 2周目: 朝, 3周目: 夜, ...
-    setBackgroundTheme((skyLoopIndex % 2 === 1) ? 'night' : 'morning');
+    // 0周目: 朝(通常) / 夜(Yoru) になる
+    const isNightBase = ((skyLoopIndex + startOffset) % 2 === 1);
+    setBackgroundTheme(isNightBase ? 'night' : 'morning');
   }
 
-  // ★ 各ループの 96秒地点で一度だけ「夕焼け」にする
   if (!skyEveningTriggered && localSec >= EVENING_MARK_S){
     setBackgroundTheme('evening');
     skyEveningTriggered = true;
   }
 }
+
 
 
 
@@ -2330,8 +2353,8 @@ function updatePlayer(d) {
 
 function playerJump() {
   if (isGameOver || isPaused || !gameStarted) return;
-  startAudio();
-
+  ensureBgmPlaying();
+  
   if (player.jumpsRemaining > 0) {
     player.dy = -player.jumpForce;
     player.isGrounded = false;
@@ -3070,8 +3093,10 @@ function closeCredits(e){
   
 
 // タイトル画面のボタン
-creditsButton.addEventListener('click', openCredits);
-creditsButton.addEventListener('touchstart', openCredits, { passive: false });
+if (creditsButton){
+  creditsButton.addEventListener('pointerdown', openCredits, { passive: false });
+}
+
 
 
 
