@@ -3278,16 +3278,17 @@ function renderShop(){
 
   // 5個：BGM変更機能
   const featureRow = row(`
-    <div class="flex items-center justify-between">
-      <div>
-        <div class="font-bold">BGM変更機能 追加</div>
-        <div class="text-xs text-gray-300">必要どんぐり：5</div>
-      </div>
-      <div class="text-sm ${featureUnlocked ? 'text-green-300' : 'text-gray-400'}">
-        ${featureUnlocked ? '解放済み''解放済'''解放
-      </div>
+  <div class="flex items-center justify-between">
+    <div>
+      <div class="font-bold">BGM変更機能 追加</div>
+      <div class="text-xs text-gray-300">必要どんぐり：5</div>
     </div>
-  `);
+    <div class="text-sm ${featureUnlocked ? 'text-green-300' : 'text-gray-400'}">
+      ${featureUnlocked ? '解放済み' : '未解放'}
+    </div>
+  </div>
+`);
+
 
   // BGM選択ボタン（解放＆機能ONの時だけ押せる）
   function bgmItem(id){
