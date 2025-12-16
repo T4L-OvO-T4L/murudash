@@ -188,7 +188,7 @@ text-shadow:
   <div class="flex flex-col items-end leading-tight">
     <span id="highScore" class="text-xs text-gray-500 block">ハイスコア: 0</span>
     <span id="bgmStatus" class="text-[10px] text-gray-400 block text-right mt-0.5">
-      BGM: デフォルト
+      BGM：デフォルト
     </span>
   </div>
 
@@ -859,7 +859,8 @@ const HIGH_SCORE_KEY = 'muruHighScoreBETA';
 const DEBUG_OPTIONS = {
   invincibleMode: true,  // 無敵モード（20回タップでON）
   warpPC: true,          // ポーズ中の「3 / 5」キーでスコアワープ
-  warpMobile: true       // ポーズ中のスコア / ハイスコア連打ワープ
+  warpMobile: true,       // ポーズ中のスコア / ハイスコア連打ワープ
+  acornCheat: true,   // ★追加：どんぐり+50裏技
 };
 
 
@@ -883,9 +884,6 @@ const BGM_META = {
   yoru:    { label: '夜の街を駆けるむるる', unlockedAt: 200, file: '../assets/BGM_YORU.mp3' }
 };
 
-function isBgmFeatureUnlocked(){
-  return (totalAcorns || 0) >= 5;
-}
 
 function getSelectedBgmId(){
   return selectedBgmId;
@@ -922,7 +920,7 @@ function updateBgmStatusLabel(){
   if (!bgmStatusEl) return;
   const id = getSelectedBgmId();
   const label = (BGM_META[id]?.label) || 'デフォルト';
-  bgmStatusEl.textContent = `BGM: ${label}`;
+  bgmStatusEl.textContent = `BGM：${label}`;
 }
 updateBgmStatusLabel();
 
@@ -991,6 +989,57 @@ const shopContent = document.getElementById('shopContent');
 const shopAcornTotalEl = document.getElementById('shopAcornTotal');
 
 
+
+
+  
+// ===== DEBUG: どんぐり +50 隠し機能 =====
+const ACORN_CHEAT_AMOUNT = 50;
+const ACORN_CHEAT_TAPS = 7;          // 7連打
+const ACORN_CHEAT_WINDOW_MS = 1400;  // 1.4秒以内
+
+let acornCheatCount = 0;
+let acornCheatTimer = null;
+
+function addAcornsDebug(n){
+  totalAcorns = (totalAcorns || 0) + n;
+  localStorage.setItem(ACORN_TOTAL_KEY, String(totalAcorns));
+
+  // 表示更新（商店内の数字）
+  if (shopAcornTotalEl) shopAcornTotalEl.textContent = String(totalAcorns);
+
+  // 解放状態も変わるから再描画
+  renderShop();
+
+  // お好み：通知（デバッグ時だけ）
+  alert(`DEBUG：どんぐり +${n}（所持 ${totalAcorns}）`);
+}
+
+function installAcornCheat(){
+  if (!DEBUG_OPTIONS.acornCheat) return;
+  if (!shopAcornTotalEl) return;
+
+  shopAcornTotalEl.addEventListener('pointerdown', (e) => {
+    // ★商店を開いてる時だけ有効（誤爆防止）
+    if (!shopOverlay || shopOverlay.classList.contains('hidden')) return;
+
+    acornCheatCount++;
+    if (acornCheatTimer) clearTimeout(acornCheatTimer);
+    acornCheatTimer = setTimeout(() => {
+      acornCheatCount = 0;
+      acornCheatTimer = null;
+    }, ACORN_CHEAT_WINDOW_MS);
+
+    if (acornCheatCount >= ACORN_CHEAT_TAPS){
+      acornCheatCount = 0;
+      if (acornCheatTimer) clearTimeout(acornCheatTimer);
+      acornCheatTimer = null;
+
+      addAcornsDebug(ACORN_CHEAT_AMOUNT);
+    }
+  }, { passive: true });
+}
+
+installAcornCheat();
 
 
 
@@ -3269,58 +3318,41 @@ function renderShop(){
   const ac = totalAcorns || 0;
   if (shopAcornTotalEl) shopAcornTotalEl.textContent = String(ac);
 
-  const featureUnlocked = isBgmFeatureUnlocked();
   const selected = getSelectedBgmId();
 
   const row = (html) => `<div class="p-3 rounded-lg bg-gray-800/70 border border-gray-700">${html}</div>`;
-  const lockedTag = `<span class="ml-2 text-xs text-gray-400">（未解放）</span>`;
-  const readyTag  = `<span class="ml-2 text-xs text-gray-300">（解放済み）</span>`;
 
-  // 5個：BGM変更機能
-  const featureRow = row(`
-  <div class="flex items-center justify-between">
-    <div>
-      <div class="font-bold">BGM変更機能 追加</div>
-      <div class="text-xs text-gray-300">必要どんぐり：5</div>
-    </div>
-    <div class="text-sm ${featureUnlocked ? 'text-green-300' : 'text-gray-400'}">
-      ${featureUnlocked ? '解放済み' : '未解放'}
-    </div>
-  </div>
-`);
-
-
-  // BGM選択ボタン（解放＆機能ONの時だけ押せる）
   function bgmItem(id){
     const meta = BGM_META[id];
     const unlocked = ac >= meta.unlockedAt;
-    const enabled = featureUnlocked && unlocked;
-
     const isSelected = (selected === id);
-    const label = isSelected
-      ? `${meta.label}（選択中！）`
-      : `${meta.label}（${unlocked ? '解放済み' : '未解放'}）`;
 
+    const statusText  = unlocked ? (isSelected ? '選択中' : '解放済み') : '未解放';
+    const statusClass = unlocked
+      ? (isSelected ? 'text-emerald-300' : 'text-gray-300')
+      : 'text-gray-400';
 
-    const btnClass = enabled
+    const btnClass = unlocked
       ? (isSelected
         ? 'bg-emerald-700 hover:bg-emerald-800 border-emerald-300'
         : 'bg-gray-700 hover:bg-gray-800 border-gray-500')
       : 'bg-gray-900/60 border-gray-700 opacity-60 cursor-not-allowed';
 
-    const sub = enabled ? '' : `必要どんぐり：${meta.unlockedAt}${lockedTag}`;
+    const sub = unlocked
+      ? (isSelected ? 'もう一回押すとデフォルトに戻るむる' : '押すとこのBGMに切り替わるむる')
+      : `必要どんぐり：${meta.unlockedAt}`;
 
     return row(`
       <button class="w-full text-left px-4 py-3 rounded-lg border ${btnClass}"
-        data-bgm="${id}" ${enabled ? '' : 'disabled'}>
-        <div class="font-bold">${label}</div>
+        data-bgm="${id}" ${unlocked ? '' : 'disabled'}>
+        <div class="flex items-center justify-between">
+          <div class="font-bold">${meta.label}</div>
+          <div class="text-xs ${statusClass}">${statusText}</div>
+        </div>
         <div class="text-xs text-gray-300 mt-1">${sub}</div>
       </button>
     `);
   }
-
-  const sougenRow = bgmItem('sougen');
-  const yoruRow   = bgmItem('yoru');
 
   const comingRow = (need) => row(`
     <div class="flex items-center justify-between">
@@ -3333,26 +3365,24 @@ function renderShop(){
   `);
 
   shopContent.innerHTML = [
-    featureRow,
-    `<p class="text-xs text-gray-400 text-center mt-2 mb-2">※BGM選択は「機能解放（5個）」後に使えるむる</p>`,
-    sougenRow,
-    yoruRow,
+    bgmItem('sougen'),
+    bgmItem('yoru'),
     comingRow(500),
     comingRow(1000),
   ].join('\n');
 
-  // ボタンのクリック処理（トグル）
+  // クリック処理（トグル）
   shopContent.querySelectorAll('button[data-bgm]').forEach(btn => {
     btn.addEventListener('click', () => {
       const id = btn.getAttribute('data-bgm');
       if (!id) return;
 
-      // もう一回押したら解除（デフォルトへ）
       if (getSelectedBgmId() === id) setSelectedBgmId('default');
       else setSelectedBgmId(id);
     });
   });
 }
+
 
 
 if (shopButton) shopButton.addEventListener('click', openShop);
