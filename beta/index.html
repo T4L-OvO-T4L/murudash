@@ -892,6 +892,8 @@ function getSelectedBgmId(){
 
 function setSelectedBgmId(id){
   selectedBgmId = id || 'default';
+  if (selectedBgmId === 'yoru') cityInited = false;
+
   updateBgmStatusLabel();
   renderShop();
 
@@ -1710,6 +1712,13 @@ function resetAudioSyncState(){
 function updateSkyByTimeline(){
   if (!gameStarted || isPaused || isGameOver) return;
 
+  // ★ yoru は夜固定（星・街の演出がブレない）
+  if (getSelectedBgmId() === 'yoru'){
+    if (phaseName !== 'night') setBackgroundTheme('night');
+    return;
+  }
+
+  
   const tSec = timeElapsed / 1000;
   const loopIndex = Math.floor(tSec / TRACK_LENGTH_S);
   const localSec  = tSec % TRACK_LENGTH_S;
@@ -1911,6 +1920,91 @@ function applyGroundThemeFromBgm(){
 const groundY = gameHeight - 50;
 
 
+// ===== 夜の街（ビル群） =====
+let cityBuildings = [];
+
+function initCity(){
+  cityBuildings = [];
+  // 遠景なので数は控えめ。足りなければ増やしてOK
+  const COUNT = 18;
+
+  for (let i = 0; i < COUNT; i++){
+    const w = 60 + Math.random()*90;
+    const h = 90 + Math.random()*160;
+
+    cityBuildings.push({
+      x: Math.random() * gameWidth,
+      w,
+      h,
+      // 0:遠い / 1:ちょい近い（視差）
+      layer: Math.random() < 0.6 ? 0 : 1,
+      // 窓の光り具合（ビルごとに違う感じ）
+      light: 0.25 + Math.random()*0.35
+    });
+  }
+
+  // x順にしておくと見た目が安定しやすい（好み）
+  cityBuildings.sort((a,b)=>a.x-b.x);
+}
+
+// 空のフェーズで薄くする（朝は消したいなら 0.0 にする）
+function phaseMulForCity(){
+  if (phaseName === 'night') return 1.0;
+  if (phaseName === 'evening') return 0.65;
+  return 0.20; // 朝は薄く残す。完全に消すなら 0.0
+}
+
+function drawCity(df){
+  const mul = phaseMulForCity();
+  if (mul <= 0.001) return;
+
+  // 遠景スピード（地面よりだいぶ遅い）
+  const baseV = gameSpeed * 0.25;
+
+  for (const b of cityBuildings){
+    const v = baseV * (b.layer === 0 ? 0.7 : 1.0);
+    b.x -= v * df;
+
+    // 左に抜けたら右へ回す
+    if (b.x + b.w < -50){
+      b.x = gameWidth + 50 + Math.random()*120;
+    }
+
+    const baseY = groundY; // ← ここが地面にピッタリ接する（隙間なし）
+
+    // ビル本体（うっすら）
+    ctx.fillStyle = `rgba(20, 25, 35, ${0.55 * mul})`;
+    ctx.fillRect(b.x, baseY - b.h, b.w, b.h);
+
+    // 窓（点々と光る）
+    const wx = 8, wy = 10;         // 窓サイズ感
+    const gapX = 8, gapY = 10;     // 間隔
+    const cols = Math.floor((b.w - 10) / (wx + gapX));
+    const rows = Math.floor((b.h - 18) / (wy + gapY));
+
+    // 窓の色（夜景っぽく）
+    ctx.fillStyle = `rgba(255, 220, 120, ${b.light * mul})`;
+
+    for (let r=0; r<rows; r++){
+      for (let c=0; c<cols; c++){
+        // ランダムで点灯（多すぎると派手なので控えめ）
+        if (Math.random() < 0.22){
+          const px = b.x + 6 + c*(wx + gapX);
+          const py = baseY - b.h + 10 + r*(wy + gapY);
+          ctx.fillRect(px, py, wx, wy);
+        }
+      }
+    }
+  }
+}
+
+// 1回だけ初期化
+initCity();
+
+
+
+
+  
 /* ===== 山並み（草原BGM専用：遠景パララックス） ===== */
 let mountains = [];
 let mountainAlpha = 0;        // 0〜1（フェード用）
@@ -1949,7 +2043,8 @@ function drawMountains(df){
   mountainAlpha += (target - mountainAlpha) * (MOUNTAIN_LERP * df);
   if (mountainAlpha <= 0.01) return;
 
-  const baseY = groundY - 6;
+  const baseY = groundY + 6;  // 山の足元を地面の中に潜らせる（隙間消える）
+
 
   // 遠景だからめっちゃ遅く（ゲーム速度にも少しだけ連動）
   const speed = (gameSpeed * 0.18 + 0.3) * df;
@@ -3264,8 +3359,10 @@ function gameLoop(ts){
   ctx.clearRect(0,0,gameWidth,gameHeight);
 drawSky(df); 
 drawStars(df); 
-drawMountains(df);   // ★追加：草原だけ遠景の山
 drawClouds(df);
+// ★BGMによって背景演出
+if (getSelectedBgmId() === 'sougen') drawMountains(df); // 既にあるならそのまま
+if (getSelectedBgmId() === 'yoru')   drawCity(df);      // ★追加：夜の街
 
 
   // 地面＋流れる砂利（障害物と同速で流す）
