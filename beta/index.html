@@ -184,27 +184,27 @@ text-shadow:
 
     </div>
     <div class="flex items-center gap-3 shrink-0">
-      <span id="highScore" class="text-xs text-gray-500 block">ハイスコア: 0</span>
-
-    <span id="bgmStatus" class="text-[10px] text-gray-400 block text-right">
+  <!-- ★ハイスコアの下にBGMを配置 -->
+  <div class="flex flex-col items-end leading-tight">
+    <span id="highScore" class="text-xs text-gray-500 block">ハイスコア: 0</span>
+    <span id="bgmStatus" class="text-[10px] text-gray-400 block text-right mt-0.5">
       BGM: デフォルト
     </span>
-
-
-      
-        <!-- 🔇 ミュートボタン追加 -->
-      <button
-        id="muteButton"
-        class="px-2 py-2 bg-gray-700 text-white rounded-lg text-xs sm:text-sm shadow-md"
-      >
-        🔊
-      </button>
-
-      <button id="pauseButton" class="pause-button px-3 py-2 sm:px-4 sm:py-2 bg-yellow-500 text-white font-bold rounded-lg shadow-md text-sm">
-        ちょっち休憩
-      </button>
-    </div>
   </div>
+
+  <!-- 🔇 ミュートボタン -->
+  <button
+    id="muteButton"
+    class="px-2 py-2 bg-gray-700 text-white rounded-lg text-xs sm:text-sm shadow-md"
+  >
+    🔊
+  </button>
+
+  <button id="pauseButton" class="pause-button px-3 py-2 sm:px-4 sm:py-2 bg-yellow-500 text-white font-bold rounded-lg shadow-md text-sm">
+    ちょっち休憩
+  </button>
+  </div>
+ </div>
 </div>
 
 <!-- キャンバス＆オーバーレイ -->
@@ -273,11 +273,17 @@ text-shadow:
      class="absolute inset-0 bg-black bg-opacity-85 rounded-lg text-white hidden z-50">
   <div class="w-full h-full flex flex-col items-center justify-center px-4">
     <div class="w-full max-w-[600px] max-h-[85%] bg-gray-900/80 rounded-lg p-4 overflow-y-auto">
-      <h2 class="text-2xl font-bold mb-2 text-center">どんぐり商店</h2>
+      <h2 class="text-2xl font-bold mb-2 text-center">
+  <img src="../assets/Donguri.svg" alt="" class="inline-block w-6 h-6 mr-2 align-[-0.2em]">
+  どんぐり商店
+  <img src="../assets/Donguri.svg" alt="" class="inline-block w-6 h-6 ml-2 align-[-0.2em]">
+</h2>
 
-      <p class="text-center text-sm text-gray-300 mb-4">
-        累計どんぐり：<span id="shopAcornTotal" class="font-mono text-base">0</span>
-      </p>
+<p class="text-center text-sm text-gray-300 mb-4">
+  所持どんぐり：
+  <span id="shopAcornTotal" class="font-mono text-lg text-amber-300 font-extrabold">0</span>
+</p>
+
 
       <div id="shopContent" class="space-y-2 text-sm sm:text-base">
         <!-- JSで埋める -->
@@ -3278,7 +3284,7 @@ function renderShop(){
         <div class="text-xs text-gray-300">必要どんぐり：5</div>
       </div>
       <div class="text-sm ${featureUnlocked ? 'text-green-300' : 'text-gray-400'}">
-        ${featureUnlocked ? '解放' : '未解放'}
+        ${featureUnlocked ? '解放済み''解放済'''解放
       </div>
     </div>
   `);
@@ -3290,7 +3296,10 @@ function renderShop(){
     const enabled = featureUnlocked && unlocked;
 
     const isSelected = (selected === id);
-    const label = isSelected ? `${meta.label}（選択中！）` : `${meta.label} 解放`;
+    const label = isSelected
+      ? `${meta.label}（選択中！）`
+      : `${meta.label}（${unlocked ? '解放済み' : '未解放'}）`;
+
 
     const btnClass = enabled
       ? (isSelected
