@@ -2730,11 +2730,11 @@ function warpToScoreBand(targetScore){
   const approxSec = targetScore / SCORE_PER_SEC_FOR_WARP;
   timeElapsed = approxSec * 1000;
 
-  // ゲームスピードも、その時間帯に近い値に合わせる
-  gameSpeed = Math.min(
-    baseGameSpeed + approxSec * gameSpeedAcceleration,
-    GAME_SPEED_MAX
-  );
+  const maxWarp = (targetScore >= SPEED_UNLOCK_SCORE) ? GAME_SPEED_MAX2 : GAME_SPEED_MAX1;
+gameSpeed = Math.min(
+  baseGameSpeed + approxSec * gameSpeedAcceleration,
+  maxWarp
+);
 
   // 画面上の障害物・どんぐり・フキダシを一旦リセット
   obstacles = [];
