@@ -2093,7 +2093,10 @@ highScoreEl.textContent = `ハイスコア: ${highScore}`;
 let gameSpeed           = 5;
 let baseGameSpeed       = 5;
 let gameSpeedAcceleration = 0.03;  // ★ここ下げる
-const GAME_SPEED_MAX    = 12;      // ★ここも少し下げる
+const GAME_SPEED_MAX1 = 12;
+const GAME_SPEED_MAX2 = 12.8;     // 追加の先っちょ
+const SPEED_UNLOCK_SCORE = 900;   // ここ超えたら解放
+
 
 
 // ★ 追加：最後に死んだときの相手
@@ -2805,8 +2808,9 @@ function updateScore(){
   }
 
 
-  const tSec=timeElapsed/1000;
-  gameSpeed=Math.min(baseGameSpeed + tSec*gameSpeedAcceleration, GAME_SPEED_MAX);
+  const tSec = timeElapsed/1000;
+  const maxNow = (score >= SPEED_UNLOCK_SCORE) ? GAME_SPEED_MAX2 : GAME_SPEED_MAX1;
+    gameSpeed = Math.min(baseGameSpeed + tSec*gameSpeedAcceleration, maxNow);
 }
   
 
