@@ -1,51 +1,55 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; media-src 'self';">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> 
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://script.google.com https://script.googleusercontent.com; script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; media-src 'self'; object-src 'none'; base-uri 'self';">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<link rel="preload" as="image" href="./assets/blueberry.svg">
-<link rel="preload" as="image" href="./assets/sunflower.svg">
-<link rel="preload" as="image" href="./assets/Donguri.svg">
-<link rel="preload" as="audio" href="./assets/BGM.mp3">
-<link rel="preload" as="audio" href="./assets/END.mp3">
-<link rel="preload" as="audio" href="./assets/pick.mp3">
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-
   
+<link rel="preload" as="image" href="/murudash/assets/blueberry.svg">
+<link rel="preload" as="image" href="/murudash/assets/sunflower.svg">
+<link rel="preload" as="image" href="/murudash/assets/Donguri.svg">
+<link rel="preload" as="audio" href="/murudash/assets/BGM.mp3">
+<link rel="preload" as="audio" href="/murudash/assets/END.mp3">
+<link rel="preload" as="audio" href="/murudash/assets/HIGHEND.mp3">
+<link rel="preload" as="audio" href="/murudash/assets/pick.mp3">
+<link rel="preload" as="audio" href="/murudash/assets/CREDIT.mp3">
+<link rel="preload" as="audio" href="/murudash/assets/BGM2.mp3">
+<link rel="preload" as="audio" href="/murudash/assets/SE.mp3">
+<link rel="preload" as="image" href="/murudash/assets/sunflower2.png">
+<link rel="preload" as="image" href="/murudash/assets/T4LMRR.png">
+
 <title>むるだっしゅ！</title>
+  
+<!-- 🌻 ファビコン（ひまわりSVG） -->
+<link rel="icon" type="image/svg+xml" href="/murudash/assets/sunflower.svg">
 
-<!-- 🌻 ファビコン（ひまわりSVG）※本番は ./assets でOK -->
-<link rel="icon" type="image/svg+xml" href="./assets/sunflower.svg">
-
-<!-- 🪪 OGP / Twitterカード（本番用） -->
+<!-- 🪪 OGP / Twitterカード -->
 <meta property="og:title" content="むるだっしゅ！">
 <meta property="og:description" content="迫りくるひまわりやブルーベリーをよけまくるブラウザランゲーム。">
 <meta property="og:type" content="website">
 
-<!-- 本番URL -->
+
 <meta property="og:url" content="https://t4l-ovo-t4l.github.io/murudash/">
 
-<!-- OGP画像（assets/OGP.png に置く前提） -->
+<!-- OGP画像（assets/OGP.png に置く場合） -->
 <meta property="og:image" content="https://t4l-ovo-t4l.github.io/murudash/assets/OGP.png">
 
 <meta property="og:site_name" content="むるだっしゅ！">
 <meta name="twitter:card" content="summary_large_image">
-
-
-
-
-
-
-
-
 
   
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
   body { font-family:'Inter',sans-serif; touch-action:manipulation; overflow:hidden; overscroll-behavior:none; background:#1a202c; }
-  canvas { display:block; }
+  
+  canvas {
+    display: block;
+    width: 100%;   /* 親要素にフィットさせる */
+    height: auto;  /* 縦横比は 768x300 のまま維持 */
+  }
+
   .control-button { transition: background-color .1s, transform .1s; }
   .control-button:active { transform: scale(.95); background:#2c5282; }
   .pause-button { transition: background-color .1s, transform .1s; }
@@ -68,11 +72,78 @@
     -webkit-touch-callout: none;
   }
 
+@keyframes credits-scroll {
+  0% {
+    transform: translateY(22%); /* PC用：ちょい下から 25がちょうどいい？スマホは15くらいかも */
+  }
+  100% {
+    transform: translateY(-120%);
+  }
+}
+
+/* スマホ用（開始位置を上げる） */
+@keyframes credits-scroll-mobile {
+  0% {
+    transform: translateY(12%);  /* スマホは15くらいかも */
+  }
+  100% {
+    transform: translateY(-120%);
+  }
+}
+
+/* 共通デフォルト（PC向け） */
+.credits-scroll {
+  animation: credits-scroll 80s linear forwards;
+}
+
+/* スマホだけ上書き：必ず "最後" に置く */
+@media (max-width: 640px) {
+  .credits-scroll {
+    animation: credits-scroll-mobile 80s linear forwards;
+  }
+}
+
+.rainbow-text {
+  /* ド原色レインボー（彩度高め） */
+  background: linear-gradient(
+    90deg,
+    #ff0000,
+    #ff7a00,
+    #fff500,
+    #00ff00,
+    #00f5ff,
+    #0040ff,
+    #c300ff,
+    #ff0000
+  );
+  background-size: 320% 320%;
+  background-position: 0% 50%;
+  background-repeat: no-repeat;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+
+
+text-shadow:
+  0 0 2px rgba(255, 255, 255, 0.20),
+  0 0 6px rgba(255, 255, 255, 0.12);
+
+
+  /* 往復アニメでガクっとしないように */
+  animation: rainbow-slide 3s linear infinite alternate;
+}
+
+@keyframes rainbow-slide {
+  from { background-position: 0% 50%; }
+  to   { background-position: 100% 50%; }
+}
+
 </style>
 </head>
 
 <body class="bg-gray-800 flex flex-col items-center justify-start min-h-screen pt-3 sm:pt-4 pb-28 no-select no-highlight">
-
   
 <!-- 注記 -->
 <div class="w-full text-center bg-gray-900 text-gray-300 text-[11px] py-1 shadow-md">
@@ -85,89 +156,764 @@
 <div class="w-full max-w-[768px] p-3 bg-white rounded-t-lg shadow-md">
   <div class="flex items-center justify-between gap-3">
     <div class="text-left">
-      <span class="text-xl sm:text-2xl font-bold text-blue-600">
+      
+      <span id="scoreLabel" class="text-xl sm:text-2xl font-bold text-blue-600 whitespace-nowrap">
         スコア: <span id="score" class="inline-block min-w-[60px] text-right font-mono">0</span>
       </span>
+
     </div>
     <div class="flex items-center gap-3 shrink-0">
-      <span id="highScore" class="text-xs text-gray-500 block">ハイスコア: 0</span>
-      <button id="pauseButton" class="pause-button px-3 py-2 sm:px-4 sm:py-2 bg-yellow-500 text-white font-bold rounded-lg shadow-md text-sm">
-        ちょっち休憩
-      </button>
-    </div>
+  <!-- ★ハイスコアの下にBGMを配置 -->
+  <div class="flex flex-col items-end leading-tight">
+    <span id="highScore" class="text-xs text-gray-500 block">ハイスコア: 0</span>
+    <span id="bgmStatus" class="text-[10px] text-gray-400 block text-right mt-0.5">
+      BGM：デフォルト
+    </span>
   </div>
+
+  <!-- 🔇 ミュートボタン -->
+  <button
+    id="muteButton"
+    class="px-2 py-2 bg-gray-700 text-white rounded-lg text-xs sm:text-sm shadow-md"
+  >
+    🔊
+  </button>
+
+  <button id="pauseButton" class="pause-button px-3 py-2 sm:px-4 sm:py-2 bg-yellow-500 text-white font-bold rounded-lg shadow-md text-sm">
+    休憩
+  </button>
+  </div>
+ </div>
 </div>
 
 <!-- キャンバス＆オーバーレイ -->
 <div class="relative w-full max-w-[768px] mt-2">
   <canvas id="gameCanvas" class="rounded-b-lg shadow-md"></canvas>
 
-  <!-- スタート -->
-  <div id="startScreen" class="absolute inset-0 bg-black bg-opacity-70 flex-col justify-center items-center rounded-b-lg text-white p-8 text-center flex">
-    <h2 class="text-5xl font-bold mb-6">むるだっしゅ！</h2>
-    <p class="text-lg mb-4">ボタンでジャンプ！<br class="sm:hidden">空中でもう一回で2段ジャンプ！</p>
-    <p class="text-lg mb-8">障害物をよけまくろう！</p>
-    <button id="startButton" class="px-8 py-4 bg-green-600 text-white font-bold rounded-lg shadow-lg text-2xl hover:bg-green-700 transition-colors">
-      ゲームスタート
-    </button>
+  <div
+    id="highScoreBanner"
+    class="pointer-events-none absolute top-4 left-1/2 -translate-x-1/2
+           px-4 py-2 text-xl sm:text-2xl font-extrabold tracking-wide
+           hidden rainbow-text whitespace-nowrap"
+  >
+    ハイスコア更新中むる～！
   </div>
 
-  <!-- ポーズ -->
-  <div id="pauseOverlay" class="absolute inset-0 bg-black bg-opacity-50 flex-col justify-center items-center rounded-b-lg text-white p-8 text-center hidden">
-    <h2 class="text-4xl font-bold mb-4">一時停止中</h2>
-    <p class="text-xl">(「ちょっち休憩」ボタンで再開)</p>
-  </div>
 
-  <!-- ゲームオーバー -->
-  <div id="gameOverScreen" class="absolute inset-0 bg-black bg-opacity-50 flex-col justify-center items-center rounded-lg text-white p-8 text-center hidden">
-    <h2 class="text-4xl font-bold mb-4">がめおべら</h2>
-    <p class="text-xl mb-6">スコア: <span id="finalScore">0</span></p>
-    <div class="flex flex-wrap justify-center gap-3">
-      <button id="restartButton" class="px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-xl hover:bg-blue-700 transition-colors">
-        リスタート
-      </button>
-      <a id="shareButton" href="#" target="_blank" rel="noopener noreferrer" class="px-8 py-4 bg-black text-white font-bold rounded-lg shadow-lg text-xl hover:bg-gray-900 transition-colors">
-        Xでスコアをシェア
-      </a>
+  <!-- ランキングオーバーレイ -->
+<div id="rankingOverlay"
+     class="absolute inset-0 bg-black bg-opacity-80 rounded-lg text-white hidden z-50">
+  <div class="w-full h-full flex flex-col items-center justify-center px-4">
+    <div class="w-full max-w-[600px] max-h-[80%] bg-gray-900/80 rounded-lg p-4 overflow-y-auto">
+      <h2 class="text-2xl font-bold mb-3 text-center">ランキング</h2>
+      <div id="rankingContent" class="text-sm sm:text-base space-y-1">
+        <!-- JSで中身を埋める -->
+      </div>
+      <div class="mt-4 text-center">
+        <button id="closeRankingButton"
+                class="px-6 py-2 bg-gray-700 hover:bg-gray-800 rounded-lg text-sm">
+          とじる
+        </button>
+      </div>
     </div>
   </div>
 </div>
 
+  <!-- ★ ハイスコアリセット確認オーバーレイ -->
+  <div id="resetConfirmOverlay"
+       class="absolute inset-0 bg-black bg-opacity-70 rounded-b-lg text-white hidden z-50">
+    <div class="w-full h-full flex flex-col items-center justify-center px-4">
+      <div class="w-full max-w-[480px] bg-gray-900 rounded-lg p-5 shadow-lg">
+        <h2 class="text-xl font-bold mb-3 text-center">ハイスコアのリセット</h2>
+        <p class="text-sm sm:text-base mb-4 text-center">
+          ハイスコアを消去しますか？<br>
+          この操作は取り消せません。
+        </p>
+        <div class="flex flex-col sm:flex-row gap-3 mt-2">
+          <button
+            id="confirmResetButton"
+            class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-bold"
+          >
+            消去する
+          </button>
+          <button
+            id="cancelResetButton"
+            class="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-sm font-bold"
+          >
+            しないむる
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<!-- 🍂 どんぐり商店 オーバーレイ -->
+<div id="shopOverlay"
+     class="absolute inset-0 bg-black bg-opacity-85 rounded-lg text-white hidden z-50">
+  <div class="w-full h-full flex flex-col items-center justify-center px-4">
+    <div class="w-full max-w-[600px] max-h-[85%] bg-gray-900/80 rounded-lg p-4 overflow-y-auto">
+      <h2 class="text-2xl font-bold mb-2 text-center">
+  <img src="/murudash/assets/Donguri.svg" alt="" class="inline-block w-6 h-6 mr-2 align-[-0.2em]">
+  どんぐり商店
+  <img src="/murudash/assets/Donguri.svg" alt="" class="inline-block w-6 h-6 ml-2 align-[-0.2em]">
+</h2>
+
+<p class="text-center text-sm text-gray-300 mb-4">
+  所持どんぐり：
+  <span id="shopAcornTotal" class="font-mono text-lg text-amber-300 font-extrabold">0</span>
+</p>
+
+
+      <div id="shopContent" class="space-y-2 text-sm sm:text-base">
+        <!-- JSで埋める -->
+      </div>
+
+      <div class="mt-5 text-center">
+        <button id="closeShopButton"
+                class="px-6 py-2 bg-gray-700 hover:bg-gray-800 rounded-lg text-sm">
+          タイトルにもどる
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+  <!-- スタート -->
+<div
+  id="startScreen"
+  class="absolute inset-0 bg-black bg-opacity-70 rounded-b-lg text-white text-center
+         flex flex-col items-center
+         px-4 pt-6 pb-6
+         justify-center
+         overflow-y-auto
+         sm:px-6 sm:pt-8 sm:pb-8"
+>
+<h2 class="text-3xl sm:text-5xl font-bold mb-4">むるだっしゅ！</h2>
+
+<p class="text-xs sm:text-lg mb-2">
+  ボタンでジャンプ！<br class="sm:hidden">空中でもう一回で2段ジャンプ！
+</p>
+
+<p class="text-xs sm:text-lg mb-4">
+  障害物をよけまくろう！
+</p>
+
+  <!-- 🍂 どんぐり商店（上段） -->
+<div class="mt-3 flex justify-center">
+  <button id="shopButton"
+    class="px-6 py-2 border border-amber-300 text-sm rounded-lg bg-amber-700/70 hover:bg-amber-700 transition-colors">
+    どんぐり商店
+  </button>
+</div>
+
+
+    <!-- クレジット ＋ リセット（横並び） -->
+    <div class="mt-3 flex flex-row flex-wrap gap-3 justify-center">
+
+  <button id="creditsButton" class="px-4 py-1.5 border border-gray-300 text-xs rounded-lg bg-black/40 hover:bg-black/60 transition-colors">
+    クレジット
+  </button>
+  <button id="resetButton" class="px-4 py-1.5 border border-red-400 text-xs rounded-lg bg-red-600/80 hover:bg-red-700 transition-colors">
+    ハイスコアリセット
+  </button>
+ </div> <!-- ← クレジット＋リセットの行の閉じ -->
+
+</div> <!-- #startScreen を閉じる -->
+
+  <!-- ポーズ -->
+  <div id="pauseOverlay" class="absolute inset-0 bg-black bg-opacity-50 flex-col justify-center items-center rounded-b-lg text-white p-8 text-center hidden">
+    <h2 class="text-4xl font-bold mb-4">一時停止中</h2>
+    <p class="text-xl">( ｢休憩｣ボタンで再開 )</p>
+  </div>
+
+<!-- ゲームオーバー -->
+<div
+  id="gameOverScreen"
+  class="absolute inset-0 bg-black bg-opacity-50 rounded-lg text-white hidden z-40"
+>
+  <div class="w-full h-full flex flex-col items-center px-4 gap-8
+              justify-start pt-10 sm:justify-center sm:pt-0">
+
+
+    <!-- 上側：タイトル ＋ スコア（中央固定） -->
+    <div class="text-center">
+      <h2 class="text-4xl font-bold mb-2">がめおべら</h2>
+
+      <p
+        id="gameOverHighScoreLabel"
+        class="text-lg mb-1 text-yellow-300 font-bold hidden"
+      >
+        ハイスコア更新むる～！
+      </p>
+
+      <p class="text-xl">
+        スコア: <span id="finalScore">0</span>
+      </p>
+    </div>
+
+    <!-- 下側：ボタン群（スマホでも潰れない） -->
+    <div class="w-full max-w-[480px] space-y-4">
+
+      <a
+        id="shareButton"
+        href="#"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="block w-full px-6 py-3 bg-black text-white font-bold rounded-lg shadow-lg text-lg text-center hover:bg-gray-900 transition-colors"
+      >
+        Xでスコアをシェア
+      </a>
+
+      <button
+        id="sendScoreButton"
+        class="block w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-lg hover:bg-blue-700 transition-colors"
+      >
+        ランキングに送信
+      </button>
+
+      <button
+        id="viewRankingButton"
+        class="block w-full px-6 py-3 bg-gray-700 text-white font-bold rounded-lg shadow-lg text-lg hover:bg-gray-800 transition-colors"
+      >
+        ランキングを見る
+      </button>
+
+      <button
+        id="backToTitleButton"
+        class="block w-full px-6 py-3 bg-gray-600 text-white font-bold rounded-lg shadow-lg text-lg hover:bg-gray-700 transition-colors"
+      >
+        タイトルへもどる
+      </button>
+
+
+      <!-- 送信中・完了メッセージ -->
+      <p
+        id="sendStatusMessage"
+        class="text-center text-sm text-gray-200"
+      ></p>
+
+    </div>
+
+  </div>
+</div>
+
+
+<!-- クレジット（スタッフロール／ゲーム画面フル） -->
+<div id="creditsOverlay"
+     class="absolute inset-0 bg-black bg-opacity-90 rounded-b-lg text-white hidden z-50">
+
+  <div class="relative w-full h-full overflow-hidden">
+
+    <!-- 外側：位置だけ担当（X方向センタリング） -->
+    <div
+      id="creditsScrollOuter"
+      class="absolute left-1/2 -translate-x-1/2 w-full max-w-[720px] text-white"
+    >
+
+      <!-- 内側：アニメーション担当（Y方向スクロール） -->
+      <!-- ★ relative を付けて、ここに飾りイラストも入れる -->
+      <div id="creditsScroll" class="credits-scroll relative">
+
+        <!-- 🎨 飾りイラスト（テキストと一緒にスクロール） -->
+        <!-- ① 上のほう（全体の 5％あたり）右に自機 -->
+<img
+  src="/murudash/assets/Muru.png"
+  alt="Muru"
+  class="absolute right-1 sm:right-2 top-[5%] w-16 sm:w-24 pointer-events-none select-none"
+/>
+
+<!-- ② ちょい下（30％あたり）左にひまわり -->
+<img
+  src="/murudash/assets/sunflower.svg"
+  alt="sunflower"
+  class="absolute left-1 sm:left-2 top-[30%] w-12 sm:w-16 h-auto pointer-events-none select-none"
+/>
+
+<!-- ③ 真ん中よりちょい下（55％あたり）右にブルーベリー -->
+<img
+  src="/murudash/assets/blueberry.svg"
+  alt="blueberry"
+  class="absolute right-2 sm:right-6 top-[55%] w-10 sm:w-14 h-auto pointer-events-none select-none"
+/>
+
+<!-- ④ 終盤（80％あたり）左にどんぐり -->
+<img
+  src="/murudash/assets/Donguri.svg"
+  alt="donguri"
+  class="absolute left-2 sm:left-8 top-[80%] w-10 sm:w-14 h-auto pointer-events-none select-none"
+/>
+
+
+
+        <!-- ★ ここからクレジット本文（中身は今のままコピペでOK） -->
+        <div class="text-center text-white">
+
+          <p class="mt-4 text-xl font-bold">
+            むるだっしゅ！ クレジット
+          </p>
+
+          <div class="mt-8">
+            <p class="text-xs text-gray-400">原作・キャラクター原案</p>
+            <p class="mt-1 text-base">くろむ（Lethal Cats）</p>
+          </div>
+
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">企画・制作</p>
+            <p class="mt-1 text-base">たる</p>
+          </div>
+
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">ディレクター</p>
+            <p class="mt-1 text-base">たる</p>
+          </div>
+
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">ゲームデザイン</p>
+            <p class="mt-1 text-base">たる</p>
+          </div>
+
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">プログラム</p>
+            <p class="mt-1 text-base">たる with ChatGPT</p>
+          </div>
+
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">グラフィック</p>
+            <p class="mt-1 text-base leading-relaxed">
+              たる<br>
+              ゆずうに<br>
+              イラストAC<br>
+              Twemoji（CC BY 4.0）
+            </p>
+          </div>
+
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">サウンド</p>
+            <p class="mt-1 text-base leading-relaxed">
+              たる made with Suno<br>
+              Audiostock
+            </p>
+          </div>
+
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">テストプレイ</p>
+            <p class="mt-1 text-base leading-relaxed">
+              ゆずうに<br>
+              竜胆<br>
+              もち<br>
+              しらざわ<br>
+            </p>
+          </div>
+
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">インスパイア &amp; リスペクト</p>
+            <p class="mt-1 text-base">Google - Dinosaur Game</p>
+          </div>
+
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">スペシャルサンクス</p>
+            <p class="mt-1 text-base leading-relaxed">
+              この世の全ムルルたち<br>
+              今これを読んでくれているあなた
+            </p>
+          </div>
+
+          <div class="mt-10">
+            <p class="text-xs text-gray-400">使用ツール</p>
+            <p class="mt-1 text-base leading-relaxed">
+              HTML5 / JavaScript（Vanilla）<br>
+              Tailwind CSS<br>
+              GitHub Pages<br>
+              Google Apps Script<br>
+              Google Spreadsheet<br>
+              ChatGPT 5.2<br>
+              Gemini 3 Pro<br>
+              Suno v5
+            </p>
+          </div>
+
+          
+          <p class="mt-16 text-sm font-medium tracking-wide">
+            2025 Presented by T4L
+          </p>
+
+          <p class="mt-4 text-xs text-gray-300 leading-relaxed">
+            ※本作品は「ムルル」をモチーフにした非公式ファン作品です。<br>
+            　権利者様とは一切関係ありません。
+          </p>
+
+          <!-- ▼ ラストに流れるひまわり（sunflower2.png） -->
+          <div class="mt-60 mb-8 flex justify-center">
+            <img
+              src="/murudash/assets/T4LMRR.png"
+              alt="T4LMRR"
+              class="w-20 sm:w-28 h-auto mx-auto"
+            />
+          </div>
+
+        </div><!-- /.text-center -->
+      </div><!-- /#creditsScroll -->
+    </div><!-- /#creditsScrollOuter -->
+
+    <!-- スクロール終了後に出す「Thank You」メッセージ -->
+    <div
+      id="creditsEndMessage"
+      class="hidden absolute inset-0 flex items-center justify-center"
+    >
+      <div class="text-center px-4">
+        <p class="text-2xl sm:text-3xl font-bold mb-3">
+          Thank You for Playing!!
+        </p>
+        <p class="text-xs sm:text-sm text-gray-300">
+          「とじる」ボタンでタイトル画面に戻るむる
+        </p>
+      </div>
+    </div>
+
+  </div><!-- /.relative -->
+</div><!-- /#creditsOverlay -->
+
+</div><!-- ★ これ：キャンバスの outer relative を閉じる -->
+
 <!-- ルール（中央揃え） -->
 <div class="w-full max-w-[768px] text-gray-200 text-sm mt-3 mb-20 px-1 leading-relaxed text-center no-select no-highlight">
   <p class="mb-1">
-    ひまわり<img src="./assets/sunflower.svg" alt="sunflower" class="icon-inline">
-    やブルーベリー<img src="./assets/blueberry.svg" alt="blueberry" class="icon-inline">
+    ひまわり<img src="/murudash/assets/sunflower.svg" alt="sunflower" class="icon-inline">
+    やブルーベリー<img src="/murudash/assets/blueberry.svg" alt="blueberry" class="icon-inline">
     を<br class="sm:hidden"/>避けながらハイスコアを目指そう！
   </p>
   <p>
-    たまに落ちてるどんぐり<img src="./assets/Donguri.svg" alt="donguri" class="icon-inline">
+    たまに落ちてるどんぐり<img src="/murudash/assets/Donguri.svg" alt="donguri" class="icon-inline">
     は拾いたいむるね
   </p>
-  
+  <p>
+    PCならスペースキーで ↓の大きなボタンが押せるよ
+  </p>
+    
     <!-- ▼ バージョン表示（右下にちょこっと） -->
   <p class="mt-2 text-[10px] text-gray-400 text-right pr-2 sm:text-xs">
     version <span id="versionLabel"></span>
   </p>
-  
-</div>
+
 
 </div>
 
 <!-- ジャンプボタン -->
 <div class="w-full max-w-[768px] flex justify-center p-4 fixed bottom-0 left-1/2 -translate-x-1/2 no-select no-highlight">
-  <button id="jumpButton" class="control-button w-full py-12 bg-blue-600 text-white font-bold rounded-lg shadow-lg text-2xl no-select" draggable="false">
-    ジャンプ
-  </button>
+<button id="jumpButton" class="control-button w-full py-12 text-white font-bold rounded-lg shadow-lg text-2xl no-select" draggable="false">
+  ゲームスタート
+</button>
+
+</div>
+
+<!-- ロード中むる -->
+<div id="loadingOverlay"
+     class="fixed inset-0 bg-black/80 text-white hidden z-[60]">
+  <div class="w-full h-full flex items-center justify-center">
+    <div class="text-center">
+      <p class="text-2xl font-bold mb-2">ロード中むる</p>
+      <p class="text-xs text-gray-300">BGMを準備してるむる</p>
+    </div>
+  </div>
 </div>
 
 <script>
+
+const SCORE_API_URL = 'https://script.google.com/macros/s/AKfycby2GHfn2Lq9iRqH45iOH8t1f9rM8e7Wm5AeUO92g8g35u7F7muzXokQoagjKaQrpg9ALw/exec';
+
+// ★ ユーザーID（ローカルに一生保持）
+const USER_ID_KEY = 'muruUserId';
+
+function generateUserId() {
+  const t = Date.now().toString(36);               // 時間ベース
+  const r = Math.random().toString(36).slice(2,10); // ランダム
+  return `muru_${t}_${r}`;
+}
+
+function getOrCreateUserId() {
+  let id = localStorage.getItem(USER_ID_KEY);
+  if (!id) {
+    id = generateUserId();
+    localStorage.setItem(USER_ID_KEY, id);
+  }
+  return id;
+}
+
+// このプレイヤー専用のID
+const USER_ID = getOrCreateUserId();
+  
+async function sendScoreToServer(currentScore){
+  try {
+    // ★前回の名前をデフォルトにする（なければ空欄）
+    const prevName = localStorage.getItem('muruPlayerName') || '';
+
+    // ★必ず何かしら入力させるループ
+    let name = '';
+    while (true) {
+      const input = prompt(
+        'ランキングに載せる名前を入れてね（必須）',
+        prevName
+      );
+
+      // キャンセルされたら送信自体やめる
+      if (input === null) {
+        return;
+      }
+
+      name = input.trim();
+      name = name.replace(/[\r\n\t]/g, ' ');  // ★追加：改行・タブ潰し
+
+      // 何か入ってたらOK
+      if (name) break;
+
+      alert('名前は必須むりゅ；；');
+    }
+
+    // （お好み）長すぎるとアレなんでちょい制限かけてもいい
+    if (name.length > 16) {
+      name = name.slice(0, 16);
+      alert('名前長すぎィ！先頭16文字だけ使うむる！');
+    }
+
+    localStorage.setItem('muruPlayerName', name);
+
+    // ★送信中の見た目
+    if (sendScoreButton){
+      sendScoreButton.disabled = true;
+      sendScoreButton.textContent = '送信中むる…';
+      sendScoreButton.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+      sendScoreButton.classList.add('bg-blue-900', 'cursor-wait');
+    }
+
+    const params = new URLSearchParams({
+      mode: 'post',
+      name: name,
+      score: String(currentScore),
+      version: GAME_VERSION,
+      ua: navigator.userAgent,
+      userId: USER_ID
+    });
+
+    const res = await fetch(`${SCORE_API_URL}?${params.toString()}`, {
+      method: 'GET',
+    });
+
+    const data = await res.json();
+    if (!data || data.status !== 'ok') {
+      throw new Error(data && data.message ? data.message : 'API status!=ok');
+    }
+
+    alert('スコア送信したむる！');
+
+    // ★ 送信完了 → ボタンを透明化＆無効化
+    sendScoreButton.textContent = "スコア送信済み";
+    sendScoreButton.disabled = true;
+
+    sendScoreButton.classList.remove(
+      "bg-blue-600",
+      "hover:bg-blue-700",
+      "cursor-pointer"
+    );
+
+    sendScoreButton.classList.add(
+      "bg-gray-500",
+      "opacity-60",
+      "cursor-not-allowed"
+    );
+
+  } catch (err) {
+    console.error(err);
+    alert('送信に失敗したむりゅ…時間を置いて試してみてほしいむる！');
+
+    // ★失敗したらボタン復活させる
+    if (sendScoreButton){
+      sendScoreButton.disabled = false;
+      sendScoreButton.textContent = 'ランキングに送信';
+      sendScoreButton.classList.remove(
+        'bg-blue-900',
+        'cursor-wait',
+        'bg-gray-500',
+        'cursor-not-allowed'
+      );
+      sendScoreButton.classList.add('bg-blue-600', 'hover:bg-blue-700');
+    }
+  }
+}
+
+
+// ★ プレイログ送信用（ゲームオーバー時に1発だけ叩く）
+function logPlaySession(isNewHighScore) {
+  try {
+    // ★ ここでローカルストレージから名前を拾う
+    const savedName = localStorage.getItem('muruPlayerName') || '';
+
+    // ★ 総どんぐり数（なければ 0 扱い）
+    const acornTotalStr = String(totalAcorns || 0);
+    
+    const params = new URLSearchParams({
+      mode: 'logPlay',                // GAS側で分岐に使う
+      version: GAME_VERSION,          // 2.0 みたいなやつ
+      score: String(score),           // 今回のスコア
+      isHighScore: isNewHighScore ? '1' : '0', // ハイスコア更新したか
+      ua: navigator.userAgent || '',  // 端末情報
+      userId: USER_ID,                // ★ 追加：誰のプレイか
+      deathType: lastDeathType || 'none', // 何に当たって死んだか
+
+      // ★ 追加：そのプレイヤーの累計どんぐり数
+      acornTotal: acornTotalStr
+    });
+
+    // ★ 名前があるときだけ name を付けて送る
+    if (savedName) {
+      params.append('name', savedName);
+    }
+
+    fetch(`${SCORE_API_URL}?${params.toString()}`, {
+      method: 'GET',
+      keepalive: true, // タブ閉じ際でも送信されやすくするおまじない
+    }).catch(() => {
+      // 失敗してもゲームには一切関係ないので握りつぶし
+    });
+  } catch (e) {
+    console.error('logPlaySession error:', e);
+  }
+}
+
+
+// 画像ローダ
+function loadImg(src){ const img = new Image(); img.src = src; return img; }
+const SPRITES = {
+  blueberry: loadImg('/murudash/assets/blueberry.svg'),
+  sunflower: loadImg('/murudash/assets/sunflower.svg'),
+  donguri:   loadImg('/murudash/assets/Donguri.svg'),
+  sunflower2: loadImg('/murudash/assets/sunflower2.png')
+};
+  
   // iOSの長押し選択・コンテキストメニュー抑止（ボタン操作はそのまま）
 document.addEventListener('selectstart', e => e.preventDefault());
 document.addEventListener('contextmenu', e => e.preventDefault(), { passive: false });
 
-// ★★★★★★★★★★★★★★★★★★★★★★ ゲームのバージョン（ここだけ変えたらOK）★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-const GAME_VERSION = '1.0';
+
+// ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★ ゲームのバージョン（ここだけ変えたらOK）★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+const GAME_VERSION = '2.0';
+const HIGH_SCORE_KEY = 'muruHighScore2.0';
+  
+// ★★★★★ デバッグ機能マスタースイッチ（ここだけいじればOK） ★★★★★
+// 本番では全部 false にする or 必要なものだけ true にする
+const DEBUG_OPTIONS = {
+  invincibleMode: false,  // 無敵モード（20回タップでON）
+  warpPC: false,          // ポーズ中の「3 / 5」キーでスコアワープ
+  warpMobile: false,       // ポーズ中のスコア / ハイスコア連打ワープ
+  acornCheat: false,   // ★追加：どんぐり+50裏技
+};
+
+
+// ★ どんぐり累計（バージョンまたいで使う）
+const ACORN_TOTAL_KEY = 'muruAcornTotal';
+let totalAcorns = parseInt(localStorage.getItem(ACORN_TOTAL_KEY) || '0', 10);
+
+// デバッグ確認したかったら
+console.log('累計どんぐり数:', totalAcorns);
+
+
+// ===== どんぐり商店（解放・BGM選択） =====
+// ★選択は「このページ開いてる間だけ」：リロードしたら必ずデフォルト
+let selectedBgmId = 'default';
+
+const BGM_META = {
+  default: { label: 'デフォルト', unlockedAt: 0 },
+  sougen:  { label: '草原を駆けるむるる', unlockedAt: 100, file: '/murudash/assets/BGM_SOUGEN.mp3', volume: 0.6 },
+  yoru:    { label: '夜の街を駆けるむるる', unlockedAt: 200, file: '/murudash/assets/BGM_YORU.mp3',   volume: 0.5 }
+};
+
+
+function getSelectedBgmId(){
+  return selectedBgmId;
+}
+
+function setSelectedBgmId(id){
+  selectedBgmId = id || 'default';
+  if (selectedBgmId === 'yoru') cityInited = false;
+
+  updateBgmStatusLabel();
+  renderShop();
+
+  // ★追加：地面テーマもBGMに合わせて更新
+  applyGroundThemeFromBgm();
+}
+
+// 「まだロードしてない」状態を作るために、ここで Audio を作らず遅延ロード
+let bgmSougenAudio = null;
+let bgmYoruAudio   = null;
+
+
+const loadingOverlay = document.getElementById('loadingOverlay');
+const bgmStatusEl = document.getElementById('bgmStatus');
+
+function showLoadingOverlay(show){
+  if (!loadingOverlay) return;
+  if (show){
+    loadingOverlay.classList.remove('hidden');
+    loadingOverlay.classList.add('flex');
+  } else {
+    loadingOverlay.classList.add('hidden');
+    loadingOverlay.classList.remove('flex');
+  }
+}
+
+function updateBgmStatusLabel(){
+  if (!bgmStatusEl) return;
+  const id = getSelectedBgmId();
+  const label = (BGM_META[id]?.label) || 'デフォルト';
+  bgmStatusEl.textContent = `BGM：${label}`;
+}
+updateBgmStatusLabel();
+
+function waitCanPlay(a){
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const ok = () => { if(done) return; done=true; cleanup(); resolve(); };
+    const ng = (e) => { if(done) return; done=true; cleanup(); reject(e); };
+
+    const cleanup = () => {
+      a.removeEventListener('canplaythrough', ok);
+      a.removeEventListener('canplay', ok);
+      a.removeEventListener('error', ng);
+      clearTimeout(t);
+    };
+
+    // 保険（環境でイベント飛ばん時あるから）
+    const t = setTimeout(ok, 8000);
+
+    a.addEventListener('canplaythrough', ok, { once:true });
+    a.addEventListener('canplay', ok, { once:true });
+    a.addEventListener('error', ng, { once:true });
+
+    try { a.load(); } catch (_) { ok(); }
+  });
+}
+
+async function preloadSelectableBgm(id){
+  if (id === 'default') return;
+
+  const meta = BGM_META[id];
+  if (!meta?.file) return;
+
+  // すでにロード済みなら何もしない
+  if (id === 'sougen' && bgmSougenAudio) return;
+  if (id === 'yoru'   && bgmYoruAudio)   return;
+
+  const a = new Audio(meta.file);   // ★ blobにしない！
+  a.loop = true;
+  a.volume = (meta.volume ?? 0.5);
+  a.preload = 'auto';
+
+  await waitCanPlay(a);
+
+  if (id === 'sougen') bgmSougenAudio = a;
+  if (id === 'yoru')   bgmYoruAudio   = a;
+}
 
 
 /* ===== 基本セットアップ ===== */
@@ -176,81 +922,649 @@ const ctx = canvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const highScoreEl = document.getElementById('highScore');
 const gameOverScreen = document.getElementById('gameOverScreen');
+
+const scoreLabel = document.getElementById('scoreLabel');
+
+
+const shopButton = document.getElementById('shopButton');
+const shopOverlay = document.getElementById('shopOverlay');
+const closeShopButton = document.getElementById('closeShopButton');
+const shopContent = document.getElementById('shopContent');
+const shopAcornTotalEl = document.getElementById('shopAcornTotal');
+  
+// ===== DEBUG: どんぐり +50 隠し機能 =====
+const ACORN_CHEAT_AMOUNT = 50;
+const ACORN_CHEAT_TAPS = 7;          // 7連打
+const ACORN_CHEAT_WINDOW_MS = 1400;  // 1.4秒以内
+
+let acornCheatCount = 0;
+let acornCheatTimer = null;
+
+function addAcornsDebug(n){
+  totalAcorns = (totalAcorns || 0) + n;
+  localStorage.setItem(ACORN_TOTAL_KEY, String(totalAcorns));
+
+  // 表示更新（商店内の数字）
+  if (shopAcornTotalEl) shopAcornTotalEl.textContent = String(totalAcorns);
+
+  // 解放状態も変わるから再描画
+  renderShop();
+
+  // お好み：通知（デバッグ時だけ）
+  alert(`DEBUG：どんぐり +${n}（所持 ${totalAcorns}）`);
+}
+
+function installAcornCheat(){
+  if (!DEBUG_OPTIONS.acornCheat) return;
+  if (!shopAcornTotalEl) return;
+
+  shopAcornTotalEl.addEventListener('pointerdown', (e) => {
+    // ★商店を開いてる時だけ有効（誤爆防止）
+    if (!shopOverlay || shopOverlay.classList.contains('hidden')) return;
+
+    acornCheatCount++;
+    if (acornCheatTimer) clearTimeout(acornCheatTimer);
+    acornCheatTimer = setTimeout(() => {
+      acornCheatCount = 0;
+      acornCheatTimer = null;
+    }, ACORN_CHEAT_WINDOW_MS);
+
+    if (acornCheatCount >= ACORN_CHEAT_TAPS){
+      acornCheatCount = 0;
+      if (acornCheatTimer) clearTimeout(acornCheatTimer);
+      acornCheatTimer = null;
+
+      addAcornsDebug(ACORN_CHEAT_AMOUNT);
+    }
+  }, { passive: true });
+}
+
+installAcornCheat();
+  
+// ★ スマホ用：ポーズ中にスコア/ハイスコア連打でワープ
+let warpTapCount300 = 0;
+let warpTapCount500 = 0;
+const WARP_TAPS_THRESHOLD = 5;        // 5連打で発動
+const WARP_TAP_WINDOW_MS = 1500;      // 1.5秒以内に5タップ
+
+let warpTapTimer300 = null;
+let warpTapTimer500 = null;
+
+function tapWarp300(){
+  warpTapCount300++;
+  if (warpTapTimer300) clearTimeout(warpTapTimer300);
+  warpTapTimer300 = setTimeout(() => {
+    warpTapCount300 = 0;
+    warpTapTimer300 = null;
+  }, WARP_TAP_WINDOW_MS);
+
+  if (warpTapCount300 >= WARP_TAPS_THRESHOLD){
+    warpTapCount300 = 0;
+    if (warpTapTimer300) clearTimeout(warpTapTimer300);
+    warpTapTimer300 = null;
+    warpToScoreBand(300);
+    console.log('DEBUG: warp to score 300 band');
+  }
+}
+
+function tapWarp500(){
+  warpTapCount500++;
+  if (warpTapTimer500) clearTimeout(warpTapTimer500);
+  warpTapTimer500 = setTimeout(() => {
+    warpTapCount500 = 0;
+    warpTapTimer500 = null;
+  }, WARP_TAP_WINDOW_MS);
+
+  if (warpTapCount500 >= WARP_TAPS_THRESHOLD){
+    warpTapCount500 = 0;
+    if (warpTapTimer500) clearTimeout(warpTapTimer500);
+    warpTapTimer500 = null;
+    warpToScoreBand(500);
+    console.log('DEBUG: warp to score 500 band');
+  }
+}
+
+const highScoreBanner = document.getElementById('highScoreBanner');
+
+// ★ ポーズ中にラベルを連打 → スコア帯ワープ（スマホ用の隠し操作）
+if (DEBUG_OPTIONS.warpMobile && scoreLabel) {
+  scoreLabel.addEventListener('pointerdown', e => {
+    if (!isPaused || !gameStarted || isGameOver) return;
+    e.preventDefault();
+    tapWarp300();
+  });
+}
+
+if (DEBUG_OPTIONS.warpMobile && highScoreEl) {
+  highScoreEl.addEventListener('pointerdown', e => {
+    if (!isPaused || !gameStarted || isGameOver) return;
+    e.preventDefault();
+    tapWarp500();
+  });
+}
+
 const finalScoreEl = document.getElementById('finalScore');
-const restartButton = document.getElementById('restartButton');
+
+// const restartButton = document.getElementById('restartButton');
+
 const shareButton = document.getElementById('shareButton');
 const jumpButton = document.getElementById('jumpButton');
 const pauseButton = document.getElementById('pauseButton');
-const pauseOverlay = document.getElementById('pauseOverlay');
-const startScreen = document.getElementById('startScreen');
-const startButton = document.getElementById('startButton');
+const pauseOverlay = document.getElementById('pauseOverlay');  // ★ここ追加
 
-  const versionLabel = document.getElementById('versionLabel');
+const gameOverHighScoreLabel = document.getElementById('gameOverHighScoreLabel');
+
+const startScreen = document.getElementById('startScreen');
+// const startButton = document.getElementById('startButton'); ←削除
+
+const muteButton = document.getElementById('muteButton');
+const creditsOverlay = document.getElementById('creditsOverlay');
+const creditsButton = document.getElementById('creditsButton');
+const creditsScroll = document.getElementById('creditsScroll');
+const creditsEndMessage = document.getElementById('creditsEndMessage');
+
+// ★ クレジット用：サンキュー表示タイマー
+let creditsEndTimer = null;
+
+// アニメ長さに合わせて呼び出す
+function scheduleCreditsEndMessage() {
+  if (!creditsEndMessage) return;
+
+  if (creditsEndTimer) {
+    clearTimeout(creditsEndTimer);
+    creditsEndTimer = null;
+  }
+
+  creditsEndTimer = setTimeout(() => {
+    creditsEndMessage.classList.remove('hidden');
+  }, 72000); // ← ここを 40000 とかに変えたら 40秒で出る
+}
+
+const rankingOverlay      = document.getElementById('rankingOverlay');
+const rankingContent      = document.getElementById('rankingContent');
+const closeRankingButton  = document.getElementById('closeRankingButton');
+
+// ★ 追加：リセット関連
+const resetConfirmOverlay = document.getElementById('resetConfirmOverlay');
+const resetButton         = document.getElementById('resetButton');
+const confirmResetButton  = document.getElementById('confirmResetButton');
+const cancelResetButton   = document.getElementById('cancelResetButton');
+  
+
+const versionLabel = document.getElementById('versionLabel');
 if (versionLabel) {
   versionLabel.textContent = `v${GAME_VERSION}`;
 }
 
+const sendScoreButton   = document.getElementById('sendScoreButton');
+const sendStatusMessage = document.getElementById('sendStatusMessage');
 
-function loadImg(src){ const img=new Image(); img.src=src; return img; }
-const SPRITES={
-  blueberry: loadImg('./assets/blueberry.svg'),
-  sunflower: loadImg('./assets/sunflower.svg'),
-  donguri:  loadImg('./assets/Donguri.svg')
-};
+const viewRankingButton = document.getElementById('viewRankingButton');
+const backToTitleButton = document.getElementById('backToTitleButton');
 
-/* ===== オーディオ ===== */
-let audioStarted=false, bgmAudio, endAudio;
-let pickupPool = [];
-let pickupIndex = 0;
+if (sendScoreButton){
+  sendScoreButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    sendScoreToServer(score);    // 今のスコアを送信
+  });
+}
+
+if (viewRankingButton){
+  viewRankingButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    openRankingOverlay();
+  });
+}
+
+if (closeRankingButton){
+  closeRankingButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    closeRankingOverlay();
+  });
+}
+
+if (backToTitleButton){
+  backToTitleButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    backToTitleFromGameOver();
+  });
+}
+
+function escapeHtml(str){
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  };
+  return String(str).replace(/[&<>"']/g, c => map[c]);
+}
+
+
+async function openRankingOverlay(){
+  if (!rankingOverlay || !rankingContent) return;
+
+  rankingOverlay.classList.remove('hidden');
+  rankingOverlay.classList.add('flex');
+
+ // ★ アクションボタンを「ランキングを閉じる」モードに
+  updateJumpButton(JUMP_MODE.RANKING);
   
-async function startAudio(){
-  if(audioStarted) return;
-  try{
-    bgmAudio = new Audio('./assets/BGM.mp3');
-    bgmAudio.volume = 0.5;
-    bgmAudio.loop = true;
-    await bgmAudio.play();
+  rankingContent.innerHTML = '<p class="text-center text-sm">読み込み中むる…</p>';
 
-    endAudio = new Audio('./assets/END.mp3');
-    endAudio.volume = 0.5;
+  try {
+    const res = await fetch(`${SCORE_API_URL}?mode=json`, { method: 'GET' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
 
-    // ▼ 効果音はプールで用意（複数同時再生に強い）
-    const PICK_POOL_SIZE = 6; // 4でもOK。取りこぼし減らしたいなら6〜8
-    for(let i=0;i<PICK_POOL_SIZE;i++){
-      const a = new Audio('./assets/pick.mp3');
-      a.preload = 'auto';
-      a.volume = 1.0;
-      // iOS対策
-      a.setAttribute('playsinline','');
-      pickupPool.push(a);
+    const data = await res.json();
+    const scores = data.scores || [];
+
+    if (!scores.length){
+      rankingContent.innerHTML =
+        '<p class="text-center text-sm">まだ記録がないむる…</p>';
+      return;
     }
 
-    audioStarted = true;
-  }catch(e){
-    console.error(e);
+    rankingContent.innerHTML = scores.map(s => `
+      <div class="flex items-center gap-2 border-b border-gray-700 py-1">
+        <span class="w-8 text-left text-xs sm:text-sm">#${s.rank}</span>
+        <span class="flex-1 text-left truncate text-xs sm:text-sm">
+          ${escapeHtml(s.name)}
+        </span>
+        <span class="w-16 text-right font-mono text-sm sm:text-base">
+          ${s.score}
+        </span>
+      </div>
+    `).join('');
+  } catch (err){
+    console.error(err);
+    rankingContent.innerHTML =
+      '<p class="text-center text-sm text-red-300">ランキングの読み込みに失敗したむる…</p>';
   }
 }
 
-  function playPickup(){
-  if(!pickupPool.length) return;
-  const a = pickupPool[pickupIndex];
-  pickupIndex = (pickupIndex + 1) % pickupPool.length;
 
-  try{
-    // iOSで稀にcurrentTimeが無視される対策：一旦停止→巻き戻し
-    a.pause();
-    a.currentTime = 0;
-    const p = a.play();
-    if(p && typeof p.catch === 'function'){ p.catch(()=>{}); }
-  }catch(_){}
+function closeRankingOverlay(){
+  if (!rankingOverlay) return;
+  rankingOverlay.classList.add('hidden');
+  rankingOverlay.classList.remove('flex');
+
+  // 状態に応じてアクションボタンを戻す
+  if (isGameOver){
+    updateJumpButton(JUMP_MODE.RESTART);
+
+    // ★ まだクールタイム中ならグレーのまま
+    if (!canRestart){
+      setRestartCooldownActive(true);
+    }
+  } else if (!gameStarted){
+    updateJumpButton(JUMP_MODE.START);
+  } else {
+    updateJumpButton(JUMP_MODE.PLAY);
+  }
 }
 
 
-/* ===== 画面サイズ（従来レイアウト） ===== */
-const parentWidth = canvas.parentElement.clientWidth;
-const gameWidth  = Math.min(parentWidth, 768);
-const gameHeight = 300;
-canvas.width = gameWidth; canvas.height = gameHeight;
+function openResetOverlay(){
+  if (!resetConfirmOverlay) return;
+  resetConfirmOverlay.classList.remove('hidden');
+  resetConfirmOverlay.classList.add('flex');
+}
+
+
+function closeResetOverlay(){
+  if (!resetConfirmOverlay) return;
+  resetConfirmOverlay.classList.add('hidden');
+  resetConfirmOverlay.classList.remove('flex');
+}
+
+/* ★ リセットボタン（タイトル画面） */
+if (resetButton){
+  resetButton.addEventListener('click', e => {
+    e.preventDefault();
+    // タイトル画面でだけ押せる想定やけど、ゲーム中でも挙動は同じでOK
+    openResetOverlay();
+  });
+}
+
+// 「しないむる」→ 何もせず閉じる
+if (cancelResetButton){
+  cancelResetButton.addEventListener('click', e => {
+    e.preventDefault();
+    closeResetOverlay();
+  });
+}
+
+// 「消去する」→ ハイスコア削除＋メッセージ
+if (confirmResetButton){
+  confirmResetButton.addEventListener('click', e => {
+    e.preventDefault();
+
+    // ローカル保存してるハイスコアを消す
+    highScore = 0;
+    localStorage.removeItem(HIGH_SCORE_KEY);
+
+    if (highScoreEl){
+      highScoreEl.textContent = 'ハイスコア: 0';
+    }
+
+    // ハイスコア演出系もリセット
+    isHighScoreRun = false;
+    if (scoreLabel){
+      scoreLabel.classList.remove('text-orange-400');
+      scoreLabel.classList.add('text-blue-600');
+    }
+    if (highScoreBanner){
+      highScoreBanner.classList.add('hidden');
+    }
+
+    // メッセージ
+    alert('ハイスコアを消去したむる！またがんばるむる');
+
+    // オーバーレイ閉じる（タイトルには元々いる状態）
+    closeResetOverlay();
+  });
+}
+
+/* ▼ ボトムのジャンプボタンのモード管理 */
+const JUMP_MODE = {
+  START: 'start',    // タイトル中
+  PLAY: 'play',      // プレイ中
+  RESTART: 'restart',  // ゲームオーバー後
+  CREDITS: 'credits',   // クレジット表示中（ジャンプボタン＝とじる）
+  RANKING: 'ranking',   // ランキング表示中（とじる）
+  SHOP: 'shop'
+
+};
+
+let jumpButtonMode = JUMP_MODE.START;
+
+function updateJumpButton(mode){
+  jumpButtonMode = mode;
+  if (!jumpButton) return;
+
+  // 色系クラスいったん全部外す
+  jumpButton.classList.remove(
+    'bg-blue-600',
+    'bg-green-600',
+    'bg-gray-700',
+    'bg-gray-500',          // ★ 追加：ロック中の色
+    'hover:bg-blue-700',
+    'hover:bg-green-700',
+    'hover:bg-gray-800',
+    'opacity-60',           // ★ 追加：半透明
+    'cursor-not-allowed'    // ★ 追加：禁止カーソル
+  );
+
+    switch(mode){
+    case JUMP_MODE.START:
+      jumpButton.textContent = 'ゲームスタート';
+      jumpButton.classList.add('bg-green-600','hover:bg-green-700');
+      break;
+
+    case JUMP_MODE.PLAY:
+      jumpButton.textContent = 'ジャンプ';
+      jumpButton.classList.add('bg-blue-600','hover:bg-blue-700');
+      break;
+
+    case JUMP_MODE.RESTART:
+      jumpButton.textContent = 'リスタート';
+      jumpButton.classList.add('bg-green-600','hover:bg-green-700');
+      break;
+
+    case JUMP_MODE.CREDITS:
+      jumpButton.textContent = 'とじる';
+      jumpButton.classList.add('bg-gray-700','hover:bg-gray-800');
+      break;
+
+    case JUMP_MODE.RANKING:          // ★ 追加
+      jumpButton.textContent = 'とじる';
+      jumpButton.classList.add('bg-gray-700','hover:bg-gray-800');
+      break;
+
+
+   case JUMP_MODE.SHOP:
+      jumpButton.textContent = 'とじる';
+      jumpButton.classList.add('bg-gray-700','hover:bg-gray-800');
+      break;
+
+  }
+
+}
+
+// 初期状態は「ゲームスタート」（緑）
+updateJumpButton(JUMP_MODE.START);
+
+  
+/* ===== Audio（Web Audio API版：iPhoneカクつき対策） ===== */
+const AudioContext = window.AudioContext || window.webkitAudioContext;
+let audioCtx; // 初期化はユーザー操作後に行う
+const seBuffers = {};
+
+// ★ HIGHEND 用の再生中ソースを覚えておく
+let currentHighEndSource = null;
+
+// BGMは従来通り（ストリーミング再生）
+let bgmAudio = new Audio('/murudash/assets/BGM.mp3');
+bgmAudio.loop = true; bgmAudio.volume = 0.5;
+let bgm2Audio = new Audio('/murudash/assets/BGM2.mp3');
+bgm2Audio.loop = true; bgm2Audio.volume = 0.5;
+let creditsAudio = new Audio('/murudash/assets/CREDIT.mp3');
+creditsAudio.loop = true; creditsAudio.volume = 0.5;
+
+let highScoreBgmTimeoutId = null;
+let muted = false;
+let audioBooted = false;
+
+// SEデータの読み込み＆デコード（これがカクつきをなくす肝）
+async function loadSeBuffer(name, url) {
+  if (!audioCtx) return;
+  try {
+    const res = await fetch(url);
+    const arrayBuffer = await res.arrayBuffer();
+    const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+    seBuffers[name] = decodedBuffer;
+  } catch (e) {
+    console.error(`Failed to load SE: ${name}`, e);
+  }
+}
+
+
+  // ★ iOS 判定（Safari/Chrome まとめて）
+const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+// ★ SE 全体のマスターゲイン
+const SE_MASTER_GAIN = isIOS ? 1.6 : 1.0;  // iPhoneだけ少し持ち上げる
+
+function playSeBuffer(name, volume = 0.5) {
+  if (muted || !audioCtx || !seBuffers[name]) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+
+  const source = audioCtx.createBufferSource();
+  source.buffer = seBuffers[name];
+
+  const gainNode = audioCtx.createGain();
+  gainNode.gain.value = volume * SE_MASTER_GAIN;
+
+  source.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+
+  // ★ HIGHEND だけは「今鳴ってるやつ」を覚えておく
+  if (name === 'highend') {
+    // すでに鳴ってるのがあれば止める
+    if (currentHighEndSource) {
+      try {
+        currentHighEndSource.stop();
+      } catch (_) {}
+    }
+    currentHighEndSource = source;
+
+    // 再生し終わったら参照クリア
+    source.onended = () => {
+      if (currentHighEndSource === source) {
+        currentHighEndSource = null;
+      }
+    };
+  }
+
+  source.start(0);
+}
+
+function stopHighEndSe() {
+  if (currentHighEndSource) {
+    try {
+      currentHighEndSource.stop();
+    } catch (_) {}
+    currentHighEndSource = null;
+  }
+}
+
+// 初期化（ワンタップ目で実行）
+async function bootAudioOnce() {
+  if (audioBooted) return;
+  audioBooted = true;
+
+  // AudioContext作成
+  audioCtx = new AudioContext();
+
+  // iOS用: 無音再生でオーディオエンジンを起こす
+  try {
+    const buf = audioCtx.createBuffer(1, 1, 22050);
+    const src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.connect(audioCtx.destination);
+    src.start(0);
+  } catch (_) {}
+
+  // ここでSEを一括ロード（非同期）
+  loadSeBuffer('pick', '/murudash/assets/pick.mp3');
+  loadSeBuffer('end', '/murudash/assets/END.mp3');
+  loadSeBuffer('highend', '/murudash/assets/HIGHEND.mp3');
+  loadSeBuffer('se', '/murudash/assets/SE.mp3');
+}
+
+// 画面タッチ/クリックで初期化
+const initEvents = ['touchstart', 'click', 'keydown'];
+const initAudioHandler = () => {
+  bootAudioOnce();
+  initEvents.forEach(evt => document.removeEventListener(evt, initAudioHandler));
+};
+initEvents.forEach(evt => document.addEventListener(evt, initAudioHandler, { passive: false }));
+
+
+/* --- 既存機能との互換用 --- */
+
+function applyMute() {
+  if (bgmAudio) bgmAudio.muted = muted;
+  if (bgm2Audio) bgm2Audio.muted = muted;
+  if (creditsAudio) creditsAudio.muted = muted;
+
+  if (bgmSougenAudio) bgmSougenAudio.muted = muted;
+  if (bgmYoruAudio)   bgmYoruAudio.muted = muted;
+}
+
+
+function playPickup() {
+  playSeBuffer('pick', 0.5);
+}
+
+function stopAllMainBgms(){
+  try { if (bgmAudio) { bgmAudio.pause(); bgmAudio.currentTime = 0; } } catch(_){}
+  try { if (bgmSougenAudio) { bgmSougenAudio.pause(); bgmSougenAudio.currentTime = 0; } } catch(_){}
+  try { if (bgmYoruAudio)   { bgmYoruAudio.pause(); bgmYoruAudio.currentTime = 0; } } catch(_){}
+}
+
+  function pauseAllMainBgms(){
+  try { if (bgmAudio) bgmAudio.pause(); } catch(_){}
+  try { if (bgmSougenAudio) bgmSougenAudio.pause(); } catch(_){}
+  try { if (bgmYoruAudio) bgmYoruAudio.pause(); } catch(_){}
+}
+
+
+function getSelectedMainAudio(){
+  const id = getSelectedBgmId();
+  if (id === 'sougen' && bgmSougenAudio) return bgmSougenAudio;
+  if (id === 'yoru'   && bgmYoruAudio)   return bgmYoruAudio;
+  return bgmAudio; // フォールバックはデフォルト
+}
+
+function playMainBgm() {
+  if (bgm2Audio) bgm2Audio.pause(); // 既存のハイスコアBGMは別枠のまま
+
+  stopAllMainBgms();
+
+  const a = getSelectedMainAudio();
+  try {
+    if (a && a.paused) {
+      a.currentTime = 0;
+      a.play().catch(()=>{});
+    }
+  } catch (_) {}
+}
+
+
+function playHighScoreBgm() {
+  stopAllMainBgms(); // ★追加：草原/夜も止める
+
+  try {
+    if (bgm2Audio && bgm2Audio.paused) {
+      bgm2Audio.currentTime = 0;
+      bgm2Audio.play().catch(() => {});
+    }
+  } catch (_) {}
+}
+
+
+function startAudio() {
+  bootAudioOnce();
+  if (isHighScoreRun) playHighScoreBgm();
+  else playMainBgm();
+  applyMute();
+}
+
+function ensureBgmPlaying() {
+  bootAudioOnce(); // iOS対策も込みで起こす
+  applyMute();
+
+  try {
+    if (isHighScoreRun) {
+      if (bgm2Audio && bgm2Audio.paused) bgm2Audio.play().catch(() => {});
+    } else {
+      const a = getSelectedMainAudio();
+      if (a && a.paused) a.play().catch(() => {});
+    }
+  } catch (_) {}
+}
+  
+
+
+  
+function playCreditsBgm() {
+  try { creditsAudio.currentTime = 0; creditsAudio.play(); } catch (_) {}
+}
+function stopCreditsBgm() {
+  try { creditsAudio.pause(); creditsAudio.currentTime = 0; } catch (_) {}
+}
+
+if (muteButton) {
+  muteButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    muted = !muted;
+    applyMute();
+    muteButton.textContent = muted ? '🔇' : '🔊';
+  });
+}
+
+
+/* ===== 画面サイズ（固定レイアウト） ===== */
+
+const gameWidth  = 768;
+const gameHeight = 384;  // ← 縦少し伸ばす（16:9 近く）
+
+canvas.width  = gameWidth;
+canvas.height = gameHeight;
+
 
 /* ===== 空のテーマ（曲タイミング連動 / フェード） ===== */
 const THEMES={ morning:{top:[160,210,235],bottom:[247,250,252]}, evening:{top:[246,173,85],bottom:[253,230,138]}, night:{top:[45,55,90],bottom:[20,25,50]} };
@@ -268,16 +1582,61 @@ function drawSky(df){
   ctx.fillStyle=g; ctx.fillRect(0,0,gameWidth,gameHeight);
 }
 
-/* ===== 曲タイミング ===== */
-const EVENING_MARK_S=96, EPS=0.25;
-let lastAudioTime=0, loopCount=0, eveningTriggered=false;
-function resetAudioSyncState(){ lastAudioTime=0; loopCount=0; eveningTriggered=false; setBackgroundTheme('morning'); }
-function updateSkyByMusic(){
-  if(!bgmAudio) return;
-  const t=bgmAudio.currentTime||0;
-  if(!eveningTriggered && t>=EVENING_MARK_S-EPS){ setBackgroundTheme('evening'); eveningTriggered=true; }
-  if(t+EPS<lastAudioTime){ loopCount++; eveningTriggered=false; setBackgroundTheme((loopCount%2===1)?'night':'morning'); }
-  lastAudioTime=t;
+
+/* ===== 曲タイミング（BGMの長さベースで時間管理） ===== */
+// BGM.mp3 の長さ：2:19.100 = 139.1 秒
+const TRACK_LENGTH_S = 139.1;
+
+// 1ループの中で「夕焼け」に入るタイミング（前と同じ 96秒）
+const EVENING_MARK_S = 96;
+
+// 現在 BGM が何周目まで進んだ想定か（0,1,2,...）
+let skyLoopIndex = 0;
+// そのループの中で「夕焼け」にもう切り替え済みかどうか
+let skyEveningTriggered = false;
+
+// ゲーム開始・リスタート時に呼ぶ
+function resetAudioSyncState(){
+  skyLoopIndex        = 0;
+  skyEveningTriggered = false;
+
+  // ★Yoru選択なら夜から、それ以外は朝から
+  const startNight = (getSelectedBgmId() === 'yoru');
+  setBackgroundTheme(startNight ? 'night' : 'morning');
+}
+
+
+// 経過時間（timeElapsed）から「BGM のどのあたりか」を逆算して空を決める
+function updateSkyByTimeline(){
+  if (!gameStarted || isPaused || isGameOver) return;
+
+  // ★ yoru は夜固定（星・街の演出がブレない）
+  if (getSelectedBgmId() === 'yoru'){
+    if (phaseName !== 'night') setBackgroundTheme('night');
+    return;
+  }
+
+  
+  const tSec = timeElapsed / 1000;
+  const loopIndex = Math.floor(tSec / TRACK_LENGTH_S);
+  const localSec  = tSec % TRACK_LENGTH_S;
+
+  // ★Yoruならトグルの基準を反転（0周目=夜）
+  const startOffset = (getSelectedBgmId() === 'yoru') ? 1 : 0;
+
+  if (loopIndex !== skyLoopIndex){
+    skyLoopIndex        = loopIndex;
+    skyEveningTriggered = false;
+
+    // 0周目: 朝(通常) / 夜(Yoru) になる
+    const isNightBase = ((skyLoopIndex + startOffset) % 2 === 1);
+    setBackgroundTheme(isNightBase ? 'night' : 'morning');
+  }
+
+  if (!skyEveningTriggered && localSec >= EVENING_MARK_S){
+    setBackgroundTheme('evening');
+    skyEveningTriggered = true;
+  }
 }
 
 /* ===== 雲（スピード増＋ゲーム速度連動） ===== */
@@ -287,7 +1646,6 @@ let clouds = Array.from({length:6},()=>({
   base: 0.35 + Math.random()*0.35,
   size: 70 + Math.random()*70
 }));
-
   
 function drawClouds(df){
   // 昼・夕・夜それぞれで雲の透明度を変える
@@ -321,9 +1679,6 @@ function drawClouds(df){
   }
 }
 
-
-
-  
 /* ===== 星空（夜だけフェード表示・ゆっくり視差・たまに流れ星） ===== */
 // 画面幅に対して控えめ。768pxなら ~75個前後
 const STAR_COUNT = Math.max(40, Math.round(gameWidth * 0.10));
@@ -415,12 +1770,245 @@ function drawStars(df){
 }
 
 
+// ===== 地面テーマ（BGMで切替） =====
+const GROUND_THEMES = {
+  dirt: {
+    base: '#8B5A2B',
+    grain:  [139, 90, 43],
+    pebble: [133, 84, 40],
+    streak: [130, 82, 38],
+  },
+  grass: {
+    base: '#2F7D3B',     // 草原っぽい緑
+    grain:  [55, 140, 70],
+    pebble: [40, 110, 55],
+    streak: [30, 95, 45],
+  },
+    concrete: {
+    base: '#6E727A',      // コンクリのベース
+    grain:  [140, 142, 148], // 砂っぽい粒
+    pebble: [120, 123, 130], // 小石っぽい点
+    streak: [95,  98,  104], // うっすら擦れ
+  },
+};
+
+// 今どっちの地面か（初期は選択BGMから決める）
+let groundThemeKey =
+  (getSelectedBgmId() === 'sougen') ? 'grass' :
+  (getSelectedBgmId() === 'yoru')   ? 'concrete' :
+  'dirt';
 
 
+function applyGroundThemeFromBgm(){
+  const nextKey =
+  (getSelectedBgmId() === 'sougen') ? 'grass' :
+  (getSelectedBgmId() === 'yoru')   ? 'concrete' :
+  'dirt';
+
+  if (nextKey === groundThemeKey) return;
+  groundThemeKey = nextKey;
+
+  // 粒/小石の色も切り替えたいから作り直す
+  initGroundDetails();
+}
   
 /* ===== 地面（色味調整＋速度一致） ===== */
 const groundY = gameHeight - 50;
-function drawGround(){ ctx.fillStyle='#8B5A2B'; ctx.fillRect(0,groundY,gameWidth,50); }
+
+
+// ===== 夜の街（ビル群） =====
+let cityBuildings = [];
+let cityInited = false; // ★追加（setSelectedBgmIdで使ってるなら保険にもなる）
+
+function makeWindowPattern(w, h){
+  const wx = 8, wy = 10;
+  const gapX = 8, gapY = 10;
+
+  const cols = Math.max(1, Math.floor((w - 10) / (wx + gapX)));
+  const rows = Math.max(1, Math.floor((h - 18) / (wy + gapY)));
+
+  // ★点灯してる窓だけを [r,c] で持つ（これで点滅しない）
+  const lit = [];
+  for (let r=0; r<rows; r++){
+    for (let c=0; c<cols; c++){
+      if (Math.random() < 0.22) lit.push([r, c]);
+    }
+  }
+
+  return { wx, wy, gapX, gapY, cols, rows, lit };
+}
+
+function initCity(){
+  cityBuildings = [];
+  const COUNT = 18;
+
+  for (let i = 0; i < COUNT; i++){
+    const w = 60 + Math.random()*90;
+    const h = 90 + Math.random()*160;
+
+    cityBuildings.push({
+      x: Math.random() * gameWidth,
+      w,
+      h,
+      layer: Math.random() < 0.6 ? 0 : 1,
+      light: 0.25 + Math.random()*0.35,
+
+      // ★追加：窓の固定パターン
+      win: makeWindowPattern(w, h)
+    });
+  }
+
+  cityBuildings.sort((a,b)=>a.x-b.x);
+  cityInited = true; // ★追加
+}
+
+
+// 空のフェーズで薄くする（朝は消したいなら 0.0 にする）
+function phaseMulForCity(){
+  if (phaseName === 'night') return 1.0;
+  if (phaseName === 'evening') return 0.65;
+  return 0.20; // 朝は薄く残す。完全に消すなら 0.0
+}
+
+function drawCity(df){
+  const mul = phaseMulForCity();
+  if (mul <= 0.001) return;
+
+  // 遠景スピード（地面よりだいぶ遅い）
+  const baseV = gameSpeed * 0.25;
+
+  for (const b of cityBuildings){
+    const v = baseV * (b.layer === 0 ? 0.7 : 1.0);
+    b.x -= v * df;
+
+    // 左に抜けたら右へ回す
+    if (b.x + b.w < -50){
+      b.x = gameWidth + 50 + Math.random()*120;
+    }
+
+    const baseY = groundY;
+
+    // ビル本体
+    ctx.fillStyle = `rgba(20, 25, 35, ${0.55 * mul})`;
+    ctx.fillRect(b.x, baseY - b.h, b.w, b.h);
+
+    // 窓（固定パターン）
+    const W = b.win;
+    ctx.fillStyle = `rgba(255, 220, 120, ${b.light * mul})`;
+
+    for (const [r, c] of W.lit){
+      const px = b.x + 6 + c*(W.wx + W.gapX);
+      const py = baseY - b.h + 10 + r*(W.wy + W.gapY);
+      ctx.fillRect(px, py, W.wx, W.wy);
+    }
+  }
+}
+// 1回だけ初期化
+initCity();
+
+/* ===== 山並み（草原BGM専用：遠景パララックス） ===== */
+let mountains = [];
+let mountainAlpha = 0;        // 0〜1（フェード用）
+const MOUNTAIN_LERP = 0.04;   // フェード速度（大きいほど速い）
+
+function initMountains(){
+  const count = 7;          // 768幅ならこれくらいで十分
+  mountains = [];
+
+  let x = -200;
+  for (let i = 0; i < count; i++){
+    const w = 220 + Math.random()*260;  // 山の横幅
+    const h = 60  + Math.random()*90;   // 山の高さ
+
+    mountains.push({
+      x, w, h,
+      p1: 0.35 + Math.random()*0.10,    // 1つめのピーク位置
+      p2: 0.65 + Math.random()*0.10,    // 2つめのピーク位置
+      h2: 0.72 + Math.random()*0.16     // 2つめピークの高さ比
+    });
+
+    x += w * (0.75 + Math.random()*0.25);
+  }
+}
+
+function mountainColor(){
+  // 空のテーマに合わせてうっすら色味だけ変える（くっきりさせない）
+  if (phaseName === 'night')   return 'rgb(45,55,75)';
+  if (phaseName === 'evening') return 'rgb(120,95,85)';
+  return 'rgb(85,110,125)'; // morning/day
+}
+
+function drawMountains(df){
+  // 草原BGMのときだけ出す（フェード付き）
+  const target = (getSelectedBgmId() === 'sougen') ? 1 : 0;
+  mountainAlpha += (target - mountainAlpha) * (MOUNTAIN_LERP * df);
+  if (mountainAlpha <= 0.01) return;
+
+  const baseY = groundY + 6;  // 山の足元を地面の中に潜らせる（隙間消える）
+
+
+  // 遠景だからめっちゃ遅く（ゲーム速度にも少しだけ連動）
+  const speed = (gameSpeed * 0.18 + 0.3) * df;
+
+  ctx.save();
+  ctx.fillStyle = mountainColor();
+
+  // うっすら本体
+  ctx.globalAlpha = 0.18 * mountainAlpha;
+
+  for (const m of mountains){
+    m.x -= speed;
+
+    // 左に抜けたら右に回す
+    if (m.x + m.w < -260){
+      const rightMost = Math.max(...mountains.map(mm => mm.x + mm.w));
+      m.x = rightMost + (m.w * (0.55 + Math.random()*0.35));
+      m.w = 220 + Math.random()*260;
+      m.h = 60  + Math.random()*90;
+      m.p1 = 0.35 + Math.random()*0.10;
+      m.p2 = 0.65 + Math.random()*0.10;
+      m.h2 = 0.72 + Math.random()*0.16;
+    }
+
+    const x0 = m.x;
+    const x1 = m.x + m.w;
+    const y0 = baseY;
+    const yPeak1 = baseY - m.h;
+    const yPeak2 = baseY - (m.h * m.h2);
+
+    ctx.beginPath();
+    ctx.moveTo(x0, y0);
+    ctx.lineTo(x0 + m.w * m.p1, yPeak1);
+    ctx.lineTo(x0 + m.w * m.p2, yPeak2);
+    ctx.lineTo(x1, y0);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // ぼかしっぽく見せるための薄い重ね（擬似）
+  ctx.globalAlpha = 0.08 * mountainAlpha;
+  for (const m of mountains){
+    const base2 = baseY + 7;
+    ctx.beginPath();
+    ctx.moveTo(m.x, base2);
+    ctx.lineTo(m.x + m.w * m.p1, base2 - m.h + 12);
+    ctx.lineTo(m.x + m.w * m.p2, base2 - (m.h * m.h2) + 12);
+    ctx.lineTo(m.x + m.w, base2);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+function drawGround(){
+  const t = GROUND_THEMES[groundThemeKey] || GROUND_THEMES.dirt;
+  ctx.fillStyle = t.base;
+  ctx.fillRect(0, groundY, gameWidth, 50);
+}
+
+initMountains();
+
 initStars(); 
 
 let groundGrains = [];   // 細かい砂
@@ -428,37 +2016,43 @@ let groundPebbles = [];  // 小石
 let groundStreaks = [];  // 地表の横線
 
 function initGroundDetails(){
+  const t = GROUND_THEMES[groundThemeKey] || GROUND_THEMES.dirt;
+
   const grainsN  = Math.floor(gameWidth * 0.38);
   const pebblesN = Math.floor(gameWidth * 0.08);
   const streaksN = Math.floor(gameWidth * 0.05);
 
-  // 床色寄せ（#8B5A2B 付近）
+  const jitter = (v, j) => v + Math.floor((Math.random()*2 - 1) * j);
+
   groundGrains = Array.from({length:grainsN},()=>({
     x: Math.random()*gameWidth,
     y: groundY + 8 + Math.random()*38,
     r: 0.8 + Math.random()*1.4,
-    shadeR: 139 + Math.floor(Math.random()*8),   // 139〜146
-    shadeG: 90  + Math.floor(Math.random()*6),   // 90〜95
-    shadeB: 43  + Math.floor(Math.random()*6)    // 43〜49
+    shadeR: jitter(t.grain[0], 8),
+    shadeG: jitter(t.grain[1], 8),
+    shadeB: jitter(t.grain[2], 8)
   }));
+
   groundPebbles = Array.from({length:pebblesN},()=>({
     x: Math.random()*gameWidth,
     y: groundY + 10 + Math.random()*36,
     w: 2 + Math.random()*3,
     h: 1 + Math.random()*2,
-    shadeR: 133 + Math.floor(Math.random()*10),  // 少し暗め
-    shadeG: 84  + Math.floor(Math.random()*10),
-    shadeB: 40  + Math.floor(Math.random()*10)
+    shadeR: jitter(t.pebble[0], 10),
+    shadeG: jitter(t.pebble[1], 10),
+    shadeB: jitter(t.pebble[2], 10)
   }));
+
   groundStreaks = Array.from({length:streaksN},()=>({
     x: Math.random()*gameWidth,
     y: groundY + 6 + Math.random()*10,
     len: 8 + Math.random()*18,
-    shadeR: 130 + Math.floor(Math.random()*8),
-    shadeG: 82  + Math.floor(Math.random()*8),
-    shadeB: 38  + Math.floor(Math.random()*8)
+    shadeR: jitter(t.streak[0], 10),
+    shadeG: jitter(t.streak[1], 10),
+    shadeB: jitter(t.streak[2], 10)
   }));
 }
+
 initGroundDetails();
 
 /* ★ 地面スクロール速度＝障害物（= gameSpeed）に完全一致させる */
@@ -491,11 +2085,21 @@ function drawGroundDetails(df){
   }
 }
 
-
 /* ===== ゲーム本体 ===== */
-let score=0, highScore=parseInt(localStorage.getItem('muruHighScore')||'0',10); highScoreEl.textContent=`ハイスコア: ${highScore}`;
-let gameSpeed=5, baseGameSpeed=5, gameSpeedAcceleration=0.05;
-const GAME_SPEED_MAX=13;
+let score = 0;
+let highScore = parseInt(localStorage.getItem(HIGH_SCORE_KEY) || '0', 10);
+highScoreEl.textContent = `ハイスコア: ${highScore}`;
+
+let gameSpeed           = 5;
+let baseGameSpeed       = 5;
+let gameSpeedAcceleration = 0.03;  // ★ここ下げる
+const GAME_SPEED_MAX    = 12;      // ★ここも少し下げる
+
+
+// ★ 追加：最後に死んだときの相手
+let lastDeathType = 'none';
+
+  
 
 let timeElapsed=0, obstacles=[], frame=0, spawnTimer=0;
 const minSpawnIntervalBase=105, maxSpawnIntervalBase=155, spawnIntervalReductionPerSec=4;
@@ -511,6 +2115,34 @@ function currentOnscreenLimit(ms){
 let isGameOver=false, isPaused=false, gameStarted=false, lastTime=0;
 let isDebug=false, debugTapCount=0; const DEBUG_TAPS_TO_ENABLE=20;
 let nextSpawnInterval=90;
+let isHighScoreRun = false;
+
+// ★ ゲームオーバー直後はリスタートを少しだけロックする
+let canRestart = false;
+const RESTART_DELAY_MS = 1500; // ← 好きに調整（ミリ秒）
+  
+// ★ リスタートボタンの見た目を「ロック中/解放済み」で切り替える
+function setRestartCooldownActive(active){
+  if (!jumpButton) return;
+  if (jumpButtonMode !== JUMP_MODE.RESTART) return;
+
+  // いったんグレー系クラスを掃除
+  jumpButton.classList.remove('bg-gray-500', 'opacity-60', 'cursor-not-allowed');
+
+  if (active){
+    // ★ ロック中 → グレー＆押せなさそうに
+    jumpButton.classList.remove('bg-green-600','hover:bg-green-700');
+    jumpButton.classList.add('bg-gray-500','opacity-60','cursor-not-allowed');
+  } else {
+    // ★ 解放済み → いつもの緑に戻す
+    jumpButton.classList.add('bg-green-600','hover:bg-green-700');
+  }
+}
+  
+// ★ ハイスコア突入フラッシュ用
+let flashTimer = 0;
+const FLASH_DURATION = 18; // だいたい 18フレーム ≒ 0.3秒
+
 
 /* === どんぐり（SVG/速度固定/5秒±1秒ごとに抽選30%） === */
 class Acorn{
@@ -535,13 +2167,34 @@ class Acorn{
 }
 let acorns = [];
 
+// ★どんぐりコンボ用
+let acornComboCount = 0;  // 連続取得数（0ならノーコンボ状態）
+
+ // ★ どんぐり取ったときに出す「+10」みたいなフキダシ用
+class FloatText {
+  constructor(text, x, y, options = {}) {
+    this.text = text;
+    this.x = x;
+    this.y = y;
+    this.vy = options.vy ?? -0.6;   // 上にふわっと上がる速さ
+    this.life = options.life ?? 30; // 寿命
+
+    // ★ 追加：色やフォントサイズをオプションで
+    this.color      = options.color      ?? '#fff7aa';
+    this.stroke     = options.stroke     ?? 'rgba(0,0,0,0.75)';
+    this.fontSize   = options.fontSize   ?? 20;
+  }
+}
+
+let floatTexts = [];
+ 
 // ★ ミリ秒基準タイマ（端末差なし）
 let acornSpawnTimerMs = 0;
 function nextAcornIntervalMs(){ return 5000 + Math.random()*2000; } // 5〜7秒に一度 抽選
 let acornNextIntervalMs = nextAcornIntervalMs();
 
 function maybeSpawnAcorn(){
-  if(Math.random() >= 0.30) return; // 30%で出す
+  if(Math.random() >= 0.45) return; // どんぐり発生率
   const x = gameWidth + 20;         // ★ 未定義バグ修正
   const size = 56 + Math.floor(Math.random()*12); // ちょい大きめ
   if(Math.random()<0.5){
@@ -560,16 +2213,91 @@ function spawnAcornMs(deltaMs){
 }
 
 function updateAcorns(d){
-  for(let i=acorns.length-1;i>=0;i--){ acorns[i].update(d); acorns[i].draw(); if(acorns[i].x<-50) acorns.splice(i,1); }
-}
-function tryCollectAcorns(){
-  const p={x:player.x,y:player.y,width:player.width*0.6,height:player.height*0.7};
   for(let i=acorns.length-1;i>=0;i--){
-    const a=acorns[i], h=a.getHitbox();
-    if(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y){
-      score+=10; acorns.splice(i,1);
-      playPickup();
+    const a = acorns[i];
+    a.update(d);
+    a.draw();
 
+    // 画面左に抜けた = 取り逃し
+    if(a.x < -50){
+      acorns.splice(i, 1);
+
+      // ★コンボリセット
+      acornComboCount = 0;
+    }
+  }
+}
+
+function tryCollectAcorns(){
+  const p = {
+    x: player.x,
+    y: player.y,
+    width:  player.width * 0.6,
+    height: player.height * 0.7
+  };
+
+  for (let i = acorns.length - 1; i >= 0; i--) {
+    const a = acorns[i];
+    const h = a.getHitbox();
+
+    const hit =
+      p.x < h.x + h.width &&
+      p.x + p.width > h.x &&
+      p.y < h.y + h.height &&
+      p.y + p.height > h.y;
+
+    if (hit) {
+      // ★ コンボカウント更新
+      acornComboCount++;                 // 1個目→1, 2個目→2, 3個目→3...
+
+      const comboBonus = acornComboCount - 1;     // 1個目:0, 2個目:1, 3個目:2...
+      const basePoints = isDebug ? 200 : 10;      // デバッグ時は 200 からスタート
+      const gained     = basePoints + comboBonus; // 10,11,12... / 200,201,202...
+
+      // スコア加算
+      score += gained;
+
+      // ★ 累計どんぐり数（バージョンまたいでカウント）
+      totalAcorns += 1;
+      localStorage.setItem(ACORN_TOTAL_KEY, String(totalAcorns));
+
+      const baseX = a.x + a.size * 0.5;
+      const baseY = a.y - a.size * 0.4;
+
+      // メインの "+10" / "+11" など（今までのやつ）
+      floatTexts.push(
+        new FloatText(
+          `+${gained}`,
+          baseX,
+          baseY,
+          {
+            // 色とかはデフォルトでOKなので指定なしでも可
+            // ここでいじりたくなったら options 追加してもOK
+          }
+        )
+      );
+
+      // ★ コンボ中だけ「COMBO!! +1」を上に表示（オレンジ文字）
+      if (comboBonus > 0) {
+        floatTexts.push(
+          new FloatText(
+            `COMBO!! +${comboBonus}`,
+            baseX,
+            baseY - 24,  // ちょい上に表示
+            {
+              color:    '#FFA500',                  // オレンジ
+              stroke:   'rgba(0,0,0,0.9)',
+              fontSize: 18,
+              life:     32,
+              vy:       -0.55
+            }
+          )
+        );
+      }
+
+      // どんぐり削除＆SE
+      acorns.splice(i, 1);
+      playPickup();
     }
   }
 }
@@ -578,17 +2306,184 @@ function tryCollectAcorns(){
 function clamp01(v){ return Math.max(0,Math.min(1,v)); }
 function getEarlyEaseMultiplier(ms){ const t=clamp01(ms/EARLY_EASE_MS); return EARLY_EASE_START_MULT + (1.0-EARLY_EASE_START_MULT)*t; }
 function getMinPixelGap(ms){ const t=clamp01(ms/EARLY_EASE_MS); const s=Math.round(gameWidth*0.42), e=Math.round(gameWidth*0.32); return Math.round(s+(e-s)*t); }
-function enableDebugMode(){ if(isDebug) return; isDebug=true; const b=document.createElement('span'); b.id='debugBadge'; b.textContent='DEBUG'; b.className='px-2 py-1 bg-pink-600 text-white text-xs font-bold rounded shadow-sm ml-1'; highScoreEl.parentElement.appendChild(b); }
+function enableDebugMode(){
+  // ★ 無効化されてたら何もしない
+  if (!DEBUG_OPTIONS.invincibleMode) return;
+
+  if(isDebug) return;
+  isDebug=true;
+  const b=document.createElement('span');
+  b.id='debugBadge';
+  b.textContent='DEBUG';
+  b.className='px-2 py-1 bg-pink-600 text-white text-xs font-bold rounded shadow-sm ml-1';
+  highScoreEl.parentElement.appendChild(b);
+}
+
 function resetDebugTapCounter(){ debugTapCount=0; }
 
+function startHighScoreRun(){
+  if (isHighScoreRun) return;
+  isHighScoreRun = true;
+
+  // 見た目変更
+  if (scoreLabel){
+    scoreLabel.classList.remove('text-blue-600');
+    scoreLabel.classList.add('text-orange-400');
+  }
+  if (highScoreBanner){
+    highScoreBanner.classList.remove('hidden');
+  }
+  flashTimer = FLASH_DURATION;
+
+  // SE（ここがエラーの元なので、失敗しても無視するように包む）
+  try {
+    playSeBuffer('se', 0.5);
+  } catch(e) { console.error(e); }
+
+  // いったん「メインBGM（選択BGM含む）」を止める
+stopAllMainBgms();
+
+// ハイスコアBGMも念のため止めて頭出し
+try{
+  if (bgm2Audio){
+    bgm2Audio.pause();
+    bgm2Audio.currentTime = 0;
+    bgm2Audio.volume = 0.5;
+  }
+}catch(_){}
+
+
+  // 既存のディレイタイマーがあればキャンセル
+  if (highScoreBgmTimeoutId !== null){
+    clearTimeout(highScoreBgmTimeoutId);
+    highScoreBgmTimeoutId = null;
+  }
+
+  // ★ 1秒待ってから BGM2 再生（ただしゲームオーバーしてたら何もしない）
+  highScoreBgmTimeoutId = setTimeout(() => {
+    highScoreBgmTimeoutId = null;
+    if (isGameOver) return;   // ← ここ大事
+
+    playHighScoreBgm();
+    applyMute();
+  }, 1000);
+
+  applyMute();
+}
+  
 /* ===== プレイヤー ===== */
-const player={x:50,y:groundY-50,width:50,height:50,dy:0,gravity:0.8,jumpForce:15,isGrounded:true,jumpsRemaining:2,isJumping:false,image:new Image(),imageLoaded:false};
-player.image.src='./assets/Muru.png';
+const player = {
+  x: 50,
+  y: groundY - 50,
+  width: 50,
+  height: 50,
+  dy: 0,
+  gravity: 0.8,
+  jumpForce: 15,
+  isGrounded: true,
+  jumpsRemaining: 2,
+  isJumping: false,
+  image: new Image(),
+  imageLoaded: false,
+
+  // ★ ぷにょん用
+  scaleX: 1,
+  scaleY: 1,
+  squashTimer: 0       // 一瞬だけ強く変形させるタイマー
+};
+
+player.image.src='/murudash/assets/Muru.png';
 player.image.onload=()=>{ player.imageLoaded=true; player.width=(player.image.width/player.image.height)*player.height; };
 
-function drawPlayer(){ if(player.imageLoaded) ctx.drawImage(player.image,player.x,player.y,player.width,player.height); else{ ctx.fillStyle='green'; ctx.fillRect(player.x,player.y,player.width,player.height);} }
-function updatePlayer(d){ if(!player.isGrounded){ player.dy+=player.gravity*d; player.y+=player.dy*d; } if(player.y+player.height>=groundY){ player.y=groundY-player.height; player.dy=0; player.isGrounded=true; player.jumpsRemaining=2; } }
-function playerJump(){  if(isGameOver||isPaused||!gameStarted) return; startAudio(); if(player.jumpsRemaining>0){ player.dy=-player.jumpForce; player.isGrounded=false; player.isJumping=true; player.jumpsRemaining--; } }
+function drawPlayer() {
+  const cx = player.x + player.width / 2;
+  const cy = player.y + player.height / 2;
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.scale(player.scaleX, player.scaleY);
+
+  if (player.imageLoaded) {
+    ctx.drawImage(
+      player.image,
+      -player.width / 2,
+      -player.height / 2,
+      player.width,
+      player.height
+    );
+  } else {
+    ctx.fillStyle = 'green';
+    ctx.fillRect(
+      -player.width / 2,
+      -player.height / 2,
+      player.width,
+      player.height
+    );
+  }
+
+  ctx.restore();
+}
+
+function updatePlayer(d) {
+  // 物理
+  if (!player.isGrounded) {
+    player.dy += player.gravity * d;
+    player.y  += player.dy * d;
+  }
+
+  // 着地判定
+  if (player.y + player.height >= groundY) {
+    if (!player.isGrounded) {
+      // ★ 着地のときはドンッとつぶれる
+    player.squashTimer = 20;   // 戻り時間ちょい長め
+    player.scaleX = 1.5;      // 横ぐいっと広げる
+    player.scaleY = 0.5;      // 縦はガッツリつぶす
+    }
+
+    player.y = groundY - player.height;
+    player.dy = 0;
+    player.isGrounded = true;
+    player.jumpsRemaining = 2;
+  } else {
+    player.isGrounded = false;
+  }
+
+  // ★ ぷにゅんアニメ（スケールの補間）
+  if (player.squashTimer > 0) {
+    player.squashTimer -= d;
+
+    // 強めに「元の形」に戻す
+    const k = 0.25; // ← 戻りをキビキビ
+    player.scaleX += (1 - player.scaleX) * k;
+    player.scaleY += (1 - player.scaleY) * k;
+  } else {
+    // ふだんは、地上と空中でちょっとだけ形変える
+    const targetX = player.isGrounded ? 1.0 : 0.9;  // 空中はちょい細め
+    const targetY = player.isGrounded ? 1.0 : 1.10; // 空中は少し伸びる
+
+    const k = 0.15;
+    player.scaleX += (targetX - player.scaleX) * k;
+    player.scaleY += (targetY - player.scaleY) * k;
+  }
+}
+
+function playerJump() {
+  if (isGameOver || isPaused || !gameStarted) return;
+  ensureBgmPlaying();
+  
+  if (player.jumpsRemaining > 0) {
+    player.dy = -player.jumpForce;
+    player.isGrounded = false;
+    player.isJumping = true;
+    player.jumpsRemaining--;
+
+    // ★ ジャンプ直後：きゅっと縮んでから伸びる感じ
+    player.squashTimer = 14;  // ← ちょい長め
+    player.scaleX = 0.72;     // ← 横を細く
+    player.scaleY = 1.30;     // ← 縦をグイっと伸ばす
+  }
+}
+
 function stopJump(){ if(player.isJumping && player.dy<0){ player.dy=Math.max(player.dy,-5); } player.isJumping=false; }
 
 /* ===== 障害物（元のロジック維持） ===== */
@@ -600,106 +2495,709 @@ class Obstacle{
   }
   draw(){ ctx.drawImage(this.img,this.x,this.y-this.height,this.width,this.height); }
   update(d){ this.x -= gameSpeed*d; }
-  getHitbox(){ const shrink=this.type==='ground_large'?0.65:0.8; const w=this.width*shrink, h=this.height*shrink; return { x:this.x+(this.width-w)/2, y:(this.y-this.height)+(this.height-h)/2, width:w, height:h }; }
+  getHitbox() {
+  // デフォルト：ちょい小さめ
+  let shrinkX = 0.8;
+  let shrinkY = 0.8;
+  let offsetY = 0; // 縦方向のずらし量
+
+  if (this.type === 'ground_large') {
+    // ★デカひまわりだけ、かなり甘めにする
+    shrinkX = 0.70;   // 横も少し小さく
+    shrinkY = 0.55;   // 縦はガッツリ低く
+    offsetY = this.height * 0.08; // 判定を気持ち下にずらす（上の花びらは飾り）
+  } else if (this.type === 'sun2_hop') {
+    // ★ジャンピングひまわり用（同じ設定）
+    shrinkX = 0.70;   // 横も少し小さく
+    shrinkY = 0.55;   // 縦はガッツリ低く
+    offsetY = this.height * 0.08; // 判定を気持ち下にずらす（上の花びらは飾り）
+  }
+
+  const w = this.width  * shrinkX;
+  const h = this.height * shrinkY;
+
+  return {
+    x: this.x + (this.width  - w) / 2,
+    y: (this.y - this.height) + (this.height - h) / 2 + offsetY,
+    width:  w,
+    height: h
+  };
 }
-const SCALE=0.7;
+
+}
+
+/* ★ 追加：動くひまわり専用クラス */
+class SpecialSunflower extends Obstacle{
+  constructor(type,img,y,size){
+    super(type,img,y,size);
+    this.baseY = y;
+    this.phase = Math.random()*Math.PI*2;
+    this.hopAmp = size * 1.1;   // ぴょんぴょんの高さ
+    this.hopSpeed = 0.1;        // ぴょんぴょんの速さ
+  }
+
+  update(d){
+    if(this.type === 'sun2_run'){
+      // こっちに向かって走ってくる感じ：普通よりちょい速い
+      this.x -= gameSpeed * 1.4 * d;
+    }else if(this.type === 'sun2_hop'){
+      // その場で流れてくる＋小さくジャンプ
+      this.x -= gameSpeed * d;
+      this.phase += this.hopSpeed * d;
+      const offset = Math.abs(Math.sin(this.phase)) * this.hopAmp;
+      this.y = this.baseY - offset;
+    }else{
+      // 万が一他タイプにも使ったとき用
+      super.update(d);
+    }
+  }
+}
+
+  
+const SCALE = 0.7;
+
+// ★ 特別ひまわり（ジャンプ＆走る）の “連続出現” を制御するカウンタ
+const MAX_SPECIAL_CHAIN = 2;      // ← 特別ひまわりが何体まで連続で出るか
+let specialChainCount    = 0;
+
+function resetSpecialChain() {
+  specialChainCount = 0;
+}
+
 function spawnObstacle(delta){
   spawnTimer += delta;
-  let minSpawnInterval = Math.max(minSpawnIntervalBase - (timeElapsed/1000)*spawnIntervalReductionPerSec, 40);
-  let maxSpawnInterval = Math.max(maxSpawnIntervalBase - (timeElapsed/1000)*spawnIntervalReductionPerSec, 70);
-  const easeMul = getEarlyEaseMultiplier(timeElapsed); minSpawnInterval*=easeMul; maxSpawnInterval*=easeMul;
-  
+
+  let minSpawnInterval = Math.max(
+    minSpawnIntervalBase - (timeElapsed/1000)*spawnIntervalReductionPerSec,
+    40
+  );
+  let maxSpawnInterval = Math.max(
+    maxSpawnIntervalBase - (timeElapsed/1000)*spawnIntervalReductionPerSec,
+    70
+  );
+
+  const easeMul = getEarlyEaseMultiplier(timeElapsed);
+  minSpawnInterval *= easeMul;
+  maxSpawnInterval *= easeMul;
+
   function lateDensityMul(ms){
-  if(ms < 60000) return 1.0;   // 〜60s
-  if(ms < 120000) return 0.85; // 1〜2分
-  return 0.72;                 // 2分〜
+    if(ms < 60000)  return 1.0;
+    if(ms < 120000) return 0.85;
+    return 0.72;
   }
   const ld = lateDensityMul(timeElapsed);
   minSpawnInterval *= ld;
   maxSpawnInterval *= ld;
-  
-  if(spawnTimer < nextSpawnInterval) return;
+
+  // ★ このフレームで「特別ひまわり（走る/ジャンプ）」を出したら true にする
+  let forceMaxInterval = false;
+
+  if (spawnTimer < nextSpawnInterval) return;
+
   const onscreen = obstacles.filter(o => (o.x + o.width > 0) && (o.x < gameWidth)).length;
-  const limit = currentOnscreenLimit(timeElapsed); if(onscreen >= limit) return;
+  const limit = currentOnscreenLimit(timeElapsed);
+  if (onscreen >= limit) return;
+
   const last = obstacles.length ? obstacles[obstacles.length-1] : null;
   const minGapPx = getMinPixelGap(timeElapsed);
-  if(last){ const gapPx = gameWidth - (last.x + last.width); if(gapPx < minGapPx) return; }
-  const rand = Math.random();
-  if(rand < 0.4){
-    const size = (40 + Math.random()*20) * SCALE;
-    const yPos = Math.random() < 0.3 ? groundY - 30 : groundY - 70 - Math.random()*50;
-    obstacles.push(new Obstacle('air', SPRITES.blueberry, yPos, size));
-  }else{
-    if(score > 10 && Math.random() < 0.3) obstacles.push(new Obstacle('ground_large', SPRITES.sunflower, groundY, 120*SCALE*1.25));
-    else obstacles.push(new Obstacle('ground', SPRITES.sunflower, groundY, (60 + Math.random()*20) * SCALE));
+  if (last){
+    const gapPx = gameWidth - (last.x + last.width);
+    if (gapPx < minGapPx) return;
   }
-  nextSpawnInterval = minSpawnInterval + Math.random()*(maxSpawnInterval - minSpawnInterval);
-  spawnTimer=0;
+
+  const rand = Math.random();
+
+  if (rand < 0.4){
+    // 🍇 ブルーベリー（全スコア帯でずっと出る）
+    const size = (40 + Math.random()*20) * SCALE;
+    const yPos = Math.random() < 0.3
+      ? groundY - 30
+      : groundY - 70 - Math.random()*50;
+
+    obstacles.push(new Obstacle('air', SPRITES.blueberry, yPos, size));
+
+    // ★ ブルーベリーを挟んだら特別ひまわり連鎖もリセット
+    resetSpecialChain();
+
+  } else {
+    // 🌻 ひまわり側
+    const hasRunner = (score >= 300); // 300〜 走るひまわり解禁
+    const hasHopper = (score >= 500); // 500〜 ジャンプひまわり解禁
+
+    const canUseSpecial = (hasRunner || hasHopper) && SPRITES.sunflower2;
+
+    // ★ 連続出現数も見ながら特別枠を使うか決定
+    let useSpecial =
+      !!(canUseSpecial && Math.random() < 0.2 && specialChainCount < MAX_SPECIAL_CHAIN);
+
+    if (useSpecial){
+      const baseSize = (70 + Math.random()*20) * SCALE;
+
+      // ★ ここで「走るか／ジャンプか」を決める
+      // 300〜499 → 走るのみ（hasHopper=false）
+      // 500〜     → 走る or ジャンプ（ランダム）
+      let spawnHop = false;
+
+      if (hasHopper){
+        // 500以上なら走る / ジャンプ半々くらい
+        spawnHop = (Math.random() < 0.5);
+      }
+
+      // ★ 特別ひまわりのときは「直前スキマ」をちょい広めに要求（走る／ジャンプ共通）
+      if (last){
+        const baseMinGap    = getMinPixelGap(timeElapsed);
+        const specialMinGap = baseMinGap * 1.55; // ← ジャンプひまわりと同じ倍率
+
+        const gapPx = gameWidth - (last.x + last.width);
+        if (gapPx < specialMinGap){
+          // 着地ポイント / 走り抜けるスペースが詰まりすぎてたら
+          // 今回は特別ひまわりはナシ → 通常ひまわりに切り替え
+          useSpecial = false;
+        }
+      }
+
+      if (useSpecial){
+        if (spawnHop && hasHopper){
+          // 🌻 ジャンピングひまわり
+          const size = baseSize * 1.65;
+          obstacles.push(
+            new SpecialSunflower('sun2_hop', SPRITES.sunflower2, groundY, size)
+          );
+        } else {
+          // 🏃‍♂️ 走るひまわり（300〜でも500〜でも出る）
+          const size = baseSize * 1.5;
+          obstacles.push(
+            new SpecialSunflower('sun2_run', SPRITES.sunflower2, groundY, size)
+          );
+        }
+
+        // ★ 走る／ジャンプどっちでも連鎖カウント
+        specialChainCount++;
+        // ★ 特別ひまわり出した回は「次の出現」を MAX 間隔にする（後ろ側の距離）
+        forceMaxInterval = true;
+      }
+    }
+
+    if (!useSpecial){
+      // 🌻 普通のひまわり（これも全スコア帯でずっと出る）
+      if (score > 10 && Math.random() < 0.3){
+        obstacles.push(
+          new Obstacle('ground_large', SPRITES.sunflower, groundY, 120 * SCALE * 1.25)
+        );
+      } else {
+        obstacles.push(
+          new Obstacle('ground', SPRITES.sunflower, groundY, (60 + Math.random()*20) * SCALE)
+        );
+      }
+      // ★ 通常ひまわりが出たら特別ひまわり連鎖はリセット
+      resetSpecialChain();
+    }
+  }
+
+  // ★ 特別ひまわり（走る/ジャンプ）が出た回だけ「次の出現」を MAX 間隔にする
+  if (forceMaxInterval){
+    nextSpawnInterval = maxSpawnInterval;
+  } else {
+    nextSpawnInterval =
+      minSpawnInterval + Math.random()*(maxSpawnInterval - minSpawnInterval);
+  }
+
+  spawnTimer = 0;
 }
+
+  
 function updateObstacles(d){
-  for(let i=obstacles.length-1;i>=0;i--){ obstacles[i].update(d); obstacles[i].draw(); if(obstacles[i].x + obstacles[i].width < 0) obstacles.splice(i,1); }
+  for(let i = obstacles.length - 1; i >= 0; i--){
+    obstacles[i].update(d);
+    obstacles[i].draw();
+    if(obstacles[i].x + obstacles[i].width < 0){
+      obstacles.splice(i, 1);
+    }
+  }
 }
+
+// ここを追加
+const SCORE_PER_SEC_FOR_WARP = 5; // 6 → 5 に落とした（早く感じさせたいなら 4.5 とか）
+
+function warpToScoreBand(targetScore){
+  score = targetScore;
+  scoreEl.textContent = score;
+
+  // ざっくり「1秒あたりスコア◯くらい」想定で逆算
+  const approxSec = targetScore / SCORE_PER_SEC_FOR_WARP;
+  timeElapsed = approxSec * 1000;
+
+  // ゲームスピードも、その時間帯に近い値に合わせる
+  gameSpeed = Math.min(
+    baseGameSpeed + approxSec * gameSpeedAcceleration,
+    GAME_SPEED_MAX
+  );
+
+  // 画面上の障害物・どんぐり・フキダシを一旦リセット
+  obstacles = [];
+  acorns = [];
+  floatTexts = [];
+
+  // スポーン関係リセット（新しい帯の条件で出直し）
+  spawnTimer = 0;
+  nextSpawnInterval = minSpawnIntervalBase + Math.random() * (maxSpawnIntervalBase - minSpawnIntervalBase);
+
+  // どんぐりタイマーもリセット
+  acornSpawnTimerMs = 0;
+  acornNextIntervalMs = nextAcornIntervalMs();
+}
+
 
 /* ===== 当たり判定 / スコア / 速度 ===== */
 function checkCollision(){
-  if(isDebug) return;
-  const p={x:player.x,y:player.y,width:player.width*0.6,height:player.height*0.7};
-  for(const o of obstacles){ const h=o.getHitbox(); if(p.x<h.x+h.width && p.x+p.width>h.x && p.y<h.y+h.height && p.y+p.height>h.y){ gameOver(); return; } }
+  if (isDebug) return;
+
+  const p = {
+    x: player.x,
+    y: player.y,
+    width:  player.width * 0.6,
+    height: player.height * 0.7
+  };
+
+  for (const o of obstacles) {
+    const h = o.getHitbox();
+
+    if (
+      p.x < h.x + h.width &&
+      p.x + p.width > h.x &&
+      p.y < h.y + h.height &&
+      p.y + p.height > h.y
+    ) {
+      // ★ ここでデスタイプ判定
+      if (o.type === 'ground') {
+        lastDeathType = 'sunflower_small';
+      } else if (o.type === 'ground_large') {
+        lastDeathType = 'sunflower_big';
+      } else if (o.type === 'air') {
+        lastDeathType = 'blueberry';
+      } else if (o.type === 'sun2_run') {
+        lastDeathType = 'sunflower2_run';
+      } else if (o.type === 'sun2_hop') {
+        lastDeathType = 'sunflower2_hop';
+      } else {
+        lastDeathType = 'unknown';
+      }
+
+      gameOver();
+      return;
+    }
+  }
 }
+
 function updateScore(){
-  for(const o of obstacles){ if(!o.passed && o.x+o.width < player.x){ score++; o.passed=true; } }
+  for(const o of obstacles){
+    if(!o.passed && o.x+o.width < player.x){
+      score++;
+      o.passed = true;
+    }
+  }
   tryCollectAcorns();
-  scoreEl.textContent=score;
+  scoreEl.textContent = score;
+
+  // ★ ここで「ハイスコア更新中」を検知（初回 highScore=0 のときはスルー）
+  if (!isHighScoreRun && highScore > 0 && score > highScore) {
+    startHighScoreRun();
+  }
+
+
   const tSec=timeElapsed/1000;
   gameSpeed=Math.min(baseGameSpeed + tSec*gameSpeedAcceleration, GAME_SPEED_MAX);
 }
+  
 
 /* ===== 終了処理など ===== */
 function buildXIntentUrl(score){ const text=`むるだっしゅ！スコアは「${score}」でした🌻\nhttps://t4l-ovo-t4l.github.io/murudash/`; return `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`; }
+
+  
 function gameOver(){
-  if(isGameOver) return;
-  isGameOver=true; gameStarted=false;
-  if(audioStarted){ try{ bgmAudio.pause(); bgmAudio.currentTime=0; endAudio.currentTime=0; endAudio.play(); }catch(_){} }
-  if(score>highScore){ highScore=score; localStorage.setItem('muruHighScore',highScore); highScoreEl.textContent=`ハイスコア: ${highScore}`; }
-  finalScoreEl.textContent=score; shareButton.href=buildXIntentUrl(score);
-  gameOverScreen.classList.remove('hidden'); gameOverScreen.classList.add('flex');
+  if (isGameOver) return;
+  isGameOver = true;
+  gameStarted = false;
+
+  // ★コンボも終了
+  acornComboCount = 0;
+
+  // ▼▼▼ 1. 何はともあれBGMを止める（最優先・エラー無視） ▼▼▼
+  try {
+    if (highScoreBgmTimeoutId !== null){
+      clearTimeout(highScoreBgmTimeoutId);
+      highScoreBgmTimeoutId = null;
+    }
+    stopAllMainBgms();
+    try { if (bgm2Audio) { bgm2Audio.pause(); bgm2Audio.currentTime = 0; } } catch(_){}
+
+  } catch(e) { console.error(e); }
+
+
+  // ▼▼▼ 2. 画面やボタンの準備 ▼▼▼
+  try {
+    if(sendScoreButton){
+      sendScoreButton.disabled = false;
+      sendScoreButton.textContent = "ランキングに送信";
+      sendScoreButton.classList.remove("bg-gray-500", "opacity-60", "cursor-not-allowed", "bg-blue-900", "cursor-wait");
+      sendScoreButton.classList.add("bg-blue-600", "hover:bg-blue-700");
+    }
+
+    updateJumpButton(JUMP_MODE.RESTART);
+
+    canRestart = false;
+    setRestartCooldownActive(true);
+    setTimeout(() => {
+      canRestart = true;
+      if (isGameOver && jumpButtonMode === JUMP_MODE.RESTART){
+        setRestartCooldownActive(false);
+      }
+    }, RESTART_DELAY_MS);
+
+    // スコア計算
+    const isNewHighScore       = score > highScore;
+    const hadPreviousHighScore = highScore > 0;
+
+    // ログ送信
+    logPlaySession(isNewHighScore);
+
+    // ハイスコア保存
+    if (isNewHighScore){
+      highScore = score;
+      localStorage.setItem(HIGH_SCORE_KEY, highScore);
+      if(highScoreEl) highScoreEl.textContent = `ハイスコア: ${highScore}`;
+    }
+
+    // ラベル表示
+    if(finalScoreEl) finalScoreEl.textContent = score;
+    if(shareButton) shareButton.href = buildXIntentUrl(score);
+
+    if (gameOverHighScoreLabel){
+      if (isHighScoreRun) gameOverHighScoreLabel.classList.remove('hidden');
+      else gameOverHighScoreLabel.classList.add('hidden');
+    }
+
+    // ▼▼▼ 3. 最後にSEを鳴らす（ここが失敗しても他には影響させない） ▼▼▼
+    // ※ 初回（highScore=0）のハイスコアでは HIGHEND を鳴らさない
+    const useHighEnd = isNewHighScore && hadPreviousHighScore;
+    if (useHighEnd){
+      playSeBuffer('highend', 0.5);
+    } else {
+      playSeBuffer('end', 0.4);
+    }
+
+  } catch (err) {
+    console.error("Error in gameOver:", err);
+  }
+
+  // ▼▼▼ 4. 絶対に画面を出す ▼▼▼
+  if(gameOverScreen){
+    gameOverScreen.classList.remove('hidden');
+    gameOverScreen.classList.add('flex');
+  }
 }
+
 function restartGame(){
-  startAudio(); try{ if(bgmAudio){ bgmAudio.currentTime=0; bgmAudio.play(); } }catch(_){}
+
+  // ★ まず HIGHEND を止める
+  stopHighEndSe();
+  
+  // ★ リスタートした瞬間はまたロック
+  canRestart = false;
+  
+// ★リスタートしたらスコア送信ボタンを初期化
+sendScoreButton.disabled = false;
+sendScoreButton.textContent = "ランキングに送信";
+
+sendScoreButton.classList.remove(
+  "bg-gray-500",
+  "opacity-60",
+  "cursor-not-allowed"
+);
+
+sendScoreButton.classList.add(
+  "bg-blue-600",
+  "hover:bg-blue-700"
+);
+
+  // まず両方きっちり止めて頭出し & ボリュームリセット
+  if (bgm2Audio){
+    try {
+      bgm2Audio.pause();
+      bgm2Audio.currentTime = 0;
+      bgm2Audio.volume = 0.5;
+    } catch(_) {}
+  }
+  if (bgmAudio){
+    try {
+      bgmAudio.pause();
+      bgmAudio.currentTime = 0;
+      bgmAudio.volume = 0.5;
+    } catch(_) {}
+  }
+
+  // ★ ここでハイスコアフラグを先に折る
+  isHighScoreRun = false;
+
+  // そのうえで通常BGMスタート
+  startAudio();
+
   score=0; scoreEl.textContent=score; timeElapsed=0; gameSpeed=baseGameSpeed;
-  obstacles=[]; acorns=[]; frame=0; spawnTimer=0;
-  // 星まわりをリセット（位置・フェード・流れ星）
+  obstacles=[]; acorns=[]; floatTexts=[]; frame=0; spawnTimer=0;
+
+  // ★コンボリセット
+  acornComboCount = 0;
+
   initStars();
   starAlpha = 0;
   shooting = null;
-
-  // ★ どんぐり抽選タイマ初期化（端末差なし）
   acornSpawnTimerMs = 0; acornNextIntervalMs = nextAcornIntervalMs();
 
   isGameOver=false; isPaused=false; gameStarted=true;
   player.y=groundY-player.height; player.dy=0; player.isGrounded=true; player.jumpsRemaining=2;
+    // ★ ぷにょんスケールもリセット
+  player.scaleX = 1;
+  player.scaleY = 1;
+  player.squashTimer = 0;
   gameOverScreen.classList.add('hidden'); gameOverScreen.classList.remove('flex'); pauseOverlay.classList.add('hidden');
+
+  // プレイ再開なので「ジャンプ」（青）に戻す
+  updateJumpButton(JUMP_MODE.PLAY);
+
+  // ↓ ここ以降の isHighScoreRun やバナー関連のリセットはそのままでOKやけど
+  //   もう isHighScoreRun は false になってるので現状のままでも矛盾しない
+  // isHighScoreRun = false; ← ここはもう不要なので消してよし
+
+  if(scoreLabel){
+    scoreLabel.classList.remove('text-orange-400');
+    scoreLabel.classList.add('text-blue-600');
+  }
+  if(highScoreBanner){
+    highScoreBanner.classList.add('hidden');
+  }
+  if (gameOverHighScoreLabel){
+    gameOverHighScoreLabel.classList.add('hidden');
+  }
+
+
+  applyMute();
+
   resetAudioSyncState(); isDebug=false; resetDebugTapCounter(); const dbg=document.getElementById('debugBadge'); if(dbg) dbg.remove();
   nextSpawnInterval = minSpawnIntervalBase + Math.random()*(maxSpawnIntervalBase - minSpawnIntervalBase);
   lastTime=performance.now(); requestAnimationFrame(gameLoop);
 }
-function togglePause(){
-  if(isGameOver||!gameStarted) return;
-  isPaused=!isPaused;
-  if(isPaused){ try{ if(bgmAudio)bgmAudio.pause(); }catch(_){}; pauseOverlay.classList.remove('hidden'); pauseOverlay.classList.add('flex'); resetDebugTapCounter(); }
-  else{ try{ if(bgmAudio)bgmAudio.play(); }catch(_){}; pauseOverlay.classList.add('hidden'); pauseOverlay.classList.remove('flex'); lastTime=performance.now(); requestAnimationFrame(gameLoop); resetDebugTapCounter(); }
+
+function backToTitleFromGameOver(){
+
+  // 念のため鳴りっぱなし対策
+  stopHighEndSe();
+
+  // 念のためBGM/タイマー停止（gameOverで止めてるけど保険）
+  try {
+    if (highScoreBgmTimeoutId !== null){
+      clearTimeout(highScoreBgmTimeoutId);
+      highScoreBgmTimeoutId = null;
+    }
+    stopAllMainBgms();
+    try { if (bgm2Audio) { bgm2Audio.pause(); bgm2Audio.currentTime = 0; } } catch(_){}
+  } catch (_) {}
+
+  // 状態を「タイトル待機」に戻す（プレイ開始はしない）
+  isGameOver = false;
+  isPaused = false;
+  gameStarted = false;
+
+  // 画面を切り替え
+  if (gameOverScreen){
+    gameOverScreen.classList.add('hidden');
+    gameOverScreen.classList.remove('flex');
+  }
+  if (pauseOverlay){
+    pauseOverlay.classList.add('hidden');
+    pauseOverlay.classList.remove('flex');
+  }
+  if (rankingOverlay){
+    rankingOverlay.classList.add('hidden');
+    rankingOverlay.classList.remove('flex');
+  }
+  if (startScreen){
+    startScreen.classList.remove('hidden');
+  }
+
+  // 見た目も最低限だけ初期化（余計な保存系は触らない）
+  score = 0;
+  if (scoreEl) scoreEl.textContent = score;
+
+  obstacles = [];
+  acorns = [];
+  floatTexts = [];
+  spawnTimer = 0;
+  frame = 0;
+  timeElapsed = 0;
+  gameSpeed = baseGameSpeed;
+
+  acornComboCount = 0;
+
+  // ハイスコア演出を戻す（数値は消さない）
+  isHighScoreRun = false;
+  if (scoreLabel){
+    scoreLabel.classList.remove('text-orange-400');
+    scoreLabel.classList.add('text-blue-600');
+  }
+  if (highScoreBanner){
+    highScoreBanner.classList.add('hidden');
+  }
+  if (gameOverHighScoreLabel){
+    gameOverHighScoreLabel.classList.add('hidden');
+  }
+
+  // プレイヤー位置だけ整える（描画は次のスタート時にループで走る）
+  player.y = groundY - player.height;
+  player.dy = 0;
+  player.isGrounded = true;
+  player.jumpsRemaining = 2;
+  player.scaleX = 1;
+  player.scaleY = 1;
+  player.squashTimer = 0;
+
+  // 空/星の初期状態も戻す
+  resetAudioSyncState();
+  initStars();
+  starAlpha = 0;
+  shooting = null;
+
+  // アクションボタンを「ゲームスタート」に戻す
+  updateJumpButton(JUMP_MODE.START);
+
+  applyMute();
 }
 
+  
+function togglePause(){
+  if (isGameOver || !gameStarted) return;
+  isPaused = !isPaused;
+
+ if (isPaused){
+    pauseAllMainBgms();           // ★追加：草原/夜も止まる
+    try{ bgm2Audio.pause(); }catch(_){}
+    pauseOverlay.classList.remove('hidden');
+    pauseOverlay.classList.add('flex');
+  } else {
+      try{
+        if (isHighScoreRun){
+          if (bgm2Audio.paused) bgm2Audio.play();
+        } else {
+          const a = getSelectedMainAudio();
+          if (a && a.paused) a.play();
+        }
+      }catch(_){}
+    pauseOverlay.classList.add('hidden'); pauseOverlay.classList.remove('flex');
+    lastTime = performance.now();
+    requestAnimationFrame(gameLoop);
+  }
+}
+
+
+
+
+
+function openCredits(e){
+  if (e) e.preventDefault();
+
+  bootAudioOnce();
+  
+  creditsOverlay.classList.remove('hidden');
+  creditsOverlay.classList.add('flex');
+
+  // ★ 以前の「Thank You」を隠す
+  if (creditsEndMessage) {
+    creditsEndMessage.classList.add('hidden');
+  }
+
+  // ★ スクロールアニメをリスタート
+  creditsScroll.classList.remove('credits-scroll');
+  void creditsScroll.offsetWidth;
+  creditsScroll.classList.add('credits-scroll');
+
+  pauseAllMainBgms();             // ★置き換え
+  try{ bgm2Audio.pause(); }catch(_){}
+  playCreditsBgm();
+
+  // ★ 一定時間後に「Thank You」表示
+  scheduleCreditsEndMessage();
+
+  updateJumpButton(JUMP_MODE.CREDITS);
+}
+
+function closeCredits(e){
+  if (e) e.preventDefault();
+  creditsOverlay.classList.add('hidden');
+  creditsOverlay.classList.remove('flex');
+  stopCreditsBgm();
+
+  // ★ サンキュー表示をリセット
+  if (creditsEndMessage) {
+    creditsEndMessage.classList.add('hidden');
+  }
+  if (creditsEndTimer) {
+    clearTimeout(creditsEndTimer);
+    creditsEndTimer = null;
+  }
+
+  // ★ クレジット閉じたらジャンプボタンの役割を戻す
+  if (isGameOver){
+    updateJumpButton(JUMP_MODE.RESTART);
+  } else if (!gameStarted){
+    updateJumpButton(JUMP_MODE.START);
+  } else {
+    updateJumpButton(JUMP_MODE.PLAY);
+  }
+
+  if (gameStarted && !isGameOver && !isPaused){
+  try{
+    if (isHighScoreRun){
+      if (bgm2Audio.paused) bgm2Audio.play();
+    } else {
+      const a = getSelectedMainAudio();
+      if (a && a.paused) a.play();
+    }
+  }catch(_){}
+}
+
+}
+
+// タイトル画面のボタン
+if (creditsButton){
+  creditsButton.addEventListener('pointerdown', openCredits, { passive: false });
+}
+  
 /* ===== ループ ===== */
 function gameLoop(ts){
-  if(isGameOver||isPaused||!gameStarted) return;
-  const dt=ts-lastTime; lastTime=ts; const df=dt/(1000/60); timeElapsed+=dt;
+  if (isGameOver || isPaused || !gameStarted) return;
 
-  updateSkyByMusic();
+  const dt = ts - lastTime; 
+  lastTime = ts;
+
+  // ★ dfクランプ：一瞬のスパイク吸収（体感カクつき激減）
+  const df = Math.max(0.5, Math.min(1.8, dt / (1000/60)));
+
+  timeElapsed += dt;
+
+  
+  // BGM.currentTime じゃなくて、経過時間ベースで空を更新
+  updateSkyByTimeline();
 
   // 背景＆雲
   ctx.clearRect(0,0,gameWidth,gameHeight);
-  drawSky(df); drawStars(df); drawClouds(df);
+drawSky(df); 
+drawStars(df); 
+drawClouds(df);
+// ★BGMによって背景演出
+if (getSelectedBgmId() === 'sougen') drawMountains(df); // 既にあるならそのまま
+if (getSelectedBgmId() === 'yoru'){
+  if (!cityInited) initCity(); // ★保険
+  drawCity(df);
+}
 
   // 地面＋流れる砂利（障害物と同速で流す）
   drawGround(); drawGroundDetails(df);
@@ -709,39 +3207,311 @@ function gameLoop(ts){
   spawnObstacle(df); updateObstacles(df);
   spawnAcornMs(dt); updateAcorns(df);
 
+  // ★ どんぐりの「+10」みたいなフキダシ描画
+  for (let i = floatTexts.length - 1; i >= 0; i--) {
+    const ft = floatTexts[i];
+
+    // ふわっと上に移動
+    ft.y += ft.vy * df;
+    ft.life -= df;
+
+    // 残り寿命に応じてだんだん透明に
+    const alpha = Math.max(0, Math.min(1, ft.life / 30));
+
+    const color    = ft.color    || '#fff7aa';
+    const stroke   = ft.stroke   || 'rgba(0,0,0,0.75)';
+    const fontSize = ft.fontSize || 20;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.font = `bold ${fontSize}px "Inter", system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = 3;
+    ctx.fillStyle = color;
+
+    ctx.strokeText(ft.text, ft.x, ft.y);
+    ctx.fillText(ft.text, ft.x, ft.y);
+    ctx.restore();
+
+    // 寿命が尽きたら消す
+    if (ft.life <= 0) {
+      floatTexts.splice(i, 1);
+    }
+  }
+  
+  // ★ ハイスコア突入フラッシュ
+  if (flashTimer > 0) {
+    const alpha = (flashTimer / FLASH_DURATION) * 0.85; // 最大0.85くらいまで光る
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.fillRect(0, 0, gameWidth, gameHeight);
+
+    flashTimer -= df;          // 時間経過で減らす（dfはだいたい1/フレーム）
+    if (flashTimer < 0) flashTimer = 0;
+  }
+
   checkCollision(); updateScore();
 
   frame++; requestAnimationFrame(gameLoop);
 }
 
+function handleActionButtonDown(){
+  // SHOP中：とじる
+  if (jumpButtonMode === JUMP_MODE.SHOP){
+    closeShop();
+    return;
+  }
+
+  // ランキング中：とじる
+  if (jumpButtonMode === JUMP_MODE.RANKING){
+    closeRankingOverlay();
+    return;
+  }
+
+  // クレジット中：とじる
+  if (jumpButtonMode === JUMP_MODE.CREDITS){
+    closeCredits();
+    return;
+  }
+
+  // ゲームオーバー中：リスタート（クールタイム尊重）
+  if (isGameOver){
+    if (!canRestart) return;
+    restartGame();
+    return;
+  }
+
+  // タイトル中：スタート
+  if (!gameStarted){
+    handleGameStart();
+    return;
+  }
+
+  // ポーズ中：今の仕様どおり（無敵デバッグ用トリガー）
+  if (isPaused){
+    if (DEBUG_OPTIONS.invincibleMode){
+      debugTapCount++;
+      if (debugTapCount >= DEBUG_TAPS_TO_ENABLE){
+        enableDebugMode();
+        resetDebugTapCounter();
+      }
+    }
+    return;
+  }
+
+  // 通常プレイ中：ジャンプ
+  playerJump();
+}
+
 /* ===== 入力 ===== */
 window.addEventListener('keydown', e=>{
-  if(e.repeat) return;
-  if(isPaused && (e.code==='Space'||e.code==='ArrowUp')){ debugTapCount++; if(debugTapCount>=DEBUG_TAPS_TO_ENABLE){ enableDebugMode(); resetDebugTapCounter(); } return; }
-  if(!gameStarted) return;
-  if(e.code==='Space'||e.code==='ArrowUp') playerJump();
-  if(e.code==='KeyP') togglePause();
-});
-window.addEventListener('keyup', e=>{ if(e.code==='Space'||e.code==='ArrowUp') stopJump(); });
-jumpButton.addEventListener('pointerdown', e=>{ e.preventDefault(); if (!gameStarted) return; if(isPaused){ debugTapCount++; if(debugTapCount>=DEBUG_TAPS_TO_ENABLE){ enableDebugMode(); resetDebugTapCounter(); } return; } playerJump(); });
-jumpButton.addEventListener('pointerup',   e=>{ e.preventDefault(); stopJump(); });
-pauseButton.addEventListener('click', e=>{ e.preventDefault(); togglePause(); });
-pauseButton.addEventListener('touchstart', e=>{ e.preventDefault(); togglePause(); });
+  if (e.repeat) return;
 
-restartButton.addEventListener('click', e=>{ e.preventDefault(); restartGame(); });
-restartButton.addEventListener('touchstart', e=>{ e.preventDefault(); restartGame(); });
+  // ★ PC：スペースキーは「下のアクションボタン」と同じ
+  if (e.code === 'Space'){
+    e.preventDefault();      // スクロール/ボタン押下などの既定動作を殺す
+    handleActionButtonDown();
+    return;
+  }
+  
+  // ★ ポーズ中の挙動
+  if (isPaused){
+    // ① 無敵モードトリガー（デバッグ有効のときだけ）
+    if (DEBUG_OPTIONS.invincibleMode &&
+        (e.code === 'Space' || e.code === 'ArrowUp')){
+      debugTapCount++;
+      if (debugTapCount >= DEBUG_TAPS_TO_ENABLE){
+        enableDebugMode();
+        resetDebugTapCounter();
+      }
+      return;
+    }
+
+    // ゲーム始まってなければ何もしない
+    if (!gameStarted) return;
+
+    // ② ポーズ中に 3 / 5 でスコア帯ワープ（PC用）
+    if (DEBUG_OPTIONS.warpPC && e.code === 'Digit3'){
+      warpToScoreBand(300);
+      console.log('DEBUG: warp to score 300 band');
+      return;
+    }
+    if (DEBUG_OPTIONS.warpPC && e.code === 'Digit5'){
+      warpToScoreBand(500);
+      console.log('DEBUG: warp to score 500 band');
+      return;
+    }
+
+    return;
+  }
+
+  // ★ ポーズしてない通常時
+  if (!gameStarted) return;
+
+  if (e.code === 'Space' || e.code === 'ArrowUp') playerJump();
+  if (e.code === 'KeyP') togglePause();
+});
+
+
+window.addEventListener('keyup', e=>{
+  if (e.code === 'Space' || e.code === 'ArrowUp') stopJump();
+});
+
+jumpButton.addEventListener('pointerdown', e=>{
+  e.preventDefault();
+  handleActionButtonDown();
+});
+
+jumpButton.addEventListener('pointerup',   e=>{ e.preventDefault(); stopJump(); });
+pauseButton.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  togglePause();
+});
+
+
+function openShop(e){
+  if (e) e.preventDefault();
+  if (!shopOverlay) return;
+
+  renderShop();
+  shopOverlay.classList.remove('hidden');
+  shopOverlay.classList.add('flex');
+
+  updateJumpButton(JUMP_MODE.SHOP);
+}
+
+async function closeShop(e){
+  if (e) e.preventDefault();
+
+  // ここで「選択BGMが未ロードならロード」してから閉じる
+  const id = getSelectedBgmId();
+  const needLoad = (id !== 'default') && (
+    (id === 'sougen' && !bgmSougenAudio) ||
+    (id === 'yoru'   && !bgmYoruAudio)
+  );
+
+  if (needLoad){
+    showLoadingOverlay(true);
+    try{
+      await preloadSelectableBgm(id);
+    }catch(err){
+      console.error(err);
+      alert('BGMのロード失敗したむる… いったんデフォルトに戻すむる');
+      setSelectedBgmId('default');
+    } finally {
+      showLoadingOverlay(false);
+    }
+  }
+
+  if (!shopOverlay) return;
+  shopOverlay.classList.add('hidden');
+  shopOverlay.classList.remove('flex');
+
+  // タイトル中なので START に戻す
+  if (!gameStarted) updateJumpButton(JUMP_MODE.START);
+  else updateJumpButton(JUMP_MODE.PLAY);
+}
+
+function renderShop(){
+  if (!shopContent) return;
+
+  const ac = totalAcorns || 0;
+  if (shopAcornTotalEl) shopAcornTotalEl.textContent = String(ac);
+
+  const selected = getSelectedBgmId();
+
+  const row = (html) => `<div class="p-3 rounded-lg bg-gray-800/70 border border-gray-700">${html}</div>`;
+
+  function bgmItem(id){
+    const meta = BGM_META[id];
+    const unlocked = ac >= meta.unlockedAt;
+    const isSelected = (selected === id);
+
+    const statusText  = unlocked ? (isSelected ? '選択中' : '解放済み') : '未解放';
+    const statusClass = unlocked
+      ? (isSelected ? 'text-emerald-300' : 'text-gray-300')
+      : 'text-gray-400';
+
+    const btnClass = unlocked
+      ? (isSelected
+        ? 'bg-emerald-700 hover:bg-emerald-800 border-emerald-300'
+        : 'bg-gray-700 hover:bg-gray-800 border-gray-500')
+      : 'bg-gray-900/60 border-gray-700 opacity-60 cursor-not-allowed';
+
+    const sub = unlocked
+      ? (isSelected ? 'もう一回押すとデフォルトに戻るむる' : '押すとこのBGMに切り替わるむる')
+      : `必要どんぐり：${meta.unlockedAt}`;
+
+    return row(`
+      <button class="w-full text-left px-4 py-3 rounded-lg border ${btnClass}"
+        data-bgm="${id}" ${unlocked ? '' : 'disabled'}>
+        <div class="flex items-center justify-between">
+          <div class="font-bold">♪BGM：${meta.label}</div>
+          <div class="text-xs ${statusClass}">${statusText}</div>
+        </div>
+        <div class="text-xs text-gray-300 mt-1">${sub}</div>
+      </button>
+    `);
+  }
+
+  const comingRow = (need) => row(`
+    <div class="flex items-center justify-between">
+      <div>
+        <div class="font-bold">準備中</div>
+        <div class="text-xs text-gray-300">必要どんぐり：${need}</div>
+      </div>
+      <div class="text-sm text-gray-400">準備中</div>
+    </div>
+  `);
+
+  shopContent.innerHTML = [
+    bgmItem('sougen'),
+    bgmItem('yoru'),
+    comingRow(500),
+    comingRow(1000),
+  ].join('\n');
+
+  // クリック処理（トグル）
+  shopContent.querySelectorAll('button[data-bgm]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-bgm');
+      if (!id) return;
+
+      if (getSelectedBgmId() === id) setSelectedBgmId('default');
+      else setSelectedBgmId(id);
+    });
+  });
+}
+
+if (shopButton) shopButton.addEventListener('click', openShop);
+if (closeShopButton) closeShopButton.addEventListener('click', closeShop);
 
 function handleGameStart(e){
-  e.preventDefault();
+
+  if (e) e.preventDefault();   // ← e がないときも落ちないように
+
   if(gameStarted) return;
-  gameStarted=true; startAudio(); startScreen.classList.add('hidden');
-  resetAudioSyncState(); isDebug=false; resetDebugTapCounter(); const dbg=document.getElementById('debugBadge'); if(dbg) dbg.remove();
-  lastTime=performance.now(); requestAnimationFrame(gameLoop);
+  gameStarted = true;
+
+  // プレイ中モード（青 & ジャンプ）
+  updateJumpButton(JUMP_MODE.PLAY);
+
+
+  startAudio();
+  startScreen.classList.add('hidden');
+  resetAudioSyncState();
+  isDebug = false;
+  resetDebugTapCounter();
+  const dbg = document.getElementById('debugBadge');
+  if(dbg) dbg.remove();
+
+  lastTime = performance.now();
+  requestAnimationFrame(gameLoop);
   nextSpawnInterval = minSpawnIntervalBase + Math.random()*(maxSpawnIntervalBase - minSpawnIntervalBase);
-  spawnTimer=0;
+  spawnTimer = 0;
 }
-startButton.addEventListener('click', handleGameStart);
-startButton.addEventListener('touchstart', handleGameStart);
 </script>
 </body>
 </html>
