@@ -824,7 +824,9 @@ let selectedBgmId = 'default';
 const BGM_META = {
   default: { label: 'デフォルト', unlockedAt: 0 },
   sougen:  { label: '草原を駆けるむるる', unlockedAt: 100, file: '../assets/BGM_SOUGEN.mp3', volume: 0.6 },
-  yoru:    { label: '夜の街を駆けるむるる', unlockedAt: 200, file: '../assets/BGM_YORU.mp3',   volume: 0.5 }
+  yuzu:    { label: 'ゆず色パステルステージ', unlockedAt: 150, file: '../assets/BGM_YUZU.mp3', volume: 0.52 },
+  yoru:    { label: '夜の街を駆けるむるる', unlockedAt: 200, file: '../assets/BGM_YORU.mp3',   volume: 0.5 },
+  bon:     { label: 'ぼんまつりステージ', unlockedAt: 250, file: '../assets/BGM_BON.mp3', volume: 0.55 }
 };
 
 
@@ -835,6 +837,7 @@ function getSelectedBgmId(){
 function setSelectedBgmId(id){
   selectedBgmId = id || 'default';
   if (selectedBgmId === 'yoru') cityInited = false;
+  if (selectedBgmId === 'bon') initBonFestival();
 
   updateBgmStatusLabel();
   renderShop();
@@ -845,7 +848,9 @@ function setSelectedBgmId(id){
 
 // 「まだロードしてない」状態を作るために、ここで Audio を作らず遅延ロード
 let bgmSougenAudio = null;
+let bgmYuzuAudio   = null;
 let bgmYoruAudio   = null;
+let bgmBonAudio    = null;
 
 
 const loadingOverlay = document.getElementById('loadingOverlay');
@@ -902,7 +907,9 @@ async function preloadSelectableBgm(id){
 
   // すでにロード済みなら何もしない
   if (id === 'sougen' && bgmSougenAudio) return;
+  if (id === 'yuzu'   && bgmYuzuAudio)   return;
   if (id === 'yoru'   && bgmYoruAudio)   return;
+  if (id === 'bon'    && bgmBonAudio)    return;
 
   const a = new Audio(meta.file);   // ★ blobにしない！
   a.loop = true;
@@ -912,7 +919,9 @@ async function preloadSelectableBgm(id){
   await waitCanPlay(a);
 
   if (id === 'sougen') bgmSougenAudio = a;
+  if (id === 'yuzu')   bgmYuzuAudio   = a;
   if (id === 'yoru')   bgmYoruAudio   = a;
+  if (id === 'bon')    bgmBonAudio    = a;
 }
 
 
@@ -1460,7 +1469,9 @@ function applyMute() {
   if (creditsAudio) creditsAudio.muted = muted;
 
   if (bgmSougenAudio) bgmSougenAudio.muted = muted;
+  if (bgmYuzuAudio)   bgmYuzuAudio.muted = muted;
   if (bgmYoruAudio)   bgmYoruAudio.muted = muted;
+  if (bgmBonAudio)    bgmBonAudio.muted = muted;
 }
 
 
@@ -1471,20 +1482,26 @@ function playPickup() {
 function stopAllMainBgms(){
   try { if (bgmAudio) { bgmAudio.pause(); bgmAudio.currentTime = 0; } } catch(_){}
   try { if (bgmSougenAudio) { bgmSougenAudio.pause(); bgmSougenAudio.currentTime = 0; } } catch(_){}
+  try { if (bgmYuzuAudio)   { bgmYuzuAudio.pause(); bgmYuzuAudio.currentTime = 0; } } catch(_){}
   try { if (bgmYoruAudio)   { bgmYoruAudio.pause(); bgmYoruAudio.currentTime = 0; } } catch(_){}
+  try { if (bgmBonAudio)    { bgmBonAudio.pause(); bgmBonAudio.currentTime = 0; } } catch(_){}
 }
 
   function pauseAllMainBgms(){
   try { if (bgmAudio) bgmAudio.pause(); } catch(_){}
   try { if (bgmSougenAudio) bgmSougenAudio.pause(); } catch(_){}
+  try { if (bgmYuzuAudio) bgmYuzuAudio.pause(); } catch(_){}
   try { if (bgmYoruAudio) bgmYoruAudio.pause(); } catch(_){}
+  try { if (bgmBonAudio) bgmBonAudio.pause(); } catch(_){}
 }
 
 
 function getSelectedMainAudio(){
   const id = getSelectedBgmId();
   if (id === 'sougen' && bgmSougenAudio) return bgmSougenAudio;
+  if (id === 'yuzu'   && bgmYuzuAudio)   return bgmYuzuAudio;
   if (id === 'yoru'   && bgmYoruAudio)   return bgmYoruAudio;
+  if (id === 'bon'    && bgmBonAudio)    return bgmBonAudio;
   return bgmAudio; // フォールバックはデフォルト
 }
 
@@ -1567,7 +1584,13 @@ canvas.height = gameHeight;
 
 
 /* ===== 空のテーマ（曲タイミング連動 / フェード） ===== */
-const THEMES={ morning:{top:[160,210,235],bottom:[247,250,252]}, evening:{top:[246,173,85],bottom:[253,230,138]}, night:{top:[45,55,90],bottom:[20,25,50]} };
+const THEMES={
+  morning:{top:[160,210,235],bottom:[247,250,252]},
+  evening:{top:[246,173,85],bottom:[253,230,138]},
+  night:{top:[45,55,90],bottom:[20,25,50]},
+  pastel:{top:[186,234,255],bottom:[255,227,244]},
+  bon:{top:[28,30,58],bottom:[56,34,78]}
+};
 let skyCurrent={ top:[...THEMES.morning.top], bottom:[...THEMES.morning.bottom] };
 let skyTarget ={ top:[...THEMES.morning.top], bottom:[...THEMES.morning.bottom] };
 const skyLerpSpeed=0.02;
@@ -1600,9 +1623,20 @@ function resetAudioSyncState(){
   skyLoopIndex        = 0;
   skyEveningTriggered = false;
 
-  // ★Yoru選択なら夜から、それ以外は朝から
-  const startNight = (getSelectedBgmId() === 'yoru');
-  setBackgroundTheme(startNight ? 'night' : 'morning');
+  const id = getSelectedBgmId();
+  if (id === 'yoru') {
+    setBackgroundTheme('night');
+    return;
+  }
+  if (id === 'yuzu') {
+    setBackgroundTheme('pastel');
+    return;
+  }
+  if (id === 'bon') {
+    setBackgroundTheme('bon');
+    return;
+  }
+  setBackgroundTheme('morning');
 }
 
 
@@ -1610,9 +1644,17 @@ function resetAudioSyncState(){
 function updateSkyByTimeline(){
   if (!gameStarted || isPaused || isGameOver) return;
 
-  // ★ yoru は夜固定（星・街の演出がブレない）
+  // ★ 固定ステージ（色味演出を固定）
   if (getSelectedBgmId() === 'yoru'){
     if (phaseName !== 'night') setBackgroundTheme('night');
+    return;
+  }
+  if (getSelectedBgmId() === 'yuzu'){
+    if (phaseName !== 'pastel') setBackgroundTheme('pastel');
+    return;
+  }
+  if (getSelectedBgmId() === 'bon'){
+    if (phaseName !== 'bon') setBackgroundTheme('bon');
     return;
   }
 
@@ -1652,6 +1694,10 @@ function drawClouds(df){
   let alpha;
   if (phaseName === 'night') {
     alpha = 0.03; // ← 夜はめっちゃ薄く（ほぼ透ける）
+  } else if (phaseName === 'pastel') {
+    alpha = 0.5;
+  } else if (phaseName === 'bon') {
+    alpha = 0.08;
   } else if (phaseName === 'evening') {
     alpha = 0.25; // ← 夕方は少しオレンジ空気感
   } else {
@@ -1724,10 +1770,10 @@ function maybeSpawnShootingStar(){
 
 function drawStars(df){
   // 夜だけターゲット1、それ以外0へフェード
-  const target = (phaseName === 'night') ? 1 : 0;
+  const target = (phaseName === 'night' || phaseName === 'bon') ? 1 : 0;
   starAlpha += (target - starAlpha) * (STAR_LERP * df);
 
-  if (starAlpha <= 0.01 && phaseName !== 'night') return; // ほぼ見えないならスキップ
+  if (starAlpha <= 0.01 && phaseName !== 'night' && phaseName !== 'bon') return; // ほぼ見えないならスキップ
 
   // 一定のごく低速ドリフト＋極小視差（ゲーム速度とは無関係）
   for (const s of stars) {
@@ -1784,25 +1830,41 @@ const GROUND_THEMES = {
     pebble: [40, 110, 55],
     streak: [30, 95, 45],
   },
-    concrete: {
+  concrete: {
     base: '#6E727A',      // コンクリのベース
     grain:  [140, 142, 148], // 砂っぽい粒
     pebble: [120, 123, 130], // 小石っぽい点
     streak: [95,  98,  104], // うっすら擦れ
+  },
+  candy: {
+    base: '#f3c7df',
+    grain:  [255, 224, 244],
+    pebble: [189, 230, 255],
+    streak: [240, 196, 229],
+  },
+  bon: {
+    base: '#4b3a64',
+    grain:  [116, 98, 151],
+    pebble: [91, 72, 125],
+    streak: [155, 122, 88],
   },
 };
 
 // 今どっちの地面か（初期は選択BGMから決める）
 let groundThemeKey =
   (getSelectedBgmId() === 'sougen') ? 'grass' :
+  (getSelectedBgmId() === 'yuzu')   ? 'candy' :
   (getSelectedBgmId() === 'yoru')   ? 'concrete' :
+  (getSelectedBgmId() === 'bon')    ? 'bon' :
   'dirt';
 
 
 function applyGroundThemeFromBgm(){
   const nextKey =
   (getSelectedBgmId() === 'sougen') ? 'grass' :
+  (getSelectedBgmId() === 'yuzu')   ? 'candy' :
   (getSelectedBgmId() === 'yoru')   ? 'concrete' :
+  (getSelectedBgmId() === 'bon')    ? 'bon' :
   'dirt';
 
   if (nextKey === groundThemeKey) return;
@@ -1905,6 +1967,128 @@ function drawCity(df){
 }
 // 1回だけ初期化
 initCity();
+
+/* ===== 盆まつりステージ（BON専用） ===== */
+let bonLanterns = [];
+let bonFireworks = [];
+let bonLastFireworkMs = 0;
+
+function initBonFestival(){
+  bonLanterns = [];
+  const gap = 72;
+  for (let x = -30; x < gameWidth + 60; x += gap){
+    bonLanterns.push({
+      x: x + Math.random()*12,
+      sway: Math.random()*Math.PI*2
+    });
+  }
+  bonFireworks = [];
+  bonLastFireworkMs = 0;
+}
+
+function spawnBonFirework(){
+  const colors = [
+    [255, 140, 180], // pink
+    [255, 210, 120], // warm yellow
+    [140, 220, 255], // light blue
+    [255, 170, 130], // peach
+  ];
+  const c = colors[(Math.random() * colors.length) | 0];
+  bonFireworks.push({
+    x: 80 + Math.random()*(gameWidth - 160),
+    y: 40 + Math.random()*(groundY - 180),
+    r: 6,
+    maxR: 48 + Math.random()*46,
+    alpha: 0.95,
+    cr: c[0], cg: c[1], cb: c[2]
+  });
+}
+
+function drawBonFestival(df){
+  const now = timeElapsed;
+  if (now - bonLastFireworkMs > 1300 + Math.random()*1200){
+    spawnBonFirework();
+    bonLastFireworkMs = now;
+  }
+
+  // 花火
+  for (let i = bonFireworks.length - 1; i >= 0; i--){
+    const f = bonFireworks[i];
+    f.r += (1.6 + gameSpeed*0.04) * df;
+    f.alpha -= 0.012 * df;
+
+    ctx.strokeStyle = `rgba(${f.cr},${f.cg},${f.cb},${Math.max(0, f.alpha)})`;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(f.x, f.y, f.r, 0, Math.PI*2);
+    ctx.stroke();
+
+    // 花火の線
+    const rays = 10;
+    for (let k = 0; k < rays; k++){
+      const a = (Math.PI*2/rays)*k + (timeElapsed*0.0006);
+      const r1 = f.r * 0.6;
+      const r2 = f.r * 1.1;
+      ctx.beginPath();
+      ctx.moveTo(f.x + Math.cos(a)*r1, f.y + Math.sin(a)*r1);
+      ctx.lineTo(f.x + Math.cos(a)*r2, f.y + Math.sin(a)*r2);
+      ctx.stroke();
+    }
+
+    if (f.r > f.maxR || f.alpha <= 0.03) bonFireworks.splice(i, 1);
+  }
+
+  // 遠景のやぐら
+  const yBase = groundY - 8;
+  const towerW = 96;
+  const towerH = 76;
+  const towerX = gameWidth * 0.52 - towerW/2;
+
+  ctx.fillStyle = 'rgba(86, 54, 48, 0.72)';
+  ctx.fillRect(towerX, yBase - towerH, towerW, towerH);
+
+  // 屋根
+  ctx.fillStyle = 'rgba(170, 55, 72, 0.78)';
+  ctx.beginPath();
+  ctx.moveTo(towerX - 20, yBase - towerH + 10);
+  ctx.lineTo(towerX + towerW + 20, yBase - towerH + 10);
+  ctx.lineTo(towerX + towerW/2, yBase - towerH - 34);
+  ctx.closePath();
+  ctx.fill();
+
+  // やぐらの提灯
+  for (let i = 0; i < 5; i++){
+    const lx = towerX + 14 + i*18;
+    const ly = yBase - towerH + 22;
+    ctx.fillStyle = 'rgba(255, 220, 140, 0.78)';
+    ctx.beginPath();
+    ctx.ellipse(lx, ly, 6, 8, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  // 画面上部の提灯列
+  for (const l of bonLanterns){
+    l.x -= gameSpeed * 0.22 * df;
+    if (l.x < -35) l.x = gameWidth + 35;
+
+    const sway = Math.sin(timeElapsed*0.003 + l.sway) * 2.5;
+    const x = l.x + sway;
+    const y = 52 + Math.sin(timeElapsed*0.002 + l.sway) * 3;
+
+    ctx.strokeStyle = 'rgba(230, 190, 120, 0.35)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, y - 20);
+    ctx.lineTo(x, y - 8);
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(255, 190, 120, 0.85)';
+    ctx.beginPath();
+    ctx.ellipse(x, y, 8, 10, 0, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+initBonFestival();
 
 /* ===== 山並み（草原BGM専用：遠景パララックス） ===== */
 let mountains = [];
@@ -3198,6 +3382,7 @@ if (getSelectedBgmId() === 'yoru'){
   if (!cityInited) initCity(); // ★保険
   drawCity(df);
 }
+if (getSelectedBgmId() === 'bon') drawBonFestival(df);
 
   // 地面＋流れる砂利（障害物と同速で流す）
   drawGround(); drawGroundDetails(df);
@@ -3389,7 +3574,9 @@ async function closeShop(e){
   const id = getSelectedBgmId();
   const needLoad = (id !== 'default') && (
     (id === 'sougen' && !bgmSougenAudio) ||
-    (id === 'yoru'   && !bgmYoruAudio)
+    (id === 'yuzu'   && !bgmYuzuAudio) ||
+    (id === 'yoru'   && !bgmYoruAudio) ||
+    (id === 'bon'    && !bgmBonAudio)
   );
 
   if (needLoad){
@@ -3468,9 +3655,10 @@ function renderShop(){
 
   shopContent.innerHTML = [
     bgmItem('sougen'),
+    bgmItem('yuzu'),
     bgmItem('yoru'),
-    comingRow(500),
-    comingRow(1000),
+    bgmItem('bon'),
+    comingRow(800),
   ].join('\n');
 
   // クリック処理（トグル）
