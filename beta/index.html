@@ -1896,30 +1896,11 @@ function drawYuzuBackdrop(df){
 
     ctx.save();
     ctx.lineCap = 'round';
-    // 左右端フェード用マスク
-    const fade = ctx.createLinearGradient(cx - rb.w*0.55, 0, cx + rb.w*0.55, 0);
-    fade.addColorStop(0.00, 'rgba(255,255,255,0)');
-    fade.addColorStop(0.16, 'rgba(255,255,255,1)');
-    fade.addColorStop(0.84, 'rgba(255,255,255,1)');
-    fade.addColorStop(1.00, 'rgba(255,255,255,0)');
-    ctx.strokeStyle = fade;
 
     for (let i = 0; i < colors.length; i++){
       ctx.globalCompositeOperation = 'source-over';
       ctx.strokeStyle = colors[i];
       ctx.lineWidth = 8;
-      ctx.beginPath();
-      ctx.ellipse(
-        cx + i*0.4,
-        cy + i*0.9,
-        rb.w * 0.5 - i*5.5,
-        rb.h * 0.5 - i*4.0,
-        0, Math.PI, Math.PI * 2
-      );
-      ctx.stroke();
-
-      ctx.globalCompositeOperation = 'destination-in';
-      ctx.strokeStyle = fade;
       ctx.beginPath();
       ctx.ellipse(
         cx + i*0.4,
