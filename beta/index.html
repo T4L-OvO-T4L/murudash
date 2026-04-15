@@ -837,7 +837,6 @@ function getSelectedBgmId(){
 function setSelectedBgmId(id){
   selectedBgmId = id || 'default';
   if (selectedBgmId === 'yoru') cityInited = false;
-  if (selectedBgmId === 'yuzu') initYuzuStage();
   if (selectedBgmId === 'bon') initBonFestival();
 
   updateBgmStatusLabel();
@@ -1969,92 +1968,10 @@ function drawCity(df){
 // 1回だけ初期化
 initCity();
 
-/* ===== ゆずパステルステージ（YUZU専用） ===== */
-let yuzuBands = [];
-let yuzuStars = [];
-let yuzuLastStarMs = 0;
-
-function initYuzuStage(){
-  // ゆるく流れる虹帯
-  yuzuBands = [
-    { y: 86,  h: 18, speed: 0.20, phase: 0.0, color: 'rgba(255,135,195,0.35)' },
-    { y: 112, h: 16, speed: 0.16, phase: 1.4, color: 'rgba(255,210,120,0.28)' },
-    { y: 136, h: 17, speed: 0.22, phase: 2.1, color: 'rgba(170,230,255,0.33)' },
-    { y: 162, h: 15, speed: 0.18, phase: 0.8, color: 'rgba(210,185,255,0.30)' },
-  ];
-  yuzuStars = [];
-  yuzuLastStarMs = 0;
-}
-
-function spawnYuzuStar(){
-  yuzuStars.push({
-    x: gameWidth + 40,
-    y: 50 + Math.random()*(groundY * 0.45),
-    vx: 2.8 + Math.random()*1.4,
-    vy: 0.7 + Math.random()*0.6,
-    len: 24 + Math.random()*20,
-    alpha: 0.9,
-    color: Math.random() < 0.5
-      ? 'rgba(255,255,255,ALPHA)'
-      : 'rgba(255,210,245,ALPHA)'
-  });
-}
-
-function drawYuzuStage(df){
-  // 流れる虹帯
-  for (const b of yuzuBands){
-    const xOff = (timeElapsed * 0.02 * b.speed + b.phase) % (gameWidth + 140);
-    for (let i = -1; i <= 1; i++){
-      const x = xOff + i*(gameWidth + 140) - 70;
-      ctx.fillStyle = b.color;
-      ctx.beginPath();
-      ctx.ellipse(x, b.y, gameWidth * 0.7, b.h, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  // パステルの流れ星
-  if (timeElapsed - yuzuLastStarMs > 850 + Math.random()*900){
-    spawnYuzuStar();
-    yuzuLastStarMs = timeElapsed;
-  }
-
-  for (let i = yuzuStars.length - 1; i >= 0; i--){
-    const s = yuzuStars[i];
-    s.x -= s.vx * df;
-    s.y += s.vy * df;
-    s.alpha -= 0.012 * df;
-
-    const a = Math.max(0, s.alpha);
-    const c = s.color.replace('ALPHA', a.toFixed(3));
-    const gx = s.x + s.len;
-    const gy = s.y - s.len * 0.45;
-
-    const grad = ctx.createLinearGradient(s.x, s.y, gx, gy);
-    grad.addColorStop(0, c);
-    grad.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(s.x, s.y);
-    ctx.lineTo(gx, gy);
-    ctx.stroke();
-
-    ctx.fillStyle = c;
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, 1.8, 0, Math.PI*2);
-    ctx.fill();
-
-    if (s.x < -80 || s.y > groundY - 16 || s.alpha <= 0.04) yuzuStars.splice(i, 1);
-  }
-}
-initYuzuStage();
-
 /* ===== 盆まつりステージ（BON専用） ===== */
 let bonLanterns = [];
 let bonFireworks = [];
 let bonLastFireworkMs = 0;
-let bonParade = [];
 
 function initBonFestival(){
   bonLanterns = [];
@@ -2067,15 +1984,6 @@ function initBonFestival(){
   }
   bonFireworks = [];
   bonLastFireworkMs = 0;
-  bonParade = [];
-  for (let i = 0; i < 5; i++){
-    bonParade.push({
-      type: (i % 2 === 0) ? 'yagura' : 'taiko',
-      x: i * 210 + Math.random()*80,
-      y: groundY - 12 - Math.random()*8,
-      scale: 0.88 + Math.random()*0.22
-    });
-  }
 }
 
 function spawnBonFirework(){
@@ -2130,54 +2038,32 @@ function drawBonFestival(df){
     if (f.r > f.maxR || f.alpha <= 0.03) bonFireworks.splice(i, 1);
   }
 
-  // 背景を流れるやぐら＆太鼓
-  for (const p of bonParade){
-    p.x -= gameSpeed * 0.25 * df * p.scale;
-    if (p.x < -180) p.x = gameWidth + 120 + Math.random()*120;
+  // 遠景のやぐら
+  const yBase = groundY - 8;
+  const towerW = 96;
+  const towerH = 76;
+  const towerX = gameWidth * 0.52 - towerW/2;
 
-    if (p.type === 'yagura'){
-      const towerW = 88 * p.scale;
-      const towerH = 72 * p.scale;
-      const towerX = p.x;
-      const yBase = p.y;
+  ctx.fillStyle = 'rgba(86, 54, 48, 0.72)';
+  ctx.fillRect(towerX, yBase - towerH, towerW, towerH);
 
-      ctx.fillStyle = 'rgba(86, 54, 48, 0.68)';
-      ctx.fillRect(towerX, yBase - towerH, towerW, towerH);
+  // 屋根
+  ctx.fillStyle = 'rgba(170, 55, 72, 0.78)';
+  ctx.beginPath();
+  ctx.moveTo(towerX - 20, yBase - towerH + 10);
+  ctx.lineTo(towerX + towerW + 20, yBase - towerH + 10);
+  ctx.lineTo(towerX + towerW/2, yBase - towerH - 34);
+  ctx.closePath();
+  ctx.fill();
 
-      ctx.fillStyle = 'rgba(175, 54, 72, 0.80)';
-      ctx.beginPath();
-      ctx.moveTo(towerX - 16, yBase - towerH + 10);
-      ctx.lineTo(towerX + towerW + 16, yBase - towerH + 10);
-      ctx.lineTo(towerX + towerW/2, yBase - towerH - 28);
-      ctx.closePath();
-      ctx.fill();
-
-      for (let i = 0; i < 4; i++){
-        const lx = towerX + 14 * p.scale + i*(16 * p.scale);
-        const ly = yBase - towerH + 22 * p.scale;
-        ctx.fillStyle = 'rgba(236, 68, 88, 0.86)';
-        ctx.beginPath();
-        ctx.ellipse(lx, ly, 5 * p.scale, 7 * p.scale, 0, 0, Math.PI*2);
-        ctx.fill();
-      }
-    } else {
-      // 太鼓台っぽい遠景オブジェ
-      const w = 70 * p.scale;
-      const h = 34 * p.scale;
-      const x = p.x;
-      const y = p.y - 8 * p.scale;
-
-      ctx.fillStyle = 'rgba(120, 68, 42, 0.62)';
-      ctx.fillRect(x, y - h, w, h);
-
-      ctx.fillStyle = 'rgba(168, 46, 58, 0.78)';
-      ctx.fillRect(x + 4 * p.scale, y - h - 8 * p.scale, w - 8 * p.scale, 8 * p.scale);
-
-      ctx.fillStyle = 'rgba(204, 148, 90, 0.82)';
-      ctx.beginPath();
-      ctx.ellipse(x + w * 0.5, y - h * 0.45, 12 * p.scale, 10 * p.scale, 0, 0, Math.PI*2);
-      ctx.fill();
-    }
+  // やぐらの提灯
+  for (let i = 0; i < 5; i++){
+    const lx = towerX + 14 + i*18;
+    const ly = yBase - towerH + 22;
+    ctx.fillStyle = 'rgba(255, 220, 140, 0.78)';
+    ctx.beginPath();
+    ctx.ellipse(lx, ly, 6, 8, 0, 0, Math.PI*2);
+    ctx.fill();
   }
 
   // 画面上部の提灯列
@@ -2189,14 +2075,14 @@ function drawBonFestival(df){
     const x = l.x + sway;
     const y = 52 + Math.sin(timeElapsed*0.002 + l.sway) * 3;
 
-    ctx.strokeStyle = 'rgba(240, 120, 120, 0.38)';
+    ctx.strokeStyle = 'rgba(230, 190, 120, 0.35)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(x, y - 20);
     ctx.lineTo(x, y - 8);
     ctx.stroke();
 
-    ctx.fillStyle = 'rgba(236, 68, 88, 0.9)';
+    ctx.fillStyle = 'rgba(255, 190, 120, 0.85)';
     ctx.beginPath();
     ctx.ellipse(x, y, 8, 10, 0, 0, Math.PI*2);
     ctx.fill();
