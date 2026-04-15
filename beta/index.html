@@ -1823,15 +1823,15 @@ let yuzuStarSpawnMs = 0;
 
 function initYuzuBackdrop(){
   yuzuRainbows = [];
-  const laneGap = 230;
+  const laneGap = 420;
 
   for (let x = -220; x < gameWidth + 320; x += laneGap){
     yuzuRainbows.push({
-      x: x + Math.random()*35,
+      x: x + Math.random()*45,
       y: 34 + Math.random()*90,
-      w: 190 + Math.random()*30,
-      h: 94 + Math.random()*16,
-      speedMul: 0.16 + Math.random()*0.08,
+      w: 220 + Math.random()*40,
+      h: 108 + Math.random()*18,
+      speedMul: 0.06 + Math.random()*0.04,
       phase: Math.random()*Math.PI*2
     });
   }
@@ -1847,7 +1847,8 @@ function spawnYuzuShootingStar(){
     vx: -(3.6 + Math.random()*1.8),
     vy:  1.1 + Math.random()*0.9,
     len: 36 + Math.random()*20,
-    life: 44 + Math.random()*22
+    life: 44 + Math.random()*22,
+    tw: Math.random() * Math.PI * 2
   });
 }
 
@@ -1893,8 +1894,8 @@ function drawYuzuBackdrop(df){
     ctx.restore();
   }
 
-  // たまに流れる星
-  if (timeElapsed - yuzuStarSpawnMs > 1300 + Math.random()*1300){
+  // たまに流れるキラキラ星
+  if (timeElapsed - yuzuStarSpawnMs > 1700 + Math.random()*1600){
     spawnYuzuShootingStar();
     yuzuStarSpawnMs = timeElapsed;
   }
@@ -1908,14 +1909,23 @@ function drawYuzuBackdrop(df){
     const alpha = Math.max(0, Math.min(1, (s.life / 60)));
     const tailX = s.x + s.len * 0.85;
     const tailY = s.y - s.len * 0.42;
+    s.tw += 0.16 * df;
+    const twinkle = 0.72 + 0.28 * Math.sin(s.tw);
+    const glow = alpha * twinkle;
 
-    ctx.fillStyle = `rgba(255,255,255,${0.86 * alpha})`;
+    ctx.fillStyle = `rgba(255,255,255,${0.86 * glow})`;
     ctx.beginPath();
     ctx.arc(s.x, s.y, 1.8, 0, Math.PI*2);
     ctx.fill();
 
+    ctx.fillStyle = `rgba(255,240,210,${0.52 * glow})`;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 4.4, 0, Math.PI*2);
+    ctx.fill();
+
     const grad = ctx.createLinearGradient(s.x, s.y, tailX, tailY);
-    grad.addColorStop(0, `rgba(255,255,255,${0.85 * alpha})`);
+    grad.addColorStop(0, `rgba(255,255,255,${0.90 * glow})`);
+    grad.addColorStop(0.45, `rgba(255,236,196,${0.45 * glow})`);
     grad.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.strokeStyle = grad;
     ctx.lineWidth = 2.1;
@@ -1923,6 +1933,17 @@ function drawYuzuBackdrop(df){
     ctx.moveTo(s.x, s.y);
     ctx.lineTo(tailX, tailY);
     ctx.stroke();
+
+    // きらっとした粒
+    for (let p = 1; p <= 3; p++){
+      const px = s.x + (tailX - s.x) * (p * 0.22);
+      const py = s.y + (tailY - s.y) * (p * 0.22);
+      const pa = Math.max(0, glow * (0.45 - p * 0.09));
+      ctx.fillStyle = `rgba(255,245,215,${pa})`;
+      ctx.beginPath();
+      ctx.arc(px, py, 1.2 - p*0.15, 0, Math.PI*2);
+      ctx.fill();
+    }
 
     if (s.life <= 0 || s.x < -70 || s.y > groundY - 6){
       yuzuShootingStars.splice(i, 1);
@@ -2089,6 +2110,7 @@ let bonFireworks = [];
 let bonLastFireworkMs = 0;
 let bonParadeYagura = [];
 let bonParadeTaiko = [];
+let bonParadeMikoshi = [];
 
 function initBonFestival(){
   bonLanterns = [];
@@ -2101,20 +2123,29 @@ function initBonFestival(){
   }
 
   bonParadeYagura = [];
-  for (let x = -260; x < gameWidth + 420; x += 320){
+  for (let x = -340; x < gameWidth + 460; x += 620){
     bonParadeYagura.push({
-      x: x + Math.random()*80,
+      x: x + Math.random()*120,
       yJitter: Math.random()*Math.PI*2,
-      speedMul: 0.11 + Math.random()*0.04
+      speedMul: 0.08 + Math.random()*0.03
     });
   }
 
   bonParadeTaiko = [];
-  for (let x = -120; x < gameWidth + 220; x += 210){
+  for (let x = -160; x < gameWidth + 260; x += 430){
     bonParadeTaiko.push({
-      x: x + Math.random()*50,
+      x: x + Math.random()*70,
       yJitter: Math.random()*Math.PI*2,
-      speedMul: 0.18 + Math.random()*0.05
+      speedMul: 0.12 + Math.random()*0.04
+    });
+  }
+
+  bonParadeMikoshi = [];
+  for (let x = -420; x < gameWidth + 540; x += 760){
+    bonParadeMikoshi.push({
+      x: x + Math.random()*140,
+      yJitter: Math.random()*Math.PI*2,
+      speedMul: 0.10 + Math.random()*0.03
     });
   }
 
@@ -2177,8 +2208,8 @@ function drawBonFestival(df){
   // 流れる遠景：やぐら
   for (const y of bonParadeYagura){
     y.x -= gameSpeed * y.speedMul * df;
-    const towerW = 92;
-    const towerH = 72;
+    const towerW = 184;
+    const towerH = 144;
     if (y.x + towerW < -80){
       y.x = gameWidth + 100 + Math.random()*130;
     }
@@ -2191,19 +2222,19 @@ function drawBonFestival(df){
 
     ctx.fillStyle = 'rgba(176, 58, 72, 0.80)';
     ctx.beginPath();
-    ctx.moveTo(towerX - 20, yBase - towerH + 10);
-    ctx.lineTo(towerX + towerW + 20, yBase - towerH + 10);
-    ctx.lineTo(towerX + towerW/2, yBase - towerH - 32);
+    ctx.moveTo(towerX - 40, yBase - towerH + 20);
+    ctx.lineTo(towerX + towerW + 40, yBase - towerH + 20);
+    ctx.lineTo(towerX + towerW/2, yBase - towerH - 64);
     ctx.closePath();
     ctx.fill();
 
     // 赤寄り提灯
     for (let i = 0; i < 5; i++){
-      const lx = towerX + 14 + i*17;
-      const ly = yBase - towerH + 22;
+      const lx = towerX + 28 + i*34;
+      const ly = yBase - towerH + 44;
       ctx.fillStyle = 'rgba(255, 92, 92, 0.82)';
       ctx.beginPath();
-      ctx.ellipse(lx, ly, 6, 8, 0, 0, Math.PI*2);
+      ctx.ellipse(lx, ly, 12, 16, 0, 0, Math.PI*2);
       ctx.fill();
     }
   }
@@ -2211,27 +2242,67 @@ function drawBonFestival(df){
   // 流れる遠景：太鼓モチーフ
   for (const t of bonParadeTaiko){
     t.x -= gameSpeed * t.speedMul * df;
-    if (t.x < -60){
+    if (t.x < -120){
       t.x = gameWidth + 70 + Math.random()*120;
     }
 
-    const y = groundY - 32 + Math.sin(timeElapsed*0.002 + t.yJitter) * 2.0;
+    const y = groundY - 52 + Math.sin(timeElapsed*0.002 + t.yJitter) * 3.0;
 
     // 台
     ctx.fillStyle = 'rgba(98, 70, 50, 0.54)';
-    ctx.fillRect(t.x - 15, y + 10, 30, 5);
+    ctx.fillRect(t.x - 30, y + 20, 60, 10);
 
     // 太鼓
     ctx.fillStyle = 'rgba(188, 122, 74, 0.62)';
     ctx.beginPath();
-    ctx.ellipse(t.x, y, 18, 14, 0, 0, Math.PI*2);
+    ctx.ellipse(t.x, y, 36, 28, 0, 0, Math.PI*2);
     ctx.fill();
 
     // 皮
     ctx.fillStyle = 'rgba(255, 225, 188, 0.65)';
     ctx.beginPath();
-    ctx.ellipse(t.x, y, 12.5, 9.5, 0, 0, Math.PI*2);
+    ctx.ellipse(t.x, y, 25, 19, 0, 0, Math.PI*2);
     ctx.fill();
+  }
+
+  // 流れる遠景：お神輿
+  for (const m of bonParadeMikoshi){
+    m.x -= gameSpeed * m.speedMul * df;
+    if (m.x < -220){
+      m.x = gameWidth + 120 + Math.random()*160;
+    }
+    const y = groundY - 34 + Math.sin(timeElapsed*0.0018 + m.yJitter) * 2.5;
+
+    // 担ぎ棒
+    ctx.fillStyle = 'rgba(130, 84, 52, 0.62)';
+    ctx.fillRect(m.x - 96, y + 8, 192, 8);
+
+    // 本体
+    ctx.fillStyle = 'rgba(208, 156, 62, 0.75)';
+    ctx.fillRect(m.x - 60, y - 58, 120, 62);
+
+    // 屋根
+    ctx.fillStyle = 'rgba(170, 52, 68, 0.78)';
+    ctx.beginPath();
+    ctx.moveTo(m.x - 76, y - 58);
+    ctx.lineTo(m.x + 76, y - 58);
+    ctx.lineTo(m.x, y - 98);
+    ctx.closePath();
+    ctx.fill();
+
+    // 鳳凰飾りっぽい金飾り
+    ctx.fillStyle = 'rgba(255, 226, 130, 0.86)';
+    ctx.beginPath();
+    ctx.arc(m.x, y - 104, 8, 0, Math.PI*2);
+    ctx.fill();
+
+    // 飾り提灯
+    for (let i = -1; i <= 1; i++){
+      ctx.fillStyle = 'rgba(255, 104, 104, 0.76)';
+      ctx.beginPath();
+      ctx.ellipse(m.x + i*30, y - 26, 8, 11, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
   }
 
   // 画面上部の提灯列
