@@ -1883,7 +1883,9 @@ function drawYuzuBackdrop(df){
     }
 
     const floatY = Math.sin(timeElapsed*0.0014 + rb.phase) * 4;
-    const cx = rb.x;
+    // rb.x is managed as the rainbow's left edge, so draw the ellipse from
+    // its center. This keeps the rainbow visible until its full width exits left.
+    const cx = rb.x + rb.w * 0.5;
     const cy = rb.y + floatY;
 
     const colors = [
