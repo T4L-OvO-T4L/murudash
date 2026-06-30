@@ -1383,6 +1383,10 @@ let bgm2Audio = new Audio('../assets/BGM2.mp3');
 bgm2Audio.loop = true; bgm2Audio.volume = 0.5;
 let creditsAudio = new Audio('../assets/CREDIT.mp3');
 creditsAudio.loop = true; creditsAudio.volume = 0.5;
+let creditsRareAudio = null;
+let currentCreditsAudio = creditsAudio;
+const CREDIT_RARE_CHANCE_DENOMINATOR = 61;
+let creditsOpening = false;
 
 let highScoreBgmTimeoutId = null;
 let muted = false;
@@ -1489,6 +1493,7 @@ function applyMute() {
   if (bgmAudio) bgmAudio.muted = muted;
   if (bgm2Audio) bgm2Audio.muted = muted;
   if (creditsAudio) creditsAudio.muted = muted;
+  if (creditsRareAudio) creditsRareAudio.muted = muted;
 
   if (bgmSougenAudio) bgmSougenAudio.muted = muted;
   if (bgmYuzuAudio)   bgmYuzuAudio.muted = muted;
@@ -1574,15 +1579,47 @@ function ensureBgmPlaying() {
     }
   } catch (_) {}
 }
-  
 
 
-  
+async function preloadRareCreditsBgm(){
+  if (creditsRareAudio) return;
+
+  const a = new Audio('../assets/CREDIT_02.mp3');
+  a.loop = true;
+  a.volume = 0.5;
+  a.muted = muted;
+  a.preload = 'auto';
+
+  await waitCanPlay(a);
+  creditsRareAudio = a;
+}
+
+async function pickCreditsBgm(){
+  currentCreditsAudio = creditsAudio;
+
+  const hitRareCredits = Math.floor(Math.random() * CREDIT_RARE_CHANCE_DENOMINATOR) === 0;
+  if (!hitRareCredits) return;
+
+  showLoadingOverlay(true);
+  try {
+    await preloadRareCreditsBgm();
+    currentCreditsAudio = creditsRareAudio || creditsAudio;
+  } catch (err) {
+    console.error(err);
+    currentCreditsAudio = creditsAudio;
+  } finally {
+    showLoadingOverlay(false);
+  }
+}
+
 function playCreditsBgm() {
-  try { creditsAudio.currentTime = 0; creditsAudio.play(); } catch (_) {}
+  const a = currentCreditsAudio || creditsAudio;
+  try { a.currentTime = 0; a.play(); } catch (_) {}
 }
 function stopCreditsBgm() {
-  try { creditsAudio.pause(); creditsAudio.currentTime = 0; } catch (_) {}
+  try { if (creditsAudio) { creditsAudio.pause(); creditsAudio.currentTime = 0; } } catch (_) {}
+  try { if (creditsRareAudio) { creditsRareAudio.pause(); creditsRareAudio.currentTime = 0; } } catch (_) {}
+  currentCreditsAudio = creditsAudio;
 }
 
 if (muteButton) {
@@ -3640,11 +3677,18 @@ function togglePause(){
 
 
 
-function openCredits(e){
+async function openCredits(e){
   if (e) e.preventDefault();
+  if (creditsOpening) return;
+  creditsOpening = true;
 
   bootAudioOnce();
-  
+  try {
+    await pickCreditsBgm();
+  } finally {
+    creditsOpening = false;
+  }
+
   creditsOverlay.classList.remove('hidden');
   creditsOverlay.classList.add('flex');
 
