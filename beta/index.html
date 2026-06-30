@@ -1862,25 +1862,40 @@ function drawYuzuBackdrop(df){
   if (!yuzuRainbows.length) initYuzuBackdrop();
 
   // ふわっと流れる虹（左右をフェード + なるべく重ならない配置）
-  yuzuRainbows.sort((a, b) => a.x - b.x);
+  const recycledRainbows = [];
+  for (const rb of yuzuRainbows){
+    rb.x -= gameSpeed * rb.speedMul * df;
+    if (rb.x + rb.w < -60) recycledRainbows.push(rb);
+  }
+
+  // 画面左へ消えた虹は、いったん並びから外して右端へ戻す。
+  // 先頭の虹を右へ戻した直後に、その虹を「前の虹」として扱うと、
+  // 次の虹まで右端へ押し出されて同時に消えたように見えるため。
+  const recycledSet = new Set(recycledRainbows);
+  const visibleRainbows = yuzuRainbows.filter(rb => !recycledSet.has(rb));
+  visibleRainbows.sort((a, b) => a.x - b.x);
+
+  for (let i = 1; i < visibleRainbows.length; i++){
+    const rb = visibleRainbows[i];
+    const prev = visibleRainbows[i - 1];
+    const need = prev.x + prev.w + Math.min(rb.minGap || 0, 210);
+    if (rb.x < need) rb.x = need;
+  }
+
+  let rightMost = visibleRainbows.reduce((mx, it) => Math.max(mx, it.x + it.w), gameWidth);
+  for (const rb of recycledRainbows){
+    rb.w = 292 + Math.random()*52;
+    rb.h = 150 + Math.random()*26;
+    rb.minGap = 180 + Math.random()*120;
+    rb.x = rightMost + rb.minGap;
+    rb.y = 34 + Math.random()*86;
+    rightMost = rb.x + rb.w;
+    visibleRainbows.push(rb);
+  }
+
+  yuzuRainbows = visibleRainbows;
   for (let i = 0; i < yuzuRainbows.length; i++){
     const rb = yuzuRainbows[i];
-    rb.x -= gameSpeed * rb.speedMul * df;
-
-    if (rb.x + rb.w < -60){
-      const rightMost = yuzuRainbows.reduce((mx, it) => Math.max(mx, it.x + it.w), gameWidth);
-      rb.w = 292 + Math.random()*52;
-      rb.h = 150 + Math.random()*26;
-      rb.minGap = 180 + Math.random()*120;
-      rb.x = rightMost + rb.minGap;
-      rb.y = 34 + Math.random()*86;
-    }
-
-    const prev = yuzuRainbows[i - 1];
-    if (prev){
-      const need = prev.x + prev.w + Math.min(rb.minGap || 0, 210);
-      if (rb.x < need) rb.x = need;
-    }
 
     const floatY = Math.sin(timeElapsed*0.0014 + rb.phase) * 4;
     // rb.x is managed as the rainbow's left edge, so draw the ellipse from
