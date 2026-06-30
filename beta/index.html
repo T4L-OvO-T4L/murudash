@@ -168,7 +168,7 @@ text-shadow:
   <div class="flex flex-col items-end leading-tight">
     <span id="highScore" class="text-xs text-gray-500 block">ハイスコア: 0</span>
     <span id="bgmStatus" class="text-[10px] text-gray-400 block text-right mt-0.5">
-      BGM：デフォルト
+      ステージ：デフォルト
     </span>
   </div>
 
@@ -228,7 +228,10 @@ text-shadow:
         <h2 class="text-xl font-bold mb-3 text-center">ハイスコアのリセット</h2>
         <p class="text-sm sm:text-base mb-4 text-center">
           ハイスコアを消去しますか？<br>
-          この操作は取り消せません。
+          この操作は取り消せません。<br><br>
+          <span class="text-xs sm:text-sm text-yellow-200">※ランキングに送信したスコアは消えません！<br>
+          　　ランキングのデータを削除したい際はお手数ですが｢たる｣まで<br>
+          　　ご連絡ください。（X：@T4L_OvO_）</span>
         </p>
         <div class="flex flex-col sm:flex-row gap-3 mt-2">
           <button
@@ -309,16 +312,27 @@ text-shadow:
 </div>
 
 
-    <!-- クレジット ＋ リセット（横並び） -->
+    <!-- クレジット ＋ ランキング（横並び） -->
     <div class="mt-3 flex flex-row flex-wrap gap-3 justify-center">
 
   <button id="creditsButton" class="px-4 py-1.5 border border-gray-300 text-xs rounded-lg bg-black/40 hover:bg-black/60 transition-colors">
     クレジット
   </button>
-  <button id="resetButton" class="px-4 py-1.5 border border-red-400 text-xs rounded-lg bg-red-600/80 hover:bg-red-700 transition-colors">
-    ハイスコアリセット
+  <button id="titleRankingButton" class="px-4 py-1.5 border border-sky-300 text-xs rounded-lg bg-sky-700/80 hover:bg-sky-800 transition-colors">
+    ランキング
   </button>
- </div> <!-- ← クレジット＋リセットの行の閉じ -->
+ </div>
+
+    <!-- ハイスコアリセット（下段） -->
+    <div class="mt-3 flex flex-col items-center gap-1">
+  <button id="resetButton" class="px-4 py-1.5 border border-red-400 text-xs rounded-lg bg-red-600/80 hover:bg-red-700 transition-colors">
+    ハイスコアをリセット
+  </button>
+  <p class="text-[10px] sm:text-xs text-gray-300 leading-relaxed">
+    ハイスコア更新の演出を再び楽しみたいときに<br>
+    こちらからハイスコアをリセットしてください
+  </p>
+ </div>
 
 </div> <!-- #startScreen を閉じる -->
 
@@ -825,9 +839,9 @@ let selectedBgmId = 'default';
 const BGM_META = {
   default: { label: 'デフォルト', unlockedAt: 0 },
   sougen:  { label: '草原を駆けるむるる', unlockedAt: 100, file: '../assets/BGM_SOUGEN.mp3', volume: 0.6 },
-  yuzu:    { label: 'ゆず色パステルステージ', unlockedAt: 150, file: '../assets/BGM_YUZU.mp3', volume: 0.52 },
+  yuzu:    { label: 'ぱすてるわたあめとむるる', unlockedAt: 150, file: '../assets/BGM_YUZU.mp3', volume: 0.52 },
   yoru:    { label: '夜の街を駆けるむるる', unlockedAt: 200, file: '../assets/BGM_YORU.mp3',   volume: 0.5 },
-  bon:     { label: '盆踊りステージ', unlockedAt: 250, file: '../assets/BGM_BON.mp3', volume: 0.55 }
+  bon:     { label: '盆踊りとむるる', unlockedAt: 250, file: '../assets/BGM_BON.mp3', volume: 0.55 }
 };
 
 
@@ -873,7 +887,7 @@ function updateBgmStatusLabel(){
   if (!bgmStatusEl) return;
   const id = getSelectedBgmId();
   const label = (BGM_META[id]?.label) || 'デフォルト';
-  bgmStatusEl.textContent = `BGM：${label}`;
+  bgmStatusEl.textContent = `ステージ：${label}`;
 }
 updateBgmStatusLabel();
 
@@ -1071,6 +1085,7 @@ const startScreen = document.getElementById('startScreen');
 const muteButton = document.getElementById('muteButton');
 const creditsOverlay = document.getElementById('creditsOverlay');
 const creditsButton = document.getElementById('creditsButton');
+const titleRankingButton = document.getElementById('titleRankingButton');
 const creditsScroll = document.getElementById('creditsScroll');
 const creditsEndMessage = document.getElementById('creditsEndMessage');
 
@@ -1122,6 +1137,13 @@ if (sendScoreButton){
 
 if (viewRankingButton){
   viewRankingButton.addEventListener('click', (e) => {
+    e.preventDefault();
+    openRankingOverlay();
+  });
+}
+
+if (titleRankingButton){
+  titleRankingButton.addEventListener('click', (e) => {
     e.preventDefault();
     openRankingOverlay();
   });
@@ -2145,7 +2167,7 @@ function drawCity(df){
 // 1回だけ初期化
 initCity();
 
-/* ===== 盆踊りステージ（BON専用） ===== */
+/* ===== 盆踊りとむるる（BON専用） ===== */
 let bonLanterns = [];
 let bonFireworks = [];
 let bonLastFireworkMs = 0;
@@ -3964,14 +3986,14 @@ function renderShop(){
       : 'bg-gray-900/60 border-gray-700 opacity-60 cursor-not-allowed';
 
     const sub = unlocked
-      ? (isSelected ? 'もう一回押すとデフォルトに戻るむる' : '押すとこのBGMに切り替わるむる')
+      ? (isSelected ? 'もう一回押すとデフォルトに戻るむる' : '押すとこのステージに切り替わるむる')
       : `必要どんぐり：${meta.unlockedAt}`;
 
     return row(`
       <button class="w-full text-left px-4 py-3 rounded-lg border ${btnClass}"
         data-bgm="${id}" ${unlocked ? '' : 'disabled'}>
         <div class="flex items-center justify-between">
-          <div class="font-bold">♪BGM：${meta.label}</div>
+          <div class="font-bold">ステージ：${meta.label}</div>
           <div class="text-xs ${statusClass}">${statusText}</div>
         </div>
         <div class="text-xs text-gray-300 mt-1">${sub}</div>
